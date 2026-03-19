@@ -6,12 +6,18 @@ import { User } from './entities/user.entity';
 import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/dto/auth.module';
+import { CategoriesModule } from './categories/categories.module';
+import { TagsModule } from './tag/tags.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, 
     }),
+    AuthModule,
+    CategoriesModule,
+    TagsModule,
 
     TypeOrmModule.forRoot({
       type: 'postgres',
