@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Sign In – InterviewDojo",
-  description: "Sign in to your InterviewDojo account",
+  title: "InterviewDojo – Auth",
+  description: "Sign in or create your InterviewDojo account",
 };
 
-export default function LoginLayout({
+export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -17,8 +17,8 @@ export default function LoginLayout({
       <aside className="hidden lg:flex lg:w-1/2 relative flex-col justify-between overflow-hidden bg-zinc-950 p-12 text-white">
         {/* Gradient orbs */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-40 -right-20 h-[500px] w-[500px] rounded-full bg-indigo-600/25 blur-[130px]" />
-          <div className="absolute bottom-10 -left-20 h-[380px] w-[380px] rounded-full bg-violet-700/30 blur-[110px]" />
+          <div className="absolute -top-32 -left-32 h-[480px] w-[480px] rounded-full bg-violet-600/30 blur-[120px]" />
+          <div className="absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-indigo-600/20 blur-[100px]" />
         </div>
 
         {/* Logo */}
@@ -31,46 +31,48 @@ export default function LoginLayout({
           </span>
         </Link>
 
-        {/* Center stats block */}
-        <div className="relative z-10 space-y-10">
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4">
+        {/* Testimonial / pitch */}
+        <div className="relative z-10 space-y-8">
+          {/* Feature list */}
+          <ul className="space-y-4 text-sm text-zinc-300">
             {[
-              { value: "50K+", label: "Active learners" },
-              { value: "1,200+", label: "Interview questions" },
-              { value: "94%", label: "Success rate" },
-              { value: "4.9★", label: "User rating" },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"
-              >
-                <p className="text-2xl font-extrabold text-white">{s.value}</p>
-                <p className="mt-0.5 text-sm text-zinc-400">{s.label}</p>
-              </div>
+              { icon: "⚡", text: "AI-powered mock interviews in real time" },
+              { icon: "🎯", text: "Personalised feedback for every answer" },
+              {
+                icon: "📈",
+                text: "Track your progress with detailed analytics",
+              },
+              { icon: "🏆", text: "1000+ curated questions across all tracks" },
+            ].map((f) => (
+              <li key={f.text} className="flex items-center gap-3">
+                <span className="text-lg">{f.icon}</span>
+                <span>{f.text}</span>
+              </li>
             ))}
-          </div>
+          </ul>
 
           {/* Quote */}
           <blockquote className="border-l-2 border-violet-500 pl-5">
             <p className="text-base italic leading-relaxed text-zinc-200">
-              "I went from failing every system-design round to confidently
-              clearing FAANG interviews. InterviewDojo's instant feedback loop
-              made all the difference."
+              "InterviewDojo helped me land my dream job at a top-tier tech
+              company. The AI feedback was brutally honest – exactly what I
+              needed."
             </p>
             <footer className="mt-3 flex items-center gap-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-indigo-700 text-sm font-bold">
-                TL
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-700 text-sm font-bold">
+                AN
               </span>
               <div>
-                <p className="text-sm font-semibold text-white">Tuan Le</p>
-                <p className="text-xs text-zinc-400">Senior Engineer @ Meta</p>
+                <p className="text-sm font-semibold text-white">Anh Nguyen</p>
+                <p className="text-xs text-zinc-400">
+                  Software Engineer @ Google
+                </p>
               </div>
             </footer>
           </blockquote>
         </div>
 
-        {/* Footer */}
+        {/* Bottom badge */}
         <div className="relative z-10 text-xs text-zinc-500">
           © {new Date().getFullYear()} InterviewDojo. All rights reserved.
         </div>
