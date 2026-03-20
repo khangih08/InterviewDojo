@@ -4,7 +4,7 @@ import { ACCESS_TOKEN_COOKIE } from "@/lib/auth";
 
 const protectedPrefixes = ["/dashboard", "/questions", "/interview", "/admin"];
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const token = req.cookies.get(ACCESS_TOKEN_COOKIE)?.value;
 
@@ -17,10 +17,15 @@ export function middleware(req: NextRequest) {
   }
 
   if (pathname === "/") {
-    return NextResponse.redirect(new URL(token ? "/dashboard" : "/login", req.url));
+    return NextResponse.redirect(
+      new URL(token ? "/dashboard" : "/login", req.url)
+    );
   }
 
-  const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
+  const isProtected = protectedPrefixes.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
+
   if (isProtected && !token) {
     const url = new URL("/login", req.url);
     url.searchParams.set("next", pathname);
@@ -31,5 +36,13 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/login", "/register", "/dashboard/:path*", "/questions/:path*", "/interview/:path*", "/admin/:path*"],
+  matcher: [
+    "/",
+    "/login",
+    "/register",
+    "/dashboard/:path*",
+    "/questions/:path*",
+    "/interview/:path*",
+    "/admin/:path*",
+  ],
 };
