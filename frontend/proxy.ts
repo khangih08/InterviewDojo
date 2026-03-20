@@ -17,13 +17,14 @@ export function proxy(req: NextRequest) {
   }
 
   if (pathname === "/") {
-    return NextResponse.redirect(
-      new URL(token ? "/dashboard" : "/login", req.url)
-    );
+    if (token) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+    return NextResponse.next(); // ← chưa login → hiện landing page
   }
 
   const isProtected = protectedPrefixes.some((prefix) =>
-    pathname.startsWith(prefix)
+    pathname.startsWith(prefix),
   );
 
   if (isProtected && !token) {
