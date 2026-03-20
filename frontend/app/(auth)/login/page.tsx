@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Eye,
   EyeOff,
@@ -10,6 +11,9 @@ import {
   Chrome,
   AlertCircle,
 } from "lucide-react";
+
+import { login as loginRequest } from "@/lib/api/auth";
+import { saveAccessToken, saveUser } from "@/lib/auth";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +30,9 @@ import {
 } from "@/components/ui/card";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -46,17 +53,39 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
-    // TODO: replace with your real auth logic
-    await new Promise((r) => setTimeout(r, 1600));
+    try {
+      const result = await loginRequest({
+        email: form.email.trim(),
+        password: form.password,
+      });
 
-    // Simulate wrong credentials demo
-    if (form.password !== "correct") {
-      setError("Invalid email or password. Please try again.");
+      /**
+       * Hỗ trợ cả 2 kiểu response:
+       * - { accessToken, user }
+       * - { token, user }
+       */
+      const token = result.accessToken ?? result.token;
+
+      if (!token) {
+        throw new Error("Không nhận được access token từ hệ thống.");
+      }
+
+      saveAccessToken(token, form.remember);
+      saveUser(result.user);
+
+      const next = searchParams.get("next");
+      router.push(next || "/dashboard");
+      router.refresh();
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Đăng nhập thất bại. Vui lòng thử lại.";
+
+      setError(message);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    setLoading(false);
   };
 
   return (
@@ -71,7 +100,6 @@ export default function LoginPage() {
       </CardHeader>
 
       <CardContent className="space-y-5">
-        {/* OAuth buttons */}
         <div className="grid grid-cols-2 gap-3">
           <Button variant="outline" className="gap-2 font-medium" type="button">
             <Github className="h-4 w-4" />
@@ -90,7 +118,6 @@ export default function LoginPage() {
           </span>
         </div>
 
-        {/* Error banner */}
         {error && (
           <div className="flex items-start gap-2.5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
@@ -98,9 +125,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-sm font-medium">
               Email address
@@ -117,7 +142,6 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Password */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="password" className="text-sm font-medium">
@@ -130,6 +154,7 @@ export default function LoginPage() {
                 Forgot password?
               </Link>
             </div>
+
             <div className="relative">
               <Input
                 id="password"
@@ -155,7 +180,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Remember me */}
           <div className="flex items-center gap-2.5">
             <Checkbox
               id="remember"
@@ -171,7 +195,6 @@ export default function LoginPage() {
             </Label>
           </div>
 
-          {/* Submit */}
           <Button
             type="submit"
             disabled={loading}
@@ -188,7 +211,6 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        {/* Divider */}
         <div className="relative">
           <Separator />
         </div>

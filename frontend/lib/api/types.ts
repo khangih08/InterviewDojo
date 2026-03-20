@@ -2,7 +2,7 @@ export type User = {
   id?: string;
   email: string;
   full_name?: string;
-  role?: "admin" | "candidate";
+  role?: "admin" | "user";
 };
 
 export type AuthLoginRequest = {
@@ -18,6 +18,7 @@ export type AuthRegisterRequest = {
 
 export type AuthLoginResponse = {
   token: string;
+  accessToken?: string;
   user: User;
 };
 
