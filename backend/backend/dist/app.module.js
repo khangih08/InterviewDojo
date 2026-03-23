@@ -15,6 +15,9 @@ const user_entity_1 = require("./entities/user.entity");
 const category_entity_1 = require("./entities/category.entity");
 const tag_entity_1 = require("./entities/tag.entity");
 const config_1 = require("@nestjs/config");
+const auth_module_1 = require("./auth/dto/auth.module");
+const categories_module_1 = require("./categories/categories.module");
+const tags_module_1 = require("./tag/tags.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -24,6 +27,9 @@ exports.AppModule = AppModule = __decorate([
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
             }),
+            auth_module_1.AuthModule,
+            categories_module_1.CategoriesModule,
+            tags_module_1.TagsModule,
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 host: process.env.DB_HOST,
