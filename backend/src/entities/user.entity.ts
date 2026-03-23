@@ -1,5 +1,25 @@
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
+export enum JobRole {
+  BACKEND = 'Backend Developer',
+  FRONTEND = 'Frontend Developer',
+  FULLSTACK = 'Fullstack Developer',
+  AI_ENGINEER = 'AI Engineer'
+}
+
+export enum Role {
+  USER = 'user',
+  ADMIN = 'admin',
+}
+
+export enum ExperienceLevel {
+  INTERN = 'intern',
+  FRESHER = 'fresher',
+  JUNIOR = 'junior',
+  MIDDLE = 'middle',
+  SENIOR = 'senior',
+}
+
 @Entity('users')
 export class User {
     @PrimaryGeneratedColumn('uuid')
@@ -14,12 +34,25 @@ export class User {
     @Column()
     full_name: string;
 
-    @Column()
-    target_role: string;
+    @Column({
+        type: 'enum',
+        enum: JobRole,
+    })
+    target_role: JobRole;
 
-    @Column()
-    experience_level: string;
+    @Column({
+        type: 'enum',
+        enum: ExperienceLevel,
+    })
+    experience_level: ExperienceLevel;
 
-    @Column({default: 'candidate'})
-    role: string;
+    @Column({
+        type: 'enum',
+        enum: Role,
+        default: Role.USER,
+    })
+    role: Role;
+
+    @Column({ type: 'text', nullable: true })
+    refreshToken: string | null;
 };
