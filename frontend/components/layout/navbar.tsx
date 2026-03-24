@@ -12,7 +12,9 @@ export function Navbar() {
     <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/10 bg-slate-950/80 px-4 py-4 backdrop-blur md:px-6">
       <div>
         <h1 className="text-lg font-semibold text-white">InterviewDojo</h1>
-        <p className="text-sm text-slate-400">Practice technical interviews with AI feedback</p>
+        <p className="text-sm text-slate-400">
+          Practice technical interviews with AI feedback
+        </p>
       </div>
 
       <div className="flex items-center gap-3">
