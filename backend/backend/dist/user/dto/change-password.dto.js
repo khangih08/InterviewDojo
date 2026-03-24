@@ -9,26 +9,25 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoginDto = void 0;
-const swagger_1 = require("@nestjs/swagger");
+exports.ChangePasswordDto = void 0;
 const class_validator_1 = require("class-validator");
-class LoginDto {
-    email;
-    password;
+class ChangePasswordDto {
+    currentPassword;
+    newPassword;
 }
-exports.LoginDto = LoginDto;
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        description: 'User email address',
-        example: 'interview@gmail.com',
-    }),
-    (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid email address' }),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Email is required' }),
-    __metadata("design:type", String)
-], LoginDto.prototype, "email", void 0);
+exports.ChangePasswordDto = ChangePasswordDto;
 __decorate([
     (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsNotEmpty)({ message: 'Password is required' }),
+    (0, class_validator_1.IsNotEmpty)({ message: 'New password must not be empty' }),
     __metadata("design:type", String)
-], LoginDto.prototype, "password", void 0);
-//# sourceMappingURL=login.dto.js.map
+], ChangePasswordDto.prototype, "currentPassword", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)({ message: 'New password must not be empty ' }),
+    (0, class_validator_1.MinLength)(8, { message: 'New password must be at least 8 characters long' }),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/, {
+        message: 'New password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
+    }),
+    __metadata("design:type", String)
+], ChangePasswordDto.prototype, "newPassword", void 0);
+//# sourceMappingURL=change-password.dto.js.map

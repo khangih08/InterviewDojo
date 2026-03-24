@@ -1,6 +1,6 @@
 import { User } from "../entities/user.entity";
 import { Repository } from "typeorm";
-export declare class UserService {
+export declare class UsersService {
     private userRepository;
     constructor(userRepository: Repository<User>);
     create(data: any): Promise<User[]>;
