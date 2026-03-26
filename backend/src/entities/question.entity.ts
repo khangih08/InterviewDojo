@@ -5,8 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { TagRelation } from './tag_relation.entity';
+import { Category } from './category.entity';
 
 @Entity('questions')
 export class Question {
@@ -14,17 +17,17 @@ export class Question {
   id: string;
 
   @Column({ type: 'text' })
-  content: string; // Nội dung câu hỏi
+  content: string; // Question content
 
   @Column({ type: 'text', nullable: true })
-  sampleAnswer: string; // Đáp án mẫu hoặc gợi ý trả lời
+  sampleAnswer: string; // Example answer 
 
   @Column({ type: 'int', default: 1 })
-  difficultyLevel: number; // Tùy chọn: Độ khó (1: Dễ, 2: TB, 3: Khó)
+  difficultyLevel: number; // Difficulty level (1-5)
 
-  // Mối quan hệ với bảng trung gian TagRelation
+  // Relational property for TagRelation
   @OneToMany(() => TagRelation, (tagRelation) => tagRelation.question, {
-    cascade: true, // Cho phép tự động lưu TagRelation khi tạo Question
+    cascade: true, // Auto-save TagRelation when saving Question
   })
   tagRelations: TagRelation[];
 
@@ -33,4 +36,12 @@ export class Question {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ManyToOne(() => Category, (category) => category.questions, {
+    onDelete: 'SET NULL', // If Category is deleted, set categoryId to null
+    nullable: true,
+  })
+
+  @JoinColumn({ name: 'category_id' })
+  category?: Category;
 }
