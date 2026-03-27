@@ -58,3 +58,39 @@ export type GetQuestionsParams = {
   difficulty?: Difficulty | "";
   tagId?: string;
 };
+
+export type CreateSessionRequest = {
+  question_id: string;
+};
+
+export type CreateSessionResponse = {
+  session_id: string;
+};
+
+export type PresignUploadRequest = {
+  session_id: string;
+  file_name: string;
+  content_type: string;
+  size_bytes: number;
+};
+
+export type PresignUploadResponse = {
+  upload_url: string;
+  file_url: string;
+  object_key?: string;
+  method?: "PUT" | "POST";
+  headers?: Record<string, string>;
+};
+
+export type CompleteSessionRequest = {
+  session_id: string;
+  recording_url: string;
+  duration_seconds: number;
+  size_bytes: number;
+  mime_type: string;
+};
+
+export type CompleteSessionResponse = {
+  success: boolean;
+  message?: string;
+};

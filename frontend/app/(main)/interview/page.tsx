@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getQuestionById } from "@/lib/api/questions";
 import type { Question } from "@/lib/api/types";
 import { useMediaPreview } from "@/hooks/useMediaPreview";
+import RecorderPanel from "@/components/interview/RecorderPanel";
 
 function formatTime(totalSeconds: number) {
   const mins = Math.floor(totalSeconds / 60);
@@ -135,7 +136,7 @@ export default function InterviewPage() {
         </Card>
       </div>
 
-      <Card className="border border-white/10 bg-slate-900/80 text-white shadow-none">
+            <Card className="border border-white/10 bg-slate-900/80 text-white shadow-none">
         <CardHeader>
           <CardTitle>Camera / Microphone Preview</CardTitle>
         </CardHeader>
@@ -144,7 +145,11 @@ export default function InterviewPage() {
             <video ref={videoRef} autoPlay muted playsInline className="aspect-video w-full bg-black object-cover" />
           </div>
 
-          {mediaError ? <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">{mediaError}</p> : null}
+          {mediaError ? (
+            <p className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-200">
+              {mediaError}
+            </p>
+          ) : null}
 
           <div className="flex flex-wrap items-center gap-3">
             {!enabled ? (
@@ -152,20 +157,34 @@ export default function InterviewPage() {
                 Bật camera + mic
               </Button>
             ) : (
-              <Button variant="outline" onClick={stop} className="border-white/10 bg-white/5 text-white hover:bg-white/10">
+              <Button
+                variant="outline"
+                onClick={stop}
+                className="border-white/10 bg-white/5 text-white hover:bg-white/10"
+              >
                 Tắt preview
               </Button>
             )}
-            <span className={`rounded-full px-3 py-1 text-xs font-medium ${enabled ? "bg-emerald-500/20 text-emerald-200" : "bg-slate-700 text-slate-200"}`}>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                enabled
+                  ? "bg-emerald-500/20 text-emerald-200"
+                  : "bg-slate-700 text-slate-200"
+              }`}
+            >
               {enabled ? "Device ready" : "Device offline"}
             </span>
           </div>
 
           <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/70 p-4 text-sm text-slate-300">
-            Tuần 3 bạn chỉ cần nối tiếp phần này bằng <span className="font-semibold text-white">MediaRecorder</span> để start/stop record, gom blob video và upload presigned URL.
+            Tuần 3 bạn chỉ cần nối tiếp phần này bằng{" "}
+            <span className="font-semibold text-white">MediaRecorder</span> để start/stop record, gom blob video và upload presigned URL.
           </div>
         </CardContent>
       </Card>
+
+      {/* 👉 WEEK 3: Recorder + Upload */}
+      <RecorderPanel questionId={questionId} />
     </div>
   );
 }
