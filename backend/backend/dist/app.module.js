@@ -14,6 +14,8 @@ const typeorm_1 = require("@nestjs/typeorm");
 const user_entity_1 = require("./entities/user.entity");
 const category_entity_1 = require("./entities/category.entity");
 const tag_entity_1 = require("./entities/tag.entity");
+const question_entity_1 = require("./entities/question.entity");
+const tag_relation_entity_1 = require("./entities/tag_relation.entity");
 const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./auth/auth.module");
 const categories_module_1 = require("./categories/categories.module");
@@ -32,6 +34,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             categories_module_1.CategoriesModule,
             tags_module_1.TagsModule,
+            questions_module_1.QuestionsModule,
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 host: process.env.DB_HOST,

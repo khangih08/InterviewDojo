@@ -69,6 +69,43 @@ let QuestionsService = class QuestionsService {
         }
         return question;
     }
+    async updateQuestion(id, updateDto) {
+        const question = await this.getQuestionById(id);
+        const { content, sampleAnswer, categoryId, tagIds } = updateDto;
+        if (content !== undefined) {
+            question.content = content;
+        }
+        if (sampleAnswer !== undefined) {
+            question.sampleAnswer = sampleAnswer;
+        }
+        if (categoryId !== undefined) {
+            question.category = { id: categoryId };
+        }
+        await this.questionsRepository.save(question);
+        if (tagIds !== undefined) {
+            await this.tagRelationsRepository
+                .createQueryBuilder()
+                .delete()
+                .from(tag_relation_entity_1.TagRelation)
+                .where('question_id = :id', { id })
+                .execute();
+            if (tagIds.length > 0) {
+                const tagRelations = tagIds.map((tagId) => this.tagRelationsRepository.create({
+                    question: { id },
+                    tag: { id: tagId },
+                }));
+                await this.tagRelationsRepository.save(tagRelations);
+            }
+        }
+        return this.getQuestionById(id);
+    }
+    async deleteQuestion(id) {
+        const question = await this.getQuestionById(id);
+        await this.questionsRepository.remove(question);
+        return {
+            message: `Question with ID ${id} deleted successfully`,
+        };
+    }
 };
 exports.QuestionsService = QuestionsService;
 exports.QuestionsService = QuestionsService = __decorate([
