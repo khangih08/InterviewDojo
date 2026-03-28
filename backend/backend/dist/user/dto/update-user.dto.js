@@ -23,6 +23,7 @@ __decorate([
 ], UpdateUserDto.prototype, "email", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Object)
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
 ], UpdateUserDto.prototype, "full_name", void 0);
 //# sourceMappingURL=update-user.dto.js.map
