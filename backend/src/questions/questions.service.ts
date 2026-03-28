@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { Question } from '../entities/question.entity';
 import { TagRelation } from '../entities/tag_relation.entity';
 import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
 
 @Injectable()
 export class QuestionsService {
@@ -89,61 +88,5 @@ export class QuestionsService {
     }
 
     return question;
-  }
-
-  /**
-   * Update an existing question and replace tag associations when provided
-   */
-  async updateQuestion(id: string, updateDto: UpdateQuestionDto): Promise<Question> {
-    const question = await this.getQuestionById(id);
-    const { content, sampleAnswer, categoryId, tagIds } = updateDto;
-
-    if (content !== undefined) {
-      question.content = content;
-    }
-
-    if (sampleAnswer !== undefined) {
-      question.sampleAnswer = sampleAnswer;
-    }
-
-    if (categoryId !== undefined) {
-      question.category = { id: categoryId } as Question['category'];
-    }
-
-    await this.questionsRepository.save(question);
-
-    if (tagIds !== undefined) {
-      await this.tagRelationsRepository
-        .createQueryBuilder()
-        .delete()
-        .from(TagRelation)
-        .where('question_id = :id', { id })
-        .execute();
-
-      if (tagIds.length > 0) {
-        const tagRelations = tagIds.map((tagId) =>
-          this.tagRelationsRepository.create({
-            question: { id },
-            tag: { id: tagId },
-          }),
-        );
-
-        await this.tagRelationsRepository.save(tagRelations);
-      }
-    }
-
-    return this.getQuestionById(id);
-  }
-
-  /**
-   * Delete a question by id
-   */
-  async deleteQuestion(id: string): Promise<{ message: string }> {
-    const question = await this.getQuestionById(id);
-    await this.questionsRepository.remove(question);
-
-    return {
-      message: `Question with ID ${id} deleted successfully`,
-    };
   }
 }

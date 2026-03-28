@@ -20,7 +20,8 @@ const config_1 = require("@nestjs/config");
 const auth_module_1 = require("./auth/auth.module");
 const categories_module_1 = require("./categories/categories.module");
 const tags_module_1 = require("./tag/tags.module");
-const questions_module_1 = require("./questions/questions.module");
+const tag_relation_entity_1 = require("./entities/tag_relation.entity");
+const question_entity_1 = require("./entities/question.entity");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -41,7 +42,7 @@ exports.AppModule = AppModule = __decorate([
                 username: process.env.DB_USERNAME,
                 password: process.env.DB_PASSWORD,
                 database: process.env.DB_NAME,
-                entities: [user_entity_1.User, category_entity_1.Category, tag_entity_1.Tag, question_entity_1.Question, tag_relation_entity_1.TagRelation],
+                entities: [user_entity_1.User, category_entity_1.Category, tag_entity_1.Tag, tag_relation_entity_1.TagRelation, question_entity_1.Question],
                 synchronize: true,
                 logging: true,
             }),

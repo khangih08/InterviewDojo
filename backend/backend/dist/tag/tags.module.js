@@ -9,12 +9,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TagsModule = void 0;
 const common_1 = require("@nestjs/common");
 const tags_controller_1 = require("./tags.controller");
+const tags_service_1 = require("./tags.service");
+const typeorm_module_1 = require("@nestjs/typeorm/dist/typeorm.module");
+const tag_entity_1 = require("../entities/tag.entity");
 let TagsModule = class TagsModule {
 };
 exports.TagsModule = TagsModule;
 exports.TagsModule = TagsModule = __decorate([
     (0, common_1.Module)({
-        controllers: [tags_controller_1.TagsController],
+        imports: [
+            typeorm_module_1.TypeOrmModule.forFeature([tag_entity_1.Tag])
+        ],
+        controllers: [tags_controller_1.TagController],
+        providers: [tags_service_1.TagService]
     })
 ], TagsModule);
 //# sourceMappingURL=tags.module.js.map
