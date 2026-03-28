@@ -11,9 +11,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Tag = void 0;
 const typeorm_1 = require("typeorm");
+const tag_relation_entity_1 = require("./tag_relation.entity");
+const typeorm_2 = require("typeorm");
 let Tag = class Tag {
     id;
     name;
+    tagRelations;
 };
 exports.Tag = Tag;
 __decorate([
@@ -24,6 +27,10 @@ __decorate([
     (0, typeorm_1.Column)(),
     __metadata("design:type", String)
 ], Tag.prototype, "name", void 0);
+__decorate([
+    (0, typeorm_2.OneToMany)(() => tag_relation_entity_1.TagRelation, (tagRelation) => tagRelation.tag),
+    __metadata("design:type", Array)
+], Tag.prototype, "tagRelations", void 0);
 exports.Tag = Tag = __decorate([
     (0, typeorm_1.Entity)('tags')
 ], Tag);

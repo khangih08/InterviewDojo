@@ -11,6 +11,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tag/tags.module';
+import { QuestionsModule } from './questions/questions.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { TagsModule } from './tag/tags.module';
     AuthModule,
     CategoriesModule,
     TagsModule,
+    QuestionsModule,
 
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -28,7 +30,7 @@ import { TagsModule } from './tag/tags.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Category, Tag],
+      entities: [User, Category, Tag, Question, TagRelation],
       synchronize: true,
       logging: true,
     }),
