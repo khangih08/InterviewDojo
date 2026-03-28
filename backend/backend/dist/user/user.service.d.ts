@@ -1,11 +1,19 @@
 import { User } from "../entities/user.entity";
 import { Repository } from "typeorm";
+import { UserResponseDto } from "./dto/user-response.dto";
+import { UpdateUserDto } from "./dto/update-user.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 export declare class UsersService {
     private userRepository;
+    private readonly SALT_ROUND;
     constructor(userRepository: Repository<User>);
-    create(data: any): Promise<User[]>;
-    findByEmail(email: string): Promise<User | null>;
-    findOne(id: number): Promise<User | null>;
-    update(id: number, data: any): Promise<User | null>;
-    remove(id: number): Promise<import("typeorm").DeleteResult>;
+    findOneById(userId: string): Promise<User>;
+    findAll(): Promise<UserResponseDto[]>;
+    update(userId: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto>;
+    changePassword(userId: string, changePasswordDto: ChangePasswordDto): Promise<{
+        message: string;
+    }>;
+    remove(userId: string): Promise<{
+        message: string;
+    }>;
 }

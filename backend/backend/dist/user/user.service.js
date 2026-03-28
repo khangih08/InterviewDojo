@@ -53,34 +53,105 @@ const typeorm_2 = require("typeorm");
 const bcrypt = __importStar(require("bcrypt"));
 let UsersService = class UsersService {
     userRepository;
+    SALT_ROUND = 10;
     constructor(userRepository) {
         this.userRepository = userRepository;
     }
-    async create(data) {
-        const salt = await bcrypt.genSalt(8);
-        const hashedPassword = await bcrypt.hash(data.password, salt);
-        const newUser = this.userRepository.create({
-            ...data,
-            password: hashedPassword,
+    async findOneById(userId) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                full_name: true,
+                target_role: true,
+                experience_level: true,
+                role: true,
+                password: false,
+            },
         });
-        return this.userRepository.save(newUser);
-    }
-    async findByEmail(email) {
-        return this.userRepository.findOneBy({ email });
-    }
-    findOne(id) {
-        return this.userRepository.findOneBy({ id: String(id) });
-    }
-    async update(id, data) {
-        if (data.password) {
-            const salt = await bcrypt.genSalt(8);
-            data.password = await bcrypt.hash(data.password, salt);
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
         }
-        await this.userRepository.update(id, data);
-        return this.findOne(id);
+        return user;
     }
-    remove(id) {
-        return this.userRepository.delete(id);
+    async findAll() {
+        return await this.userRepository.find({
+            select: {
+                id: true,
+                email: true,
+                full_name: true,
+                target_role: true,
+                experience_level: true,
+                role: true,
+                password: false,
+            },
+        });
+    }
+    async update(userId, updateUserDto) {
+        const existingUser = await this.userRepository.findOne({
+            where: { id: userId },
+        });
+        if (!existingUser) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        if (updateUserDto.email && updateUserDto.email !== existingUser.email) {
+            const emailToken = await this.userRepository.findOne({
+                where: { email: updateUserDto.email },
+            });
+            if (emailToken) {
+                throw new common_1.NotFoundException('Email is already taken');
+            }
+        }
+        await this.userRepository.update(userId, updateUserDto);
+        const updatedUser = await this.userRepository.findOne({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                full_name: true,
+                target_role: true,
+                experience_level: true,
+                role: true,
+            },
+        });
+        if (!updatedUser) {
+            throw new common_1.NotFoundException('Update failed: User not found after saving');
+        }
+        ;
+        return updatedUser;
+    }
+    async changePassword(userId, changePasswordDto) {
+        const { currentPassword, newPassword } = changePasswordDto;
+        const user = await this.userRepository.findOne({
+            where: { id: userId }
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+        if (!isPasswordValid) {
+            throw new common_1.NotFoundException('Current password is incorrect');
+        }
+        const isSamePassword = await bcrypt.compare(newPassword, user.password);
+        if (isSamePassword) {
+            throw new common_1.NotFoundException('New password must be different from the current password');
+        }
+        const hashedNewPassword = await bcrypt.hash(newPassword, this.SALT_ROUND);
+        await this.userRepository.update(userId, { password: hashedNewPassword });
+        return { message: 'Password changed successfully' };
+    }
+    async remove(userId) {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+        });
+        if (!user) {
+            throw new common_1.NotFoundException('User not found');
+        }
+        await this.userRepository.delete(userId);
+        return {
+            message: 'User account deleted successfully'
+        };
     }
 };
 exports.UsersService = UsersService;

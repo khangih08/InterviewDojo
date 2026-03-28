@@ -8,8 +8,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthModule = void 0;
 const passport_1 = require("@nestjs/passport");
-const auth_service_1 = require("../auth.service");
-const auth_controller_1 = require("../auth.controller");
+const auth_service_1 = require("./auth.service");
+const auth_controller_1 = require("./auth.controller");
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const jwt_1 = require("@nestjs/jwt");

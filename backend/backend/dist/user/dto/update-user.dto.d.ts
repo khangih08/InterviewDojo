@@ -1,4 +1,4 @@
 export declare class UpdateUserDto {
     email?: string;
-    full_name: any;
+    full_name?: string;
 }

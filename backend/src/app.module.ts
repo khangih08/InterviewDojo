@@ -6,9 +6,11 @@ import { User } from './entities/user.entity';
 import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/dto/auth.module';
+import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tag/tags.module';
+import { TagRelation } from './entities/tag_relation.entity';
+import { Question } from './entities/question.entity';
 
 @Module({
   imports: [
@@ -26,7 +28,7 @@ import { TagsModule } from './tag/tags.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      entities: [User, Category, Tag],
+      entities: [User, Category, Tag, TagRelation, Question],
       synchronize: true,
       logging: true,
     }),

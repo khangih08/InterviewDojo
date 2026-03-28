@@ -14,20 +14,52 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CategoriesService = void 0;
 const common_1 = require("@nestjs/common");
-const category_entity_1 = require("../entities/category.entity");
 const typeorm_1 = require("@nestjs/typeorm");
 const typeorm_2 = require("typeorm");
+const category_entity_1 = require("../entities/category.entity");
 let CategoriesService = class CategoriesService {
     categoryRepository;
     constructor(categoryRepository) {
         this.categoryRepository = categoryRepository;
     }
-    create(data) {
-        const category = this.categoryRepository.create(data);
-        return this.categoryRepository.save(category);
+    async create(createCategoryDto) {
+        const existing = await this.categoryRepository.findOne({
+            where: { name: createCategoryDto.name }
+        });
+        if (existing)
+            throw new common_1.ConflictException('Category name already exists');
+        const category = this.categoryRepository.create(createCategoryDto);
+        return await this.categoryRepository.save(category);
     }
-    findAll() {
-        return this.categoryRepository.find({ relations: ['posts'] });
+    async findAll(query) {
+        const { search, page = 1, limit = 10 } = query;
+        const skip = (page - 1) * limit;
+        const [items, total] = await this.categoryRepository.findAndCount({
+            where: search ? { name: (0, typeorm_2.ILike)(`%${search}%`) } : {},
+            order: { name: 'ASC' },
+            take: limit,
+            skip: skip,
+        });
+        return {
+            data: items,
+            meta: { total, page, limit },
+        };
+    }
+    async findOne(id) {
+        const category = await this.categoryRepository.findOne({ where: { id } });
+        if (!category)
+            throw new common_1.NotFoundException('Category not found');
+        return category;
+    }
+    async update(id, updateCategoryDto) {
+        const category = await this.findOne(id);
+        Object.assign(category, updateCategoryDto);
+        return await this.categoryRepository.save(category);
+    }
+    async remove(id) {
+        const category = await this.findOne(id);
+        await this.categoryRepository.remove(category);
+        return { message: 'Category deleted successfully' };
     }
 };
 exports.CategoriesService = CategoriesService;
