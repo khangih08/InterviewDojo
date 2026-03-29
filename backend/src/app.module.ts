@@ -11,8 +11,6 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tag/tags.module';
-import { TagRelation } from './entities/tag_relation.entity';
-import { Question } from './entities/question.entity';
 import { QuestionsModule } from './questions/questions.module';
 
 @Module({
