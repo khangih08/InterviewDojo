@@ -13,6 +13,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tag/tags.module';
 import { TagRelation } from './entities/tag_relation.entity';
 import { Question } from './entities/question.entity';
+import { QuestionsModule } from './questions/questions.module';
 
 @Module({
   imports: [

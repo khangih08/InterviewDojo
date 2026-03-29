@@ -9,20 +9,22 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.QuestionsModule = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const questions_controller_1 = require("./questions.controller");
 const questions_service_1 = require("./questions.service");
+const questions_controller_1 = require("./questions.controller");
 const question_entity_1 = require("../entities/question.entity");
+const category_entity_1 = require("../entities/category.entity");
+const tag_entity_1 = require("../entities/tag.entity");
 const tag_relation_entity_1 = require("../entities/tag_relation.entity");
-const roles_guard_1 = require("../auth/guards/roles.guard");
 let QuestionsModule = class QuestionsModule {
 };
 exports.QuestionsModule = QuestionsModule;
 exports.QuestionsModule = QuestionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [typeorm_1.TypeOrmModule.forFeature([question_entity_1.Question, tag_relation_entity_1.TagRelation])],
+        imports: [
+            typeorm_1.TypeOrmModule.forFeature([question_entity_1.Question, category_entity_1.Category, tag_entity_1.Tag, tag_relation_entity_1.TagRelation]),
+        ],
         controllers: [questions_controller_1.QuestionsController],
-        providers: [questions_service_1.QuestionsService, roles_guard_1.RolesGuard],
-        exports: [questions_service_1.QuestionsService],
+        providers: [questions_service_1.QuestionsService],
     })
 ], QuestionsModule);
 //# sourceMappingURL=questions.module.js.map

@@ -1,78 +1,62 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-  Param,
-  UseGuards,
-  Patch,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, ParseUUIDPipe, Delete, Patch, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { QuestionsService } from './questions.service';
-import { CreateQuestionDto } from './dto/create-question.dto';
-import { UpdateQuestionDto } from './dto/update-question.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles, Role } from '../common/decorator/roles.decorator';
+import { CreateQuestionDto } from './dto/create_question.dto';
+import { GetQuestionQueryDto } from './dto/get_question_query.dto';
+import { QuestionResponseDto } from './dto/question_response.dto';
+import { UpdateQuestionDto } from './dto/update_question.dto';
+import { Role } from 'src/entities/user.entity';
+import { Roles } from 'src/common/decorator/roles.decorator';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/common/guards/roles.guard';
 
+@ApiTags('Questions')
 @Controller('questions')
 export class QuestionsController {
   constructor(private readonly questionsService: QuestionsService) {}
 
-  /**
-   * [ADMIN] Create a new question
-   * Requires: Admin role, JWT authentication
-   */
   @Post()
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin)
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Create a new question with category and tags' })
+  @ApiResponse({ status: 201, type: QuestionResponseDto })
   create(@Body() createQuestionDto: CreateQuestionDto) {
-    return this.questionsService.createQuestion(createQuestionDto);
+    return this.questionsService.create(createQuestionDto);
   }
 
-  /**
-   * [USER/ADMIN] View list of questions (with filtering by tagId, categoryId)
-   * Requires: JWT authentication
-   */
   @Get()
-  @UseGuards(JwtAuthGuard)
-  findAll(
-    @Query('categoryId') categoryId?: string,
-    @Query('tagId') tagId?: string,
-  ) {
-    return this.questionsService.getQuestions(categoryId, tagId);
+  @ApiOperation({ summary: 'Get all questions with filters and pagination' })
+  findAll(@Query() query: GetQuestionQueryDto) {
+    return this.questionsService.findAll(query);
   }
 
-  /**
-   * [USER/ADMIN] View details of a specific question
-   * Requires: JWT authentication
-   */
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  findOne(@Param('id') id: string) {
-    return this.questionsService.getQuestionById(id);
+  @ApiOperation({ summary: 'Get a specific question by ID' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.questionsService.findOne(id);
   }
 
-  /**
-   * [ADMIN] Update a specific question
-   * Requires: Admin role, JWT authentication
-   */
   @Patch(':id')
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin)
-  update(@Param('id') id: string, @Body() updateQuestionDto: UpdateQuestionDto) {
-    return this.questionsService.updateQuestion(id, updateQuestionDto);
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Admin: Update a question, its category or tags' })
+  @ApiResponse({ status: 200, type: QuestionResponseDto })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateQuestionDto: UpdateQuestionDto,
+  ) {
+    return this.questionsService.update(id, updateQuestionDto);
   }
 
-  /**
-   * [ADMIN] Delete a specific question
-   * Requires: Admin role, JWT authentication
-   */
   @Delete(':id')
+  @ApiBearerAuth('JWT-auth')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.Admin)
-  remove(@Param('id') id: string) {
-    return this.questionsService.deleteQuestion(id);
+  @Roles(Role.ADMIN)
+  @ApiOperation({ summary: 'Admin: Delete a question' })
+  @ApiResponse({ status: 200, description: 'Question deleted' })
+  remove(@Param('id', ParseUUIDPipe) id: string) {
+    return this.questionsService.remove(id);
   }
 }
