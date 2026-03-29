@@ -20,6 +20,7 @@ const categories_module_1 = require("./categories/categories.module");
 const tags_module_1 = require("./tag/tags.module");
 const tag_relation_entity_1 = require("./entities/tag_relation.entity");
 const question_entity_1 = require("./entities/question.entity");
+const questions_module_1 = require("./questions/questions.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -32,6 +33,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             categories_module_1.CategoriesModule,
             tags_module_1.TagsModule,
+            questions_module_1.QuestionsModule,
             typeorm_1.TypeOrmModule.forRoot({
                 type: 'postgres',
                 host: process.env.DB_HOST,
