@@ -14,52 +14,52 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CategoriesController = void 0;
 const common_1 = require("@nestjs/common");
-const category_dto_1 = require("./category.dto");
+const swagger_1 = require("@nestjs/swagger");
+const categories_service_1 = require("./categories.service");
+const create_category_dto_1 = require("./dto/create_category.dto");
+const update_category_dto_1 = require("./dto/update_category.dto");
+const category_query_dto_1 = require("./dto/category_query.dto");
 let CategoriesController = class CategoriesController {
-    create(createCategoryDto) {
-        return {
-            message: 'This action adds a new category',
-            data: createCategoryDto,
-        };
+    categoriesService;
+    constructor(categoriesService) {
+        this.categoriesService = categoriesService;
     }
-    findAll() {
-        return {
-            message: 'This action returns all categories',
-        };
+    create(createCategoryDto) {
+        return this.categoriesService.create(createCategoryDto);
+    }
+    findAll(query) {
+        return this.categoriesService.findAll(query);
     }
     findOne(id) {
-        return {
-            message: `This action returns category #${id}`,
-        };
+        return this.categoriesService.findOne(id);
     }
     update(id, updateCategoryDto) {
-        return {
-            message: `This action updates category #${id}`,
-            data: updateCategoryDto,
-        };
+        return this.categoriesService.update(id, updateCategoryDto);
     }
     remove(id) {
-        return {
-            message: `This action removes category #${id}`,
-        };
+        return this.categoriesService.remove(id);
     }
 };
 exports.CategoriesController = CategoriesController;
 __decorate([
     (0, common_1.Post)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new category' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [category_dto_1.CreateCategoryDto]),
+    __metadata("design:paramtypes", [create_category_dto_1.CreateCategoryDto]),
     __metadata("design:returntype", void 0)
 ], CategoriesController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Get all categories with search and pagination' }),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [category_query_dto_1.GetCategoriesQueryDto]),
     __metadata("design:returntype", void 0)
 ], CategoriesController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get category by ID' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -67,20 +67,24 @@ __decorate([
 ], CategoriesController.prototype, "findOne", null);
 __decorate([
     (0, common_1.Patch)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a category' }),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, category_dto_1.UpdateCategoryDto]),
+    __metadata("design:paramtypes", [String, update_category_dto_1.UpdateCategoryDto]),
     __metadata("design:returntype", void 0)
 ], CategoriesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a category' }),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], CategoriesController.prototype, "remove", null);
 exports.CategoriesController = CategoriesController = __decorate([
-    (0, common_1.Controller)('categories')
+    (0, swagger_1.ApiTags)('Categories'),
+    (0, common_1.Controller)('categories'),
+    __metadata("design:paramtypes", [categories_service_1.CategoriesService])
 ], CategoriesController);
 //# sourceMappingURL=categories.controller.js.map

@@ -9,34 +9,22 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateQuestionDto = void 0;
+exports.CreateCategoryDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
-class CreateQuestionDto {
-    content;
-    sampleAnswer;
-    categoryId;
-    tagIds;
+class CreateCategoryDto {
+    name;
 }
-exports.CreateQuestionDto = CreateQuestionDto;
+exports.CreateCategoryDto = CreateCategoryDto;
 __decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'The unique name of the category',
+        example: 'System Design',
+        maxLength: 50,
+    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
+    (0, class_validator_1.MaxLength)(50),
     __metadata("design:type", String)
-], CreateQuestionDto.prototype, "content", void 0);
-__decorate([
-    (0, class_validator_1.IsString)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateQuestionDto.prototype, "sampleAnswer", void 0);
-__decorate([
-    (0, class_validator_1.IsUUID)(),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", String)
-], CreateQuestionDto.prototype, "categoryId", void 0);
-__decorate([
-    (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsUUID)('all', { each: true }),
-    (0, class_validator_1.IsOptional)(),
-    __metadata("design:type", Array)
-], CreateQuestionDto.prototype, "tagIds", void 0);
-//# sourceMappingURL=create-question.dto.js.map
+], CreateCategoryDto.prototype, "name", void 0);
+//# sourceMappingURL=create_category.dto.js.map

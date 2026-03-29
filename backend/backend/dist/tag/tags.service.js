@@ -12,28 +12,78 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TagsService = void 0;
+exports.TagService = void 0;
 const common_1 = require("@nestjs/common");
 const typeorm_1 = require("@nestjs/typeorm");
-const tag_entity_1 = require("../entities/tag.entity");
 const typeorm_2 = require("typeorm");
-let TagsService = class TagsService {
+const tag_entity_1 = require("../entities/tag.entity");
+let TagService = class TagService {
     tagRepository;
     constructor(tagRepository) {
         this.tagRepository = tagRepository;
     }
-    create(data) {
-        const category = this.tagRepository.create(data);
-        return this.tagRepository.save(category);
+    async create(createTagDto) {
+        const existingTag = await this.tagRepository.findOne({
+            where: { name: createTagDto.name },
+        });
+        if (existingTag) {
+            throw new common_1.ConflictException(`Tag with name "${createTagDto.name}" already exists`);
+        }
+        const newTag = this.tagRepository.create(createTagDto);
+        return await this.tagRepository.save(newTag);
     }
-    findAll() {
-        return this.tagRepository.find({ relations: ['posts'] });
+    async findAll() {
+        return await this.tagRepository.find({
+            order: { name: 'ASC' },
+        });
+    }
+    async findOne(id) {
+        const tag = await this.tagRepository.findOne({
+            where: { id },
+            relations: ['tagRelations', 'tagRelations.question'],
+        });
+        if (!tag) {
+            throw new common_1.NotFoundException(`Tag with ID "${id}" not found`);
+        }
+        return tag;
+    }
+    async searchTags(query) {
+        return await this.tagRepository.find({
+            where: { name: (0, typeorm_2.Like)(`%${query}%`) },
+            take: 10,
+        });
+    }
+    async update(id, updateTagDto) {
+        const tag = await this.findOne(id);
+        if (updateTagDto.name && updateTagDto.name !== tag.name) {
+            const nameExists = await this.tagRepository.findOne({
+                where: { name: updateTagDto.name },
+            });
+            if (nameExists) {
+                throw new common_1.ConflictException('New tag name already exists');
+            }
+        }
+        Object.assign(tag, updateTagDto);
+        return await this.tagRepository.save(tag);
+    }
+    async remove(id) {
+        const tag = await this.findOne(id);
+        await this.tagRepository.remove(tag);
+    }
+    async findByIds(ids) {
+        if (!ids || ids.length === 0)
+            return [];
+        return await this.tagRepository.find({
+            where: {
+                id: (0, typeorm_2.In)(ids),
+            },
+        });
     }
 };
-exports.TagsService = TagsService;
-exports.TagsService = TagsService = __decorate([
+exports.TagService = TagService;
+exports.TagService = TagService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, typeorm_1.InjectRepository)(tag_entity_1.Tag)),
     __metadata("design:paramtypes", [typeorm_2.Repository])
-], TagsService);
+], TagService);
 //# sourceMappingURL=tags.service.js.map

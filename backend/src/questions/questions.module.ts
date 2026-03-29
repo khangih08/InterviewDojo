@@ -1,15 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuestionsController } from './questions.controller';
 import { QuestionsService } from './questions.service';
+import { QuestionsController } from 'src/questions/questions.controller';
 import { Question } from '../entities/question.entity';
+import { Category } from '../entities/category.entity';
+import { Tag } from '../entities/tag.entity';
 import { TagRelation } from '../entities/tag_relation.entity';
-import { RolesGuard } from '../auth/guards/roles.guard';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Question, TagRelation])],
+  imports: [
+    TypeOrmModule.forFeature([Question, Category, Tag, TagRelation]),
+  ],
   controllers: [QuestionsController],
-  providers: [QuestionsService, RolesGuard],
-  exports: [QuestionsService],
+  providers: [QuestionsService],
 })
 export class QuestionsModule {}
