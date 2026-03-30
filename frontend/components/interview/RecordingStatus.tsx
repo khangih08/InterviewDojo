@@ -8,13 +8,13 @@ type Props = {
 
 export default function RecordingStatus({ status, progress = 0, error }: Props) {
   const map = {
-    idle: "Chưa sẵn sàng",
-    ready: "Sẵn sàng ghi hình",
-    recording: "Đang ghi hình...",
-    stopped: "Đã ghi xong",
-    uploading: "Đang upload...",
-    done: "Hoàn tất",
-    error: "Có lỗi xảy ra",
+    idle: "Not ready",
+    ready: "Ready to record",
+    recording: "Recording...",
+    stopped: "Recording stopped",
+    uploading: "Uploading...",
+    done: "Completed",
+    error: "An error occurred",
   };
 
   return (

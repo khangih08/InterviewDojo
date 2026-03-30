@@ -1,43 +1,55 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 
-import { clearAccessToken, clearUser, getAccessToken, getUser, saveAccessToken, saveUser } from "@/lib/auth";
+import {
+  clearAccessToken,
+  clearUser,
+  getAccessToken,
+  getUser,
+  saveAccessToken,
+  saveUser,
+} from "@/lib/auth";
 import { login as loginApi, register as registerApi } from "@/lib/api/auth";
-import type { User } from "@/lib/api/types";
+import type { AuthRegisterRequest, User } from "@/lib/api/types";
 
 type AuthContextValue = {
   user: User | null;
   token: string | null;
   hydrated: boolean;
   isAuthenticated: boolean;
-  login: (input: { email: string; password: string; remember?: boolean }) => Promise<void>;
-  register: (input: { email: string; password: string; full_name?: string }) => Promise<void>;
+  login: (input: {
+    email: string;
+    password: string;
+    remember?: boolean;
+  }) => Promise<void>;
+  register: (input: AuthRegisterRequest) => Promise<void>;
   logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [user, setUser] = useState<User | null>(() => getUser<User>());
+  const [token, setToken] = useState<string | null>(() => getAccessToken());
+  const hydrated = true;
 
-  useEffect(() => {
-    setToken(getAccessToken());
-    setUser(getUser<User>());
-    setHydrated(true);
-  }, []);
+  const login = useCallback(
+    async (input: { email: string; password: string; remember?: boolean }) => {
+      const response = await loginApi({
+        email: input.email,
+        password: input.password,
+      });
 
-  const login = useCallback(async (input: { email: string; password: string; remember?: boolean }) => {
-    const response = await loginApi({ email: input.email, password: input.password });
-    saveAccessToken(response.token, input.remember);
-    saveUser(response.user);
-    setToken(response.token);
-    setUser(response.user);
-  }, []);
+      saveAccessToken(response.token, input.remember);
+      saveUser(response.user);
+      setToken(response.token);
+      setUser(response.user);
+    },
+    []
+  );
 
-  const register = useCallback(async (input: { email: string; password: string; full_name?: string }) => {
+  const register = useCallback(async (input: AuthRegisterRequest) => {
     await registerApi(input);
   }, []);
 

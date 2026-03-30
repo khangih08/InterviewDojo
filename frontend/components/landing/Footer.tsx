@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Github, Swords, Twitter, Linkedin, Youtube } from "lucide-react";
+import { Github, Twitter, Linkedin, Youtube } from "lucide-react";
 
 const footerLinks = {
   "Interview Prep": [
