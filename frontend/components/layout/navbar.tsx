@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -7,6 +8,11 @@ import { useAuth } from "@/contexts/auth-context";
 export function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between border-b border-zinc-200/80 bg-white/90 px-4 py-4 backdrop-blur md:px-6">
@@ -19,7 +25,7 @@ export function Navbar() {
 
       <div className="flex items-center gap-3">
         <div className="hidden rounded-full border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-sm text-zinc-700 sm:block">
-          {user?.full_name || user?.email || "Candidate"}
+          {mounted ? user?.full_name || user?.email || "Candidate" : "Candidate"}
         </div>
         <button
           onClick={() => {

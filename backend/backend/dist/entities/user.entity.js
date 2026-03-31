@@ -17,6 +17,12 @@ var JobRole;
     JobRole["FRONTEND"] = "Frontend Developer";
     JobRole["FULLSTACK"] = "Fullstack Developer";
     JobRole["AI_ENGINEER"] = "AI Engineer";
+    JobRole["DEVOPS"] = "DevOps Engineer";
+    JobRole["DATA_SCIENTIST"] = "Data Scientist";
+    JobRole["CLOUD_ENGINEER"] = "Cloud Engineer";
+    JobRole["MOBILE_DEVELOPER"] = "Mobile Developer";
+    JobRole["SECURITY_ENGINEER"] = "Security Engineer";
+    JobRole["EMBEDDED_ENGINEER"] = "Embedded Systems Engineer";
 })(JobRole || (exports.JobRole = JobRole = {}));
 var Role;
 (function (Role) {

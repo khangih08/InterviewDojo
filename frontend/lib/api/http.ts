@@ -8,6 +8,18 @@ export type ApiError = {
   details?: unknown;
 };
 
+function normalizeApiMessage(message: unknown, fallback: string) {
+  if (Array.isArray(message)) {
+    return message.join(" ");
+  }
+
+  if (typeof message === "string" && message.trim()) {
+    return message;
+  }
+
+  return fallback;
+}
+
 export function createHttpClient(): AxiosInstance {
   const instance = axios.create({
     baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3000",
@@ -33,9 +45,17 @@ export const http = createHttpClient();
 export function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string }>;
+    const fallbackMessage =
+      axiosError.code === "ERR_NETWORK"
+        ? "Cannot reach the server. Make sure the backend is running."
+        : axiosError.message ?? "Request failed";
+
     return {
       status: axiosError.response?.status ?? 0,
-      message: axiosError.response?.data?.message ?? axiosError.message ?? "Request failed",
+      message: normalizeApiMessage(
+        axiosError.response?.data?.message,
+        fallbackMessage
+      ),
       details: axiosError.response?.data,
     };
   }
