@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ function formatTime(totalSeconds: number) {
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
 }
 
-export default function InterviewPage() {
+function InterviewPageContent() {
   const searchParams = useSearchParams();
   const questionId = searchParams.get("questionId") ?? "q1";
 
@@ -186,5 +186,13 @@ export default function InterviewPage() {
       {/* 👉 WEEK 3: Recorder + Upload */}
       <RecorderPanel questionId={questionId} />
     </div>
+  );
+}
+
+export default function InterviewPage() {
+  return (
+    <Suspense fallback={null}>
+      <InterviewPageContent />
+    </Suspense>
   );
 }

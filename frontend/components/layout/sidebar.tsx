@@ -15,10 +15,10 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-slate-950/70 px-4 py-6 md:block">
+    <aside className="hidden w-64 shrink-0 border-r border-zinc-200 bg-white px-4 py-6 md:block">
       <div className="mb-8 px-2">
-        <p className="text-xs uppercase tracking-[0.3em] text-slate-400">InterviewDojo</p>
-        <h2 className="mt-2 text-lg font-semibold text-white">Frontend MVP</h2>
+        <p className="text-xs uppercase tracking-[0.3em] text-zinc-400">InterviewDojo</p>
+        <h2 className="mt-2 text-lg font-semibold text-zinc-950">Frontend MVP</h2>
       </div>
 
       <nav className="space-y-2">
@@ -30,7 +30,9 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
-                active ? "bg-indigo-500/20 text-white ring-1 ring-indigo-400/40" : "text-slate-300 hover:bg-white/5 hover:text-white"
+                active
+                  ? "bg-violet-100 text-violet-700 ring-1 ring-violet-200"
+                  : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
               }`}
             >
               <Icon className="h-4 w-4" />

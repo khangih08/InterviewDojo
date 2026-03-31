@@ -1,6 +1,9 @@
 export const API_URL = "http://localhost:3000"; // hoặc NestJS sau này
 
-export async function post(path: string, data: any) {
+export async function post(
+  path: string,
+  data: { email?: string; password?: string }
+) {
   // mock API
   await new Promise((r) => setTimeout(r, 500));
 

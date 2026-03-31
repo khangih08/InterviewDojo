@@ -2,8 +2,29 @@ export type User = {
   id?: string;
   email: string;
   full_name?: string;
+  target_role?: JobRole;
+  experience_level?: ExperienceLevel;
   role?: "admin" | "user";
 };
+
+export type JobRole =
+  | "Backend Developer"
+  | "Frontend Developer"
+  | "Fullstack Developer"
+  | "AI Engineer"
+  | "DevOps Engineer"
+  | "Data Scientist"
+  | "Cloud Engineer"
+  | "Mobile Developer"
+  | "Security Engineer"
+  | "Embedded Systems Engineer";
+
+export type ExperienceLevel =
+  | "intern"
+  | "fresher"
+  | "junior"
+  | "middle"
+  | "senior";
 
 export type AuthLoginRequest = {
   email: string;
@@ -13,7 +34,9 @@ export type AuthLoginRequest = {
 export type AuthRegisterRequest = {
   email: string;
   password: string;
-  full_name?: string;
+  full_name: string;
+  target_role: JobRole;
+  experience_level: ExperienceLevel;
 };
 
 export type AuthLoginResponse = {

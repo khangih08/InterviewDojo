@@ -10,43 +10,52 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-white">Dashboard</h2>
-        <p className="mt-1 text-sm text-slate-400">Skeleton cho tuần 1 để bạn nối tiếp sang history và analytics tuần sau.</p>
+        <h2 className="text-2xl font-bold text-violet-600">Dashboard</h2>
+        <p className="mt-1 text-sm text-zinc-500">
+          Skeleton cho tuan 1 de ban noi tiep sang history va analytics tuan sau.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map((item) => (
-          <Card key={item.label} className="border border-white/10 bg-slate-900/80 text-white shadow-none">
+          <Card
+            key={item.label}
+            className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70"
+          >
             <CardHeader>
-              <CardTitle className="text-sm text-slate-400">{item.label}</CardTitle>
+              <CardTitle className="text-sm text-zinc-500">
+                {item.label}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-semibold">{item.value}</p>
+              <p className="text-3xl font-semibold text-zinc-950">
+                {item.value}
+              </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <Card className="border border-white/10 bg-slate-900/80 text-white shadow-none">
+      <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70">
         <CardHeader>
-          <CardTitle>Progress overview</CardTitle>
+          <CardTitle className="text-zinc-950">Progress overview</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/70 p-6">
-              <p className="text-sm text-slate-400">Recent activity</p>
-              <ul className="mt-4 space-y-3 text-sm text-slate-200">
-                <li>• Completed React interview practice</li>
-                <li>• Average communication score improved +6</li>
-                <li>• System Design category needs more practice</li>
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6">
+              <p className="text-sm text-zinc-500">Recent activity</p>
+              <ul className="mt-4 space-y-3 text-sm text-zinc-700">
+                <li>- Completed React interview practice</li>
+                <li>- Average communication score improved +6</li>
+                <li>- System Design category needs more practice</li>
               </ul>
             </div>
-            <div className="rounded-2xl border border-dashed border-white/10 bg-slate-950/70 p-6">
-              <p className="text-sm text-slate-400">Upcoming tasks</p>
-              <ul className="mt-4 space-y-3 text-sm text-slate-200">
-                <li>• Add history page in tuần 5</li>
-                <li>• Replace fake stats by real API</li>
-                <li>• Add chart component when analysis API ổn định</li>
+            <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6">
+              <p className="text-sm text-zinc-500">Upcoming tasks</p>
+              <ul className="mt-4 space-y-3 text-sm text-zinc-700">
+                <li>- Add history page in week 5</li>
+                <li>- Replace fake stats with real API</li>
+                <li>- Add chart component when analysis API is stable</li>
               </ul>
             </div>
           </div>

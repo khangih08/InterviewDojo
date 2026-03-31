@@ -28,7 +28,7 @@ export default function FeaturesSection() {
           Everything you need to ace it
         </h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          From coding rounds to culture-fit questions, we've got every stage of
+          From coding rounds to culture-fit questions, we&apos;ve got every stage of
           the interview covered.
         </p>
       </div>
