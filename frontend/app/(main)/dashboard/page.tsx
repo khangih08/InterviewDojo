@@ -1,10 +1,24 @@
 "use client";
 
 import Link from "next/link";
-
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  ArrowRight,
+  BookOpen,
+  CheckCircle2,
+  Circle,
+  Clock,
+  Flame,
+  LayoutDashboard,
+  Mic,
+  Sparkles,
+  Target,
+  Zap,
+} from "lucide-react";
+
+// ─── Data ────────────────────────────────────────────────────────────────────
 
 const roleDashboard: Record<
   string,
@@ -66,221 +80,322 @@ const experienceCopy: Record<string, string> = {
 };
 
 const dailyChecklist = [
-  "Solve 3 focused questions in your target role.",
-  "Do 1 timed mock or a partial interview simulation.",
-  "Write down 1 mistake you do not want to repeat tomorrow.",
+  { label: "Solve 3 focused questions in your target role.", done: false },
+  { label: "Do 1 timed mock or a partial interview simulation.", done: false },
+  {
+    label: "Write down 1 mistake you do not want to repeat tomorrow.",
+    done: false,
+  },
 ];
 
 const prepKits = [
   {
+    icon: Zap,
     title: "Quick Warm-up",
-    subtitle: "15-20 min",
+    subtitle: "15–20 min",
     description:
       "A short set to get into interview mode before a deeper session.",
     href: "/questions",
     cta: "Open warm-up",
+    accent: "from-amber-50 to-orange-50",
+    iconColor: "text-amber-500",
+    badgeColor: "bg-amber-100 text-amber-700",
   },
   {
+    icon: BookOpen,
     title: "Core Interview Set",
-    subtitle: "45-60 min",
+    subtitle: "45–60 min",
     description:
       "A focused question block designed for your current target role.",
     href: "/questions",
     cta: "Practice now",
+    accent: "from-violet-50 to-indigo-50",
+    iconColor: "text-violet-500",
+    badgeColor: "bg-violet-100 text-violet-700",
   },
   {
+    icon: Mic,
     title: "Mock Interview",
     subtitle: "60 min",
     description:
       "Simulate the real interview flow and train under mild pressure.",
     href: "/interview",
     cta: "Start mock",
+    accent: "from-emerald-50 to-teal-50",
+    iconColor: "text-emerald-500",
+    badgeColor: "bg-emerald-100 text-emerald-700",
   },
 ];
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { user } = useAuth();
 
   const role = user?.target_role ?? "Frontend Developer";
   const experience = user?.experience_level ?? "fresher";
-  const name = user?.full_name || user?.email || "Candidate";
+  const name = (user?.full_name || user?.email || "Candidate").split(" ")[0];
   const guide = roleDashboard[role] ?? roleDashboard["Frontend Developer"];
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-white p-6 shadow-sm shadow-zinc-200/70">
-        <div className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">
-          Interview prep hub
-        </div>
-        <h2 className="mt-3 text-3xl font-bold text-zinc-950">
-          Welcome back, {name}
-        </h2>
-        <div className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">
-          Dashboard này được thiết kế theo kiểu các platform luyện tập như
-          LeetCode/HackerRank: ít số liệu trang trí, nhiều “study plan”, “prep
-          kit”, và “next step” để bạn vào bài ngay.
-        </div>
+    <div className="min-h-screen bg-[#f8f7ff] p-4 sm:p-6 lg:p-8">
+      <div className="mx-auto max-w-6xl space-y-6">
+        {/* ── Hero ── */}
+        <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-violet-700 to-indigo-800 p-8 text-white shadow-xl shadow-violet-200">
+          {/* decorative blobs */}
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/5" />
+          <div className="pointer-events-none absolute -bottom-10 right-32 h-40 w-40 rounded-full bg-white/5" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-32 w-32 rounded-full bg-indigo-500/20" />
 
-        <div className="mt-5 flex flex-wrap gap-3">
-          <span className="rounded-full bg-violet-100 px-4 py-2 text-sm font-medium text-violet-700">
-            Role: {role}
-          </span>
-          <span className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-700">
-            Level: {experience}
-          </span>
-          <span className="rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-700">
-            Today target: 3 questions + 1 mock
-          </span>
-        </div>
+          <div className="relative">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-violet-200">
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              Interview Prep Hub
+            </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <Button
-            asChild
-            className="bg-violet-600 text-white hover:bg-violet-700"
-          >
-            <Link href="/questions">Continue practice</Link>
-          </Button>
-          <Button
-            asChild
-            variant="outline"
-            className="border-violet-200 text-violet-700 hover:bg-violet-50"
-          >
-            <Link href="/interview">Start mock interview</Link>
-          </Button>
-        </div>
-      </section>
+            <h1 className="mt-4 text-3xl font-bold sm:text-4xl">
+              Welcome back, {name} 👋
+            </h1>
+            <p className="mt-2 max-w-lg text-sm leading-relaxed text-violet-200">
+              Your personalised study plan is ready. Stay consistent — small
+              daily reps beat last-minute cramming every time.
+            </p>
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70 lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-zinc-950">Study plan</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-zinc-50 p-4">
-              <div>
-                <p className="text-base font-semibold text-zinc-950">
+            {/* tags */}
+            <div className="mt-5 flex flex-wrap gap-2">
+              {[
+                { icon: Target, label: role },
+                { icon: Flame, label: experience },
+                { icon: Clock, label: "3 questions + 1 mock today" },
+              ].map(({ icon: Icon, label }) => (
+                <span
+                  key={label}
+                  className="flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white backdrop-blur-sm"
+                >
+                  <Icon className="h-3 w-3 opacity-80" />
+                  {label}
+                </span>
+              ))}
+            </div>
+
+            {/* CTAs */}
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button
+                asChild
+                className="rounded-full bg-white font-semibold text-violet-700 shadow-md hover:bg-violet-50"
+              >
+                <Link href="/questions" className="flex items-center gap-2">
+                  Continue Practice <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-white/30 bg-white/10 text-white backdrop-blur-sm hover:bg-white/20"
+              >
+                <Link href="/interview">Start Mock Interview</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        {/* ── Study Plan + Priority ── */}
+        <div className="grid gap-5 lg:grid-cols-3">
+          {/* Study Plan */}
+          <Card className="overflow-hidden border-0 shadow-md shadow-zinc-100 lg:col-span-2">
+            <CardHeader className="border-b border-zinc-100 bg-white pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-zinc-900">
+                  <Sparkles className="h-4 w-4 text-violet-500" />
+                  Study Plan
+                </CardTitle>
+                <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700">
+                  In Progress
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-5 bg-white p-6">
+              {/* plan info */}
+              <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 p-5">
+                <p className="text-lg font-bold text-zinc-900">
                   {guide.planName}
                 </p>
                 <p className="mt-1 text-sm text-zinc-500">
                   {guide.planLength} · {guide.planSummary}
                 </p>
               </div>
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700">
-                In progress
-              </span>
-            </div>
 
-            <div>
-              <p className="text-sm font-medium text-zinc-950">Focus topics</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {guide.focusTopics.map((topic) => (
-                  <span
-                    key={topic}
-                    className="rounded-full border border-zinc-200 bg-white px-3 py-1 text-xs text-zinc-600"
-                  >
-                    {topic}
-                  </span>
-                ))}
+              {/* topics */}
+              <div>
+                <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-zinc-400">
+                  Focus Topics
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {guide.focusTopics.map((t) => (
+                    <span
+                      key={t}
+                      className="rounded-full border border-violet-200 bg-white px-3.5 py-1 text-xs font-medium text-violet-700 shadow-sm"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70">
-          <CardHeader>
-            <CardTitle className="text-zinc-950">Current priority</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-sm leading-6 text-zinc-600">
-              {experienceCopy[experience] ??
-                "Focus on role-fit practice and structured answers."}
-            </p>
-            <div className="rounded-2xl bg-violet-50 p-4">
-              <p className="text-sm font-medium text-violet-700">
-                Next best step
-              </p>
-              <p className="mt-2 text-sm leading-6 text-zinc-700">
-                {guide.nextAction}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-3">
-        {prepKits.map((kit) => (
-          <Card
-            key={kit.title}
-            className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70"
-          >
-            <CardHeader>
-              <div className="flex items-center justify-between gap-3">
-                <CardTitle className="text-zinc-950">{kit.title}</CardTitle>
-                <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs text-zinc-600">
-                  {kit.subtitle}
-                </span>
-              </div>
+          {/* Priority */}
+          <Card className="border-0 shadow-md shadow-zinc-100">
+            <CardHeader className="border-b border-zinc-100 bg-white pb-4">
+              <CardTitle className="flex items-center gap-2 text-zinc-900">
+                <Target className="h-4 w-4 text-rose-500" />
+                Current Priority
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm leading-6 text-zinc-600">
-                {kit.description}
+            <CardContent className="space-y-4 bg-white p-6">
+              <p className="text-sm leading-relaxed text-zinc-600">
+                {experienceCopy[experience] ??
+                  "Focus on role-fit practice and structured answers."}
               </p>
+              <div className="rounded-2xl bg-gradient-to-br from-rose-50 to-orange-50 p-4">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-rose-600">
+                  <Zap className="h-3.5 w-3.5" /> Next Best Step
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-700">
+                  {guide.nextAction}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ── Prep Kits ── */}
+        <div>
+          <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-zinc-400">
+            Prep Kits
+          </h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {prepKits.map(
+              ({
+                icon: Icon,
+                title,
+                subtitle,
+                description,
+                href,
+                cta,
+                accent,
+                iconColor,
+                badgeColor,
+              }) => (
+                <Card
+                  key={title}
+                  className="group border-0 shadow-md shadow-zinc-100 transition-transform duration-200 hover:-translate-y-1 hover:shadow-lg"
+                >
+                  <CardContent
+                    className={`rounded-2xl bg-gradient-to-br p-6 ${accent}`}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div
+                        className={`rounded-xl bg-white p-2.5 shadow-sm ${iconColor}`}
+                      >
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeColor}`}
+                      >
+                        {subtitle}
+                      </span>
+                    </div>
+                    <p className="mt-4 text-base font-bold text-zinc-900">
+                      {title}
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed text-zinc-600">
+                      {description}
+                    </p>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="mt-5 w-full rounded-full border-zinc-200 bg-white text-zinc-800 shadow-sm hover:bg-zinc-50 group-hover:border-violet-300 group-hover:text-violet-700"
+                    >
+                      <Link
+                        href={href}
+                        className="flex items-center justify-center gap-2"
+                      >
+                        {cta} <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ),
+            )}
+          </div>
+        </div>
+
+        {/* ── Checklist + Mock Rec ── */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Checklist */}
+          <Card className="border-0 shadow-md shadow-zinc-100">
+            <CardHeader className="border-b border-zinc-100 bg-white pb-4">
+              <CardTitle className="flex items-center gap-2 text-zinc-900">
+                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                Today&apos;s Checklist
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 bg-white p-6">
+              {dailyChecklist.map(({ label, done }) => (
+                <div
+                  key={label}
+                  className="flex items-start gap-3 rounded-2xl border border-zinc-100 bg-zinc-50 px-4 py-3.5 transition-colors hover:bg-violet-50/50"
+                >
+                  {done ? (
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                  ) : (
+                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-zinc-300" />
+                  )}
+                  <span
+                    className={`text-sm leading-relaxed ${done ? "text-zinc-400 line-through" : "text-zinc-700"}`}
+                  >
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Mock Rec */}
+          <Card className="border-0 shadow-md shadow-zinc-100">
+            <CardHeader className="border-b border-zinc-100 bg-white pb-4">
+              <CardTitle className="flex items-center gap-2 text-zinc-900">
+                <Mic className="h-4 w-4 text-violet-500" />
+                Mock Interview Recommendation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col justify-between gap-5 bg-white p-6">
+              <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-indigo-50 p-5">
+                <p className="text-xs font-semibold uppercase tracking-widest text-violet-500">
+                  Recommended Format
+                </p>
+                <p className="mt-2 text-base font-semibold text-zinc-900">
+                  {guide.mockType}
+                </p>
+                <p className="mt-1 text-sm text-zinc-500">
+                  60 min · Simulated pressure · Role-specific questions
+                </p>
+              </div>
               <Button
                 asChild
-                variant="outline"
-                className="w-full border-violet-200 text-violet-700 hover:bg-violet-50"
+                className="w-full rounded-full bg-violet-600 font-semibold text-white shadow-md shadow-violet-200 hover:bg-violet-700"
               >
-                <Link href={kit.href}>{kit.cta}</Link>
+                <Link
+                  href="/interview"
+                  className="flex items-center justify-center gap-2"
+                >
+                  Go to Mock Interview <ArrowRight className="h-4 w-4" />
+                </Link>
               </Button>
             </CardContent>
           </Card>
-        ))}
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70">
-          <CardHeader>
-            <CardTitle className="text-zinc-950">
-              Today&apos;s preparation checklist
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm text-zinc-700">
-              {dailyChecklist.map((item) => (
-                <li
-                  key={item}
-                  className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-3"
-                >
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-
-        <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70">
-          <CardHeader>
-            <CardTitle className="text-zinc-950">
-              Mock interview recommendation
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-2xl bg-zinc-50 p-4">
-              <p className="text-sm font-medium text-zinc-950">
-                Recommended format
-              </p>
-              <p className="mt-2 text-sm leading-6 text-zinc-600">
-                {guide.mockType}
-              </p>
-            </div>
-            <Button
-              asChild
-              className="w-full bg-violet-600 text-white hover:bg-violet-700"
-            >
-              <Link href="/interview">Go to mock interview</Link>
-            </Button>
-          </CardContent>
-        </Card>
+        </div>
       </div>
     </div>
   );
