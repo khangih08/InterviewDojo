@@ -20,7 +20,8 @@ const roleDashboard: Record<
   "Backend Developer": {
     planName: "Backend Interview Track",
     planLength: "2 weeks",
-    planSummary: "APIs, databases, caching, scalability, and debugging tradeoffs.",
+    planSummary:
+      "APIs, databases, caching, scalability, and debugging tradeoffs.",
     focusTopics: ["REST API", "PostgreSQL", "Caching", "System Design"],
     mockType: "Backend technical mock",
     nextAction: "Practice backend and database questions first.",
@@ -28,7 +29,8 @@ const roleDashboard: Record<
   "Frontend Developer": {
     planName: "Frontend Interview Track",
     planLength: "2 weeks",
-    planSummary: "JavaScript, React, browser behavior, performance, and UI tradeoffs.",
+    planSummary:
+      "JavaScript, React, browser behavior, performance, and UI tradeoffs.",
     focusTopics: ["JavaScript", "React", "Performance", "State Management"],
     mockType: "Frontend technical mock",
     nextAction: "Warm up with React and browser questions.",
@@ -36,7 +38,8 @@ const roleDashboard: Record<
   "Fullstack Developer": {
     planName: "Fullstack Interview Track",
     planLength: "3 weeks",
-    planSummary: "End-to-end delivery, contracts, integration, and architecture choices.",
+    planSummary:
+      "End-to-end delivery, contracts, integration, and architecture choices.",
     focusTopics: ["Architecture", "Frontend", "Backend", "APIs"],
     mockType: "Mixed stack mock",
     nextAction: "Alternate between frontend and backend sets.",
@@ -44,7 +47,8 @@ const roleDashboard: Record<
   "AI Engineer": {
     planName: "AI Engineer Interview Track",
     planLength: "3 weeks",
-    planSummary: "Evaluation, pipelines, ML systems, deployment, and applied tradeoffs.",
+    planSummary:
+      "Evaluation, pipelines, ML systems, deployment, and applied tradeoffs.",
     focusTopics: ["ML Systems", "Evaluation", "Data Quality", "Deployment"],
     mockType: "AI system mock",
     nextAction: "Review ML systems and evaluation scenarios.",
@@ -54,8 +58,10 @@ const roleDashboard: Record<
 const experienceCopy: Record<string, string> = {
   intern: "Build confidence through fundamentals and short practice sets.",
   fresher: "Focus on core concepts, communication, and structured answers.",
-  junior: "Show consistent execution and explain your implementation choices clearly.",
-  middle: "Practice tradeoffs, ownership stories, and stronger system reasoning.",
+  junior:
+    "Show consistent execution and explain your implementation choices clearly.",
+  middle:
+    "Practice tradeoffs, ownership stories, and stronger system reasoning.",
   senior: "Lead with architecture decisions, mentoring, and impact stories.",
 };
 
@@ -69,21 +75,24 @@ const prepKits = [
   {
     title: "Quick Warm-up",
     subtitle: "15-20 min",
-    description: "A short set to get into interview mode before a deeper session.",
+    description:
+      "A short set to get into interview mode before a deeper session.",
     href: "/questions",
     cta: "Open warm-up",
   },
   {
     title: "Core Interview Set",
     subtitle: "45-60 min",
-    description: "A focused question block designed for your current target role.",
+    description:
+      "A focused question block designed for your current target role.",
     href: "/questions",
     cta: "Practice now",
   },
   {
     title: "Mock Interview",
     subtitle: "60 min",
-    description: "Simulate the real interview flow and train under mild pressure.",
+    description:
+      "Simulate the real interview flow and train under mild pressure.",
     href: "/interview",
     cta: "Start mock",
   },
@@ -100,17 +109,17 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <section className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 via-white to-white p-6 shadow-sm shadow-zinc-200/70">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">
+        <div className="text-sm font-medium uppercase tracking-[0.2em] text-violet-600">
           Interview prep hub
-        </p>
+        </div>
         <h2 className="mt-3 text-3xl font-bold text-zinc-950">
           Welcome back, {name}
         </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">
+        <div className="mt-3 max-w-3xl text-sm leading-6 text-zinc-600">
           Dashboard này được thiết kế theo kiểu các platform luyện tập như
           LeetCode/HackerRank: ít số liệu trang trí, nhiều “study plan”, “prep
           kit”, và “next step” để bạn vào bài ngay.
-        </p>
+        </div>
 
         <div className="mt-5 flex flex-wrap gap-3">
           <span className="rounded-full bg-violet-100 px-4 py-2 text-sm font-medium text-violet-700">
@@ -125,7 +134,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button asChild className="bg-violet-600 text-white hover:bg-violet-700">
+          <Button
+            asChild
+            className="bg-violet-600 text-white hover:bg-violet-700"
+          >
             <Link href="/questions">Continue practice</Link>
           </Button>
           <Button
@@ -213,7 +225,11 @@ export default function DashboardPage() {
               <p className="text-sm leading-6 text-zinc-600">
                 {kit.description}
               </p>
-              <Button asChild variant="outline" className="w-full border-violet-200 text-violet-700 hover:bg-violet-50">
+              <Button
+                asChild
+                variant="outline"
+                className="w-full border-violet-200 text-violet-700 hover:bg-violet-50"
+              >
                 <Link href={kit.href}>{kit.cta}</Link>
               </Button>
             </CardContent>
@@ -224,7 +240,9 @@ export default function DashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70">
           <CardHeader>
-            <CardTitle className="text-zinc-950">Today&apos;s preparation checklist</CardTitle>
+            <CardTitle className="text-zinc-950">
+              Today&apos;s preparation checklist
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm text-zinc-700">
@@ -242,22 +260,27 @@ export default function DashboardPage() {
 
         <Card className="border-zinc-200 bg-white shadow-sm shadow-zinc-200/70">
           <CardHeader>
-            <CardTitle className="text-zinc-950">Mock interview recommendation</CardTitle>
+            <CardTitle className="text-zinc-950">
+              Mock interview recommendation
+            </CardTitle>
           </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-2xl bg-zinc-50 p-4">
-            <p className="text-sm font-medium text-zinc-950">
-              Recommended format
-            </p>
-            <p className="mt-2 text-sm leading-6 text-zinc-600">
-              {guide.mockType}
-            </p>
-          </div>
-          <Button asChild className="w-full bg-violet-600 text-white hover:bg-violet-700">
-            <Link href="/interview">Go to mock interview</Link>
-          </Button>
-        </CardContent>
-      </Card>
+          <CardContent className="space-y-4">
+            <div className="rounded-2xl bg-zinc-50 p-4">
+              <p className="text-sm font-medium text-zinc-950">
+                Recommended format
+              </p>
+              <p className="mt-2 text-sm leading-6 text-zinc-600">
+                {guide.mockType}
+              </p>
+            </div>
+            <Button
+              asChild
+              className="w-full bg-violet-600 text-white hover:bg-violet-700"
+            >
+              <Link href="/interview">Go to mock interview</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
