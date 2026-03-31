@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 export default function HeroSection() {
   return (
     <section className="container mx-auto px-4 py-24 text-center space-y-6">
-      <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-xs">
+      <Badge variant="secondary" className="gap-1.5 px-3 py-1 text-base">
         <Zap className="h-3 w-3" /> AI-Powered Mock Interviews
       </Badge>
       <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight max-w-3xl mx-auto">
