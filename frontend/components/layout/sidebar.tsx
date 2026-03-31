@@ -1,8 +1,10 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CircleHelp, Video, UserCog } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -13,6 +15,16 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
+  const visibleNavItems =
+    mounted && user?.role !== "admin"
+      ? navItems.filter((item) => item.href !== "/admin")
+      : navItems;
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-zinc-200 bg-white px-4 py-6 md:block">
@@ -22,7 +34,7 @@ export function Sidebar() {
       </div>
 
       <nav className="space-y-2">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
           return (

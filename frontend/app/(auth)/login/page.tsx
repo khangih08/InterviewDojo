@@ -23,6 +23,7 @@ import {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const justRegistered = searchParams.get("registered") === "1";
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -86,6 +87,12 @@ function LoginPageContent() {
       </CardHeader>
 
       <CardContent>
+        {justRegistered ? (
+          <div className="mb-5 rounded-xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm text-violet-700">
+            Account created successfully. Please sign in.
+          </div>
+        ) : null}
+
         {error ? (
           <div className="mb-5 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />

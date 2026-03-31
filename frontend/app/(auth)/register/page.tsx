@@ -90,14 +90,16 @@ export default function RegisterPage() {
         experience_level: form.experienceLevel,
       });
 
-      router.push("/login");
+      router.push("/login?registered=1");
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Registration failed. Please try again."
-      );
+      const rawMessage = err instanceof Error ? err.message : "";
+      const normalizedMessage =
+        rawMessage.includes("User with this email already exists")
+          ? "An account with this email already exists."
+          : rawMessage;
+
+      setError(normalizedMessage || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
