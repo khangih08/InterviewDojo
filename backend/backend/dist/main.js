@@ -41,7 +41,7 @@ async function bootstrap() {
         description: 'Enter refresh JWT token',
         in: 'header',
     }, 'JWT-refresh')
-        .addServer('http://localhost:3000', 'Development server')
+        .addServer('http://localhost:8000', 'Development server')
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup('api/docs', app, document, {
@@ -58,7 +58,7 @@ async function bootstrap() {
       .swagger-ui .info .title {color: #4A90E2;}
     `,
     });
-    await app.listen(process.env.PORT ?? 3000);
+    await app.listen(8000);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

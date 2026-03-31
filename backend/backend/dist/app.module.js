@@ -21,6 +21,9 @@ const auth_module_1 = require("./auth/auth.module");
 const categories_module_1 = require("./categories/categories.module");
 const tags_module_1 = require("./tag/tags.module");
 const questions_module_1 = require("./questions/questions.module");
+const platform_express_1 = require("@nestjs/platform-express");
+const controller_1 = require("./interviews/controller");
+const service_1 = require("./interviews/service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -29,6 +32,9 @@ exports.AppModule = AppModule = __decorate([
         imports: [
             config_1.ConfigModule.forRoot({
                 isGlobal: true,
+            }),
+            platform_express_1.MulterModule.register({
+                dest: './uploads',
             }),
             auth_module_1.AuthModule,
             categories_module_1.CategoriesModule,
@@ -46,8 +52,8 @@ exports.AppModule = AppModule = __decorate([
                 logging: true,
             }),
         ],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        controllers: [app_controller_1.AppController, controller_1.InterviewsController],
+        providers: [app_service_1.AppService, service_1.InterviewsService],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map
