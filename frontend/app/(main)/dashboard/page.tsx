@@ -138,7 +138,7 @@ export default function DashboardPage() {
   const guide = roleDashboard[role] ?? roleDashboard["Frontend Developer"];
 
   return (
-    <div className="min-h-screen bg-[#f8f7ff] p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-transparent p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-6xl space-y-6">
         {/* ── Hero ── */}
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 via-violet-700 to-indigo-800 p-8 text-white shadow-xl shadow-violet-200">
