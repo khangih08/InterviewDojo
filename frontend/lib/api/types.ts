@@ -117,3 +117,24 @@ export type CompleteSessionResponse = {
   success: boolean;
   message?: string;
 };
+
+export type AnalysisStatus = "processing" | "done" | "error";
+
+export type AnalysisMetric = {
+  label: string;
+  score: number;
+};
+
+export type AnalysisResponse = {
+  sessionId: string;
+  status: AnalysisStatus;
+  transcript?: string;
+  technicalScore?: number;
+  communicationScore?: number;
+  strengths?: string[];
+  weaknesses?: string[];
+  suggestions?: string[];
+  metrics?: AnalysisMetric[];
+  summary?: string;
+  message?: string;
+};

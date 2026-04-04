@@ -1,12 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import RecordingStatus from "@/components/interview/RecordingStatus";
 import { useRecorder } from "@/hooks/useRecorder";
-import { createSession, completeSession } from "@/lib/api/sessions";
-import { getPresignedUploadUrl, uploadFileToS3 } from "@/lib/api/uploads";
 
 type Props = {
   questionId: string;
@@ -21,7 +20,70 @@ type UiStatus =
   | "done"
   | "error";
 
+type StoredInterviewResult = {
+  sessionId: string;
+  status: "processing" | "done";
+  transcript: string;
+  feedback: string;
+  questionId: string;
+  createdAt: string;
+  technicalScore?: number;
+  communicationScore?: number;
+  metrics?: Array<{ label: string; score: number }>;
+};
+
+function deriveMockScores(transcript: string, feedback: string) {
+  const transcriptLength = transcript.trim().length;
+  const feedbackLength = feedback.trim().length;
+
+  const technicalScore = Math.max(
+    45,
+    Math.min(92, Math.round(55 + transcriptLength / 18)),
+  );
+
+  const communicationScore = Math.max(
+    40,
+    Math.min(95, Math.round(50 + feedbackLength / 7)),
+  );
+
+  const metrics = [
+    { label: "Technical", score: technicalScore },
+    { label: "Communication", score: communicationScore },
+    {
+      label: "Depth",
+      score: Math.max(
+        40,
+        Math.min(
+          95,
+          Math.round(technicalScore * 0.9 + communicationScore * 0.1),
+        ),
+      ),
+    },
+    {
+      label: "Clarity",
+      score: Math.max(
+        40,
+        Math.min(
+          95,
+          Math.round(communicationScore * 0.9 + technicalScore * 0.1),
+        ),
+      ),
+    },
+    {
+      label: "Balance",
+      score: Math.max(
+        40,
+        Math.min(95, Math.round((technicalScore + communicationScore) / 2)),
+      ),
+    },
+  ];
+
+  return { technicalScore, communicationScore, metrics };
+}
+
 export default function RecorderPanel({ questionId }: Props) {
+  const router = useRouter();
+
   const {
     status,
     error,
@@ -37,9 +99,6 @@ export default function RecorderPanel({ questionId }: Props) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitError, setSubmitError] = useState("");
 
-  // 🌟 THÊM STATE ĐỂ LƯU KẾT QUẢ TỪ AI
-  const [aiResult, setAiResult] = useState<{ transcript: string; feedback: string } | null>(null);
-
   const currentStatus: UiStatus =
     uiStatus === "uploading" || uiStatus === "done" || uiStatus === "error"
       ? uiStatus
@@ -51,7 +110,6 @@ export default function RecorderPanel({ questionId }: Props) {
   };
 
   const handleStart = () => {
-    setAiResult(null); // Xóa kết quả cũ khi bắt đầu quay lại
     startRecording();
     setUiStatus("recording");
   };
@@ -62,9 +120,10 @@ export default function RecorderPanel({ questionId }: Props) {
   };
 
   const handleReset = () => {
-    setAiResult(null); // Xóa kết quả cũ khi reset
     resetRecording();
-    setUiStatus("idle"); // Hoặc "ready" tùy logic của bạn
+    setUiStatus("idle");
+    setUploadProgress(0);
+    setSubmitError("");
   };
 
   const handleUpload = async () => {
@@ -72,52 +131,65 @@ export default function RecorderPanel({ questionId }: Props) {
 
     try {
       setSubmitError("");
-      setAiResult(null);
       setUiStatus("uploading");
-      setUploadProgress(20);
+      setUploadProgress(15);
 
       const fileName = `interview-${Date.now()}.webm`;
-
-      console.log("Đang gửi video/audio và câu hỏi sang Backend...");
-
       const formData = new FormData();
-      formData.append('file', recordedVideo.blob, fileName);
+      formData.append("file", recordedVideo.blob, fileName);
+      formData.append(
+        "question",
+        "Sự khác nhau giữa Let, Var và Const trong JavaScript là gì?",
+      );
 
-      // 🌟 GỬI KÈM CÂU HỎI LÊN BACKEND (Bạn có thể thay bằng câu hỏi thật truyền từ Props)
-      formData.append('question', 'Sự khác nhau giữa Let, Var và Const trong JavaScript là gì?');
+      const response = await fetch(
+        "http://localhost:8000/interviews/upload-audio",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
-
-      const sttResponse = await fetch('http://127.0.0.1:8000/interviews/upload-audio', {
-        method: 'POST',
-        body: formData,
-      });
-
-      // 🌟 THÊM ĐOẠN NÀY ĐỂ BẮT TẬN TAY LỖI GÌ
-      if (!sttResponse.ok) {
-        const errorDetail = await sttResponse.text();
-        console.error("❌ Chi tiết lỗi từ Backend:", errorDetail);
-        throw new Error(`Lỗi ${sttResponse.status}: ${errorDetail}`);
+      if (!response.ok) {
+        const errorDetail = await response.text();
+        throw new Error(`Lỗi ${response.status}: ${errorDetail}`);
       }
-      const sttData = await sttResponse.json();
-      console.log("✅ Kết quả AI trả về:", sttData);
 
-      if (sttData.success) {
-        // 🌟 LƯU KẾT QUẢ VÀO STATE THAY VÌ DÙNG ALERT
-        setAiResult({
-          transcript: sttData.transcript,
-          feedback: sttData.feedback
-        });
+      const data = await response.json();
+
+      if (!data?.success) {
+        throw new Error("Backend không trả về kết quả hợp lệ.");
       }
+
+      const { technicalScore, communicationScore, metrics } = deriveMockScores(
+        data.transcript ?? "",
+        data.feedback ?? "",
+      );
+
+      const sessionId = `local-${Date.now()}`;
+      const payload: StoredInterviewResult = {
+        sessionId,
+        status: "processing",
+        transcript: data.transcript ?? "",
+        feedback: data.feedback ?? "",
+        questionId,
+        createdAt: new Date().toISOString(),
+        technicalScore,
+        communicationScore,
+        metrics,
+      };
+
+      sessionStorage.setItem("interview:lastSessionId", sessionId);
+      sessionStorage.setItem("interview:lastResult", JSON.stringify(payload));
 
       setUploadProgress(100);
       setUiStatus("done");
 
-      // (Phần upload S3 tạm ẩn để test MVP)
-
+      router.push(`/result?sessionId=${encodeURIComponent(sessionId)}`);
     } catch (uploadError) {
       console.error(uploadError);
       setSubmitError(
-        uploadError instanceof Error ? uploadError.message : "Upload thất bại."
+        uploadError instanceof Error ? uploadError.message : "Upload thất bại.",
       );
       setUiStatus("error");
     }
@@ -138,12 +210,17 @@ export default function RecorderPanel({ questionId }: Props) {
       <div className="flex flex-wrap gap-3">
         <Button
           onClick={handleEnableDevices}
-          disabled={currentStatus === "recording" || currentStatus === "uploading"}
+          disabled={
+            currentStatus === "recording" || currentStatus === "uploading"
+          }
         >
           Turn on camera & mic
         </Button>
 
-        <Button onClick={handleStart} disabled={status !== "ready" && status !== "stopped"}>
+        <Button
+          onClick={handleStart}
+          disabled={status !== "ready" && status !== "stopped"}
+        >
           Start
         </Button>
 
@@ -190,32 +267,6 @@ export default function RecorderPanel({ questionId }: Props) {
           </p>
         </div>
       ) : null}
-
-      {/* 🌟 GIAO DIỆN HIỂN THỊ KẾT QUẢ AI ĐÁNH GIÁ */}
-      {aiResult && (
-        <div className="mt-8 rounded-xl border border-blue-200 bg-blue-50 p-6 dark:border-blue-900 dark:bg-blue-950/30 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-          <h3 className="flex items-center gap-2 text-lg font-bold text-blue-700 dark:text-blue-400 mb-4">
-            <span>🤖</span> AI Interviewer Feedback
-          </h3>
-
-          <div className="space-y-4">
-            <div className="rounded-lg bg-white p-4 dark:bg-zinc-900 shadow-sm">
-              <p className="text-sm font-semibold text-zinc-500 mb-1">🗣️ Bạn đã nói:</p>
-              <p className="text-zinc-800 dark:text-zinc-200 italic leading-relaxed">
-                "{aiResult.transcript}"
-              </p>
-            </div>
-
-            <div className="rounded-lg bg-white p-4 dark:bg-zinc-900 shadow-sm">
-              <p className="text-sm font-semibold text-zinc-500 mb-1">📝 Nhận xét & Chấm điểm:</p>
-              <div className="text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                {aiResult.feedback}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }
