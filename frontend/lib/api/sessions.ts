@@ -5,6 +5,7 @@ import type {
   CompleteSessionRequest,
   CompleteSessionResponse,
 } from "@/lib/api/types";
+import { Session } from './types';
 
 export async function createSession(
   payload: CreateSessionRequest
@@ -30,3 +31,17 @@ export async function completeSession(
     throw new Error(toApiError(error).message);
   }
 }
+
+export const sessionsApi = {
+  // GET /sessions
+  getAllSessions: async (): Promise<Session[]> => {
+    const response = await http.get<Session[]>('/sessions');
+    return response.data;
+  },
+  
+  // GET /sessions/:id
+  getSessionById: async (id: string): Promise<Session> => {
+    const response = await http.get<Session>(`/sessions/${id}`);
+    return response.data;
+  }
+};
