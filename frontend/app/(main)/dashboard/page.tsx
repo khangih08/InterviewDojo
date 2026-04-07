@@ -18,8 +18,16 @@ function getFirstName(fullName?: string, email?: string) {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { loading, errorMessage, totalSessions, avgScore, bestScore, chartData, sessions, completedSessions } =
-    useDashboardData();
+  const {
+    loading,
+    errorMessage,
+    totalSessions,
+    avgScore,
+    bestScore,
+    chartData,
+    sessions,
+    completedSessions,
+  } = useDashboardData();
 
   const role = user?.target_role ?? "Frontend Developer";
   const guide = roleDashboard[role] ?? roleDashboard["Frontend Developer"];
@@ -49,14 +57,14 @@ export default function DashboardPage() {
         <DashboardNextActionCard guide={guide} />
       </div>
 
-          <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-            <DashboardRecentCard sessions={sessions} loading={loading} />
-            <DashboardAchievements
-              totalSessions={totalSessions}
-              avgScore={avgScore}
-              completedSessions={completedSessions.length}
-            />
-          </div>
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <DashboardRecentCard sessions={sessions} loading={loading} />
+        <DashboardAchievements
+          totalSessions={totalSessions}
+          avgScore={avgScore}
+          completedSessions={completedSessions.length}
+        />
+      </div>
     </div>
   );
 }

@@ -12,8 +12,14 @@ type DashboardRecentCardProps = {
 
 function getAverageScore(session: Session) {
   if (!session.ai_analysis) return 0;
-  const technical = Math.max(0, Math.min(100, session.ai_analysis.technical_score ?? 0));
-  const communication = Math.max(0, Math.min(100, session.ai_analysis.communication_score ?? 0));
+  const technical = Math.max(
+    0,
+    Math.min(100, session.ai_analysis.technical_score ?? 0),
+  );
+  const communication = Math.max(
+    0,
+    Math.min(100, session.ai_analysis.communication_score ?? 0),
+  );
   return Math.round((technical + communication) / 2);
 }
 
@@ -76,7 +82,8 @@ export function DashboardRecentCard({
                     <p className="truncate text-sm font-medium text-gray-900">
                       {session.question_content?.substring(0, 40) ||
                         "Interview Session"}
-                      {session.question_content && session.question_content.length > 40
+                      {session.question_content &&
+                      session.question_content.length > 40
                         ? "..."
                         : ""}
                     </p>

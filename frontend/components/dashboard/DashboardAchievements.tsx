@@ -86,12 +86,16 @@ export function DashboardAchievements({
                     : "bg-gray-50 border border-gray-100 opacity-60"
                 }`}
               >
-                <Icon className={`h-5 w-5 flex-shrink-0 ${achievement.color}`} />
+                <Icon
+                  className={`h-5 w-5 flex-shrink-0 ${achievement.color}`}
+                />
                 <div className="flex-grow">
                   <p className="text-sm font-medium text-gray-900">
                     {achievement.label}
                   </p>
-                  <p className="text-xs text-gray-500">{achievement.description}</p>
+                  <p className="text-xs text-gray-500">
+                    {achievement.description}
+                  </p>
                 </div>
                 {achievement.unlocked && (
                   <span className="text-xs font-bold text-amber-600">✓</span>

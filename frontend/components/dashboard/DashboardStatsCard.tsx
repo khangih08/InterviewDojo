@@ -39,7 +39,10 @@ export function DashboardStatsCard({
   return (
     <div className="grid gap-4 md:grid-cols-3">
       {stats.map(({ label, value, icon: Icon, color, bgColor }) => (
-        <Card key={label} className="overflow-hidden hover:shadow-lg transition-shadow">
+        <Card
+          key={label}
+          className="overflow-hidden hover:shadow-lg transition-shadow"
+        >
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
