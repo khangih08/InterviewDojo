@@ -417,15 +417,6 @@ export default function InterviewResultPage() {
   if (!isDone) {
     return (
       <div className="min-h-screen bg-[#080c18] px-4 py-8">
-        <div
-          className="pointer-events-none fixed inset-0 overflow-hidden"
-          aria-hidden
-        >
-          <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px]" />
-          <div className="absolute -right-40 top-1/3 h-[400px] w-[400px] rounded-full bg-violet-600/15 blur-[120px]" />
-          <div className="absolute bottom-0 left-1/3 h-[300px] w-[300px] rounded-full bg-sky-600/10 blur-[100px]" />
-        </div>
-
         <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col items-center justify-center text-center">
           <Glass className="w-full p-10 space-y-6">
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/15">
@@ -486,15 +477,6 @@ export default function InterviewResultPage() {
 
   return (
     <div className="min-h-screen bg-[#080c18] px-4 py-8">
-      <div
-        className="pointer-events-none fixed inset-0 overflow-hidden"
-        aria-hidden
-      >
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute -right-40 top-1/3 h-[400px] w-[400px] rounded-full bg-violet-600/15 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 h-[300px] w-[300px] rounded-full bg-sky-600/10 blur-[100px]" />
-      </div>
-
       <div className="relative mx-auto max-w-6xl space-y-8">
         <div className="flex items-center gap-4">
           <button
