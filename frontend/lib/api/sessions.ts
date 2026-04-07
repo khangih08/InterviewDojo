@@ -4,14 +4,18 @@ import type {
   CreateSessionResponse,
   CompleteSessionRequest,
   CompleteSessionResponse,
+  Session,
 } from "@/lib/api/types";
-import { Session } from './types';
+//import { Session } from './types';
 
 export async function createSession(
-  payload: CreateSessionRequest
+  payload: CreateSessionRequest,
 ): Promise<CreateSessionResponse> {
   try {
-    const response = await http.post<CreateSessionResponse>("/sessions", payload);
+    const response = await http.post<CreateSessionResponse>(
+      "/sessions",
+      payload,
+    );
     return response.data;
   } catch (error) {
     throw new Error(toApiError(error).message);
@@ -19,12 +23,12 @@ export async function createSession(
 }
 
 export async function completeSession(
-  payload: CompleteSessionRequest
+  payload: CompleteSessionRequest,
 ): Promise<CompleteSessionResponse> {
   try {
     const response = await http.post<CompleteSessionResponse>(
       "/session/complete",
-      payload
+      payload,
     );
     return response.data;
   } catch (error) {
@@ -35,13 +39,13 @@ export async function completeSession(
 export const sessionsApi = {
   // GET /sessions
   getAllSessions: async (): Promise<Session[]> => {
-    const response = await http.get<Session[]>('/sessions');
+    const response = await http.get<Session[]>("/sessions");
     return response.data;
   },
-  
+
   // GET /sessions/:id
   getSessionById: async (id: string): Promise<Session> => {
     const response = await http.get<Session>(`/sessions/${id}`);
     return response.data;
-  }
+  },
 };

@@ -138,3 +138,20 @@ export type AnalysisResponse = {
   summary?: string;
   message?: string;
 };
+
+export type SessionStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+
+export type SessionAiAnalysis = {
+  technical_score?: number;
+  communication_score?: number;
+  feedback?: string;
+  transcript?: string;
+};
+
+export type Session = {
+  id: string;
+  created_at: string;
+  status: SessionStatus;
+  question_content?: string;
+  ai_analysis?: SessionAiAnalysis | null;
+};
