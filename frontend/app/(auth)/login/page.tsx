@@ -68,7 +68,7 @@ function LoginPageContent() {
           : rawMessage;
 
       setError(
-        normalizedMessage || "Incorrect email or password. Please try again."
+        normalizedMessage || "Incorrect email or password. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -76,7 +76,7 @@ function LoginPageContent() {
   };
 
   return (
-    <Card className="border-zinc-200 bg-white shadow-xl shadow-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+    <Card className="ring-0 border-zinc-200/80 bg-white shadow-lg shadow-slate-200/50 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
       <CardHeader className="space-y-2 text-center">
         <CardTitle className="text-2xl font-semibold text-violet-600 dark:text-violet-400">
           Sign in
@@ -168,7 +168,10 @@ function LoginPageContent() {
       <CardFooter className="justify-center">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-violet-600 hover:underline">
+          <Link
+            href="/register"
+            className="font-medium text-violet-600 hover:underline"
+          >
             Create one
           </Link>
         </p>
