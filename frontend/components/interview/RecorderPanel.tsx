@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import RecordingStatus from "@/components/interview/RecordingStatus";
@@ -89,15 +90,27 @@ export default function RecorderPanel({ questionId }: Props) {
     error,
     recordedVideo,
     previewVideoRef,
+    elapsedSec,
+    remainingSec,
+    maxDurationSec,
+    recordingProgressPercent,
+    volumeLevel,
     setupDevices,
     startRecording,
     stopRecording,
     resetRecording,
+    stopDevices,
   } = useRecorder();
 
   const [uiStatus, setUiStatus] = useState<UiStatus>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [submitError, setSubmitError] = useState("");
+
+  useEffect(() => {
+    return () => {
+      stopDevices();
+    };
+  }, [stopDevices]);
 
   const currentStatus: UiStatus =
     uiStatus === "uploading" || uiStatus === "done" || uiStatus === "error"
@@ -105,18 +118,47 @@ export default function RecorderPanel({ questionId }: Props) {
       : status;
 
   const handleEnableDevices = async () => {
-    await setupDevices();
-    setUiStatus("ready");
+    const isReady = await setupDevices();
+
+    if (isReady) {
+      setUiStatus("ready");
+    } else {
+      setUiStatus("error");
+    }
   };
 
   const handleStart = () => {
-    startRecording();
-    setUiStatus("recording");
+    const started = startRecording();
+
+    if (started) {
+      setUiStatus("recording");
+      setUploadProgress(0);
+      setSubmitError("");
+    } else {
+      setUiStatus("error");
+    }
   };
 
   const handleStop = () => {
-    stopRecording();
-    setUiStatus("stopped");
+    const stopped = stopRecording();
+
+    if (stopped !== false) {
+      setUiStatus("stopped");
+    }
+  };
+
+  const handleRetryRecording = () => {
+    resetRecording();
+    setUploadProgress(0);
+    setSubmitError("");
+
+    const restarted = startRecording();
+
+    if (restarted) {
+      setUiStatus("recording");
+    } else {
+      setUiStatus("error");
+    }
   };
 
   const handleReset = () => {
@@ -129,10 +171,22 @@ export default function RecorderPanel({ questionId }: Props) {
   const handleUpload = async () => {
     if (!recordedVideo) return;
 
+    const confirmed = window.confirm(
+      "Bạn có chắc muốn gửi video này để chấm điểm không?",
+    );
+
+    if (!confirmed) return;
+
+    let progressTimer: number | null = null;
+
     try {
       setSubmitError("");
       setUiStatus("uploading");
-      setUploadProgress(15);
+      setUploadProgress(10);
+
+      progressTimer = window.setInterval(() => {
+        setUploadProgress((current) => (current >= 92 ? current : current + 6));
+      }, 250);
 
       const fileName = `interview-${Date.now()}.webm`;
       const formData = new FormData();
@@ -188,10 +242,22 @@ export default function RecorderPanel({ questionId }: Props) {
       router.push(`/result?sessionId=${encodeURIComponent(sessionId)}`);
     } catch (uploadError) {
       console.error(uploadError);
-      setSubmitError(
-        uploadError instanceof Error ? uploadError.message : "Upload thất bại.",
-      );
+
+      if (!navigator.onLine) {
+        setSubmitError("Network fail: mất kết nối internet. Vui lòng thử lại.");
+      } else if (uploadError instanceof TypeError) {
+        setSubmitError("Network fail: không thể kết nối đến máy chủ.");
+      } else if (uploadError instanceof Error) {
+        setSubmitError(`Upload fail: ${uploadError.message}`);
+      } else {
+        setSubmitError("Upload fail: không thể tải file lên.");
+      }
+
       setUiStatus("error");
+    } finally {
+      if (progressTimer !== null) {
+        window.clearInterval(progressTimer);
+      }
     }
   };
 
@@ -241,9 +307,22 @@ export default function RecorderPanel({ questionId }: Props) {
         </Button>
 
         <Button
-          onClick={handleUpload}
-          disabled={!recordedVideo || currentStatus === "uploading"}
+          variant="secondary"
+          onClick={handleRetryRecording}
+          disabled={status !== "stopped" && currentStatus !== "error"}
         >
+          Retry recording
+        </Button>
+
+        <Button
+          onClick={handleUpload}
+          disabled={
+            !recordedVideo ||
+            currentStatus === "uploading" ||
+            currentStatus === "recording"
+          }
+        >
+          <Upload className="mr-2 h-4 w-4" />
           Upload
         </Button>
       </div>
@@ -252,6 +331,11 @@ export default function RecorderPanel({ questionId }: Props) {
         status={currentStatus}
         progress={uploadProgress}
         error={submitError || error}
+        remainingSec={remainingSec}
+        elapsedSec={elapsedSec}
+        maxDurationSec={maxDurationSec}
+        recordingProgressPercent={recordingProgressPercent}
+        volumeLevel={volumeLevel}
       />
 
       {recordedVideo ? (

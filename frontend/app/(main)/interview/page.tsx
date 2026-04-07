@@ -166,10 +166,9 @@ function InterviewPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c18] px-4 py-8">
-      {/* ── ambient blobs ── */}
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#080c18] px-4 py-8">
       <div
-        className="pointer-events-none fixed inset-0 overflow-hidden"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         aria-hidden
       >
         <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px]" />

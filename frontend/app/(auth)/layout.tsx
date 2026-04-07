@@ -55,18 +55,6 @@ export default function AuthLayout({
               <Separator className="bg-white/20" />
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4">
-                {[
-                  { value: "10K+", label: "Câu hỏi" },
-                  { value: "95%", label: "Hài lòng" },
-                  { value: "3K+", label: "Người dùng" },
-                ].map(({ value, label }) => (
-                  <div key={label} className="space-y-1">
-                    <p className="text-2xl font-bold text-white">{value}</p>
-                    <p className="text-sm text-violet-300">{label}</p>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Footer quote */}
