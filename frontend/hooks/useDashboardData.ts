@@ -17,6 +17,7 @@ export type DashboardDataState = {
   totalSessions: number;
   avgScore: number;
   bestScore: number;
+  chartData: ChartPoint[];
 };
 
 function clampScore(value: number) {
@@ -116,5 +117,6 @@ export function useDashboardData(): DashboardDataState {
     totalSessions,
     avgScore,
     bestScore,
+    chartData,
   };
 }
