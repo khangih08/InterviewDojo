@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { ChartPoint } from "./useDashboardData";
+import type { ChartPoint } from "@/hooks/useDashboardData";
 
 type DashboardProgressCardProps = {
   loading: boolean;
