@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 
 import {
   clearAccessToken,
@@ -30,9 +37,15 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getUser<User>());
-  const [token, setToken] = useState<string | null>(() => getAccessToken());
-  const hydrated = true;
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setUser(getUser<User>());
+    setToken(getAccessToken());
+    setHydrated(true);
+  }, []);
 
   const login = useCallback(
     async (input: { email: string; password: string; remember?: boolean }) => {

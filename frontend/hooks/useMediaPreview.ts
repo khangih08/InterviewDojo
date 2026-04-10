@@ -10,12 +10,16 @@ export function useMediaPreview() {
 
   const stop = useCallback(() => {
     stream?.getTracks().forEach((track) => track.stop());
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     setStream(null);
     setEnabled(false);
   }, [stream]);
 
   const start = useCallback(async () => {
     try {
+      stream?.getTracks().forEach((track) => track.stop());
       setError(null);
       const media = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -26,7 +30,7 @@ export function useMediaPreview() {
     } catch {
       setError("Không thể truy cập camera / microphone. Hãy kiểm tra quyền trình duyệt.");
     }
-  }, []);
+  }, [stream]);
 
   useEffect(() => {
     if (videoRef.current && stream) {
@@ -35,8 +39,13 @@ export function useMediaPreview() {
   }, [stream]);
 
   useEffect(() => {
+    const videoEl = videoRef.current;
+
     return () => {
       stream?.getTracks().forEach((track) => track.stop());
+      if (videoEl) {
+        videoEl.srcObject = null;
+      }
     };
   }, [stream]);
 
