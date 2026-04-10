@@ -1,4 +1,6 @@
-// Thêm ở đầu file
+import { http, toApiError } from "@/lib/api/http";
+import type { AnalysisResponse } from "@/lib/api/types";
+
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS === "true";
 
 const MOCK_ANALYSIS: AnalysisResponse = {
