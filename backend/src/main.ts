@@ -5,22 +5,27 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,        
-    forbidNonWhitelisted: true, 
-    transform: true,    
-    transformOptions : {
-      enableImplicitConversion: true,
-    },    
-  }));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
 
   app.enableCors({
     // Vẫn giữ cho phép Frontend (cổng 3000 hoặc 3001) gọi sang
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3001', 'http://localhost:3000'],
+    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [
+      'http://localhost:3001',
+      'http://localhost:3000',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Enable Swagger docs
@@ -52,7 +57,11 @@ async function bootstrap() {
       'JWT-refresh',
     )
     // 1️⃣ Đã sửa lại đường dẫn Swagger thành cổng 8000
-    .addServer('http://localhost:8000', 'Development server')
+    //.addServer('http://localhost:8000', 'Development server')
+    .addServer(
+      process.env.PUBLIC_API_URL || 'http://localhost:8000',
+      'API server',
+    )
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -72,6 +81,8 @@ async function bootstrap() {
   });
 
   // 2️⃣ Đã đổi cổng khởi chạy Backend thành 8000
-  await app.listen(8000);
+  //await app.listen(8000);
+  const port = Number(process.env.PORT) || 8000;
+  await app.listen(port);
 }
 bootstrap();

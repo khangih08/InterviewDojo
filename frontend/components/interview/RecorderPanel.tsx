@@ -199,7 +199,7 @@ export default function RecorderPanel({ questionId }: Props) {
       );
 
       const response = await fetch(
-        "http://localhost:8000/interviews/upload-audio",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/interviews/upload-audio`,
         {
           method: "POST",
           body: formData,
