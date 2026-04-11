@@ -18,7 +18,7 @@ export class InterviewsService {
       fs.unlinkSync(file.path);
       return transcription.text;
     } catch (error) {
-      console.error('❌ Groq STT Error:', error);
+      console.error(' Groq STT Error:', error);
       throw new Error('Lỗi khi chuyển đổi giọng nói thành văn bản');
     }
   }
@@ -34,13 +34,15 @@ export class InterviewsService {
       const chatCompletion = await this.groq.chat.completions.create({
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
+          { role: 'user', content: userPrompt },
         ],
         model: 'llama-3.3-70b-versatile',
         temperature: 0.7,
       });
 
-      return chatCompletion.choices[0]?.message?.content || 'Không thể tạo feedback.';
+      return (
+        chatCompletion.choices[0]?.message?.content || 'Không thể tạo feedback.'
+      );
     } catch (error) {
       console.error('❌ Groq LLM Error:', error);
       return 'Có lỗi xảy ra khi AI đánh giá câu trả lời.';
