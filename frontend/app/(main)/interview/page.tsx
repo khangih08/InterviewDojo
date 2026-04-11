@@ -111,7 +111,10 @@ function InterviewPageContent() {
       try {
         setLoading(true);
         const data = await getQuestionById(questionId);
-        setQuestion(data);
+
+        // SỬA LỖI Ở ĐÂY: Ép kiểu dữ liệu về QuestionData để qua mặt TypeScript
+        setQuestion(data as unknown as QuestionData);
+
         setSeconds(120);
       } catch (err) {
         setFetchErr(
@@ -200,20 +203,17 @@ function InterviewPageContent() {
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {/* Map đúng trường categoryName */}
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300 ring-1 ring-indigo-500/20">
                     {question.categoryName}
                   </span>
 
-                  {/* Map đúng màu và level */}
                   <span
                     className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${DIFF_COLOR[currentDiff.colorKey]}`}
                   >
                     {currentDiff.text}
                   </span>
 
-                  {/* Mảng tags của ta bây giờ là chuỗi, nên truyền item thay vì tag.name */}
-                  {question.tags.map((tag, idx) => (
+                  {question.tags?.map((tag, idx) => (
                     <span
                       key={idx}
                       className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400 ring-1 ring-white/10"
@@ -273,7 +273,6 @@ function InterviewPageContent() {
           </Glass>
         </div>
 
-        {/* Truyền toàn bộ câu hỏi (bao gồm nội dung) xuống cho Component ghi âm/chat AI */}
         <RecorderPanel question={question} />
       </div>
     </div>
