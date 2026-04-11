@@ -1,0 +1,66 @@
+name: Render Deploy Reusable
+
+on:
+  workflow_call:
+    secrets:
+      RENDER_DEPLOY_HOOK_URL:
+        required: true
+      RENDER_API_KEY:
+        required: true
+      RENDER_SERVICE_ID:
+        required: true
+
+jobs:
+  deploy-and-wait:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render deploy hook
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+          echo "Render deploy hook triggered."
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Wait for Render deploy result
+        shell: bash
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+        run: |
+          set -euo pipefail
+
+          API_URL="https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys?limit=20"
+          DASHBOARD_URL="https://dashboard.render.com/web/${RENDER_SERVICE_ID}"
+
+          echo "::notice::Render dashboard: ${DASHBOARD_URL}"
+          echo "Waiting for Render deploy status..."
+
+          for i in $(seq 1 60); do
+            RESP="$(curl -fsS -H "Authorization: Bearer ${RENDER_API_KEY}" "${API_URL}")"
+
+            DEPLOY_ID="$(echo "${RESP}" | jq -r '.[0].id // .[0].deploy.id // empty')"
+            STATUS="$(echo "${RESP}" | jq -r '.[0].status // .[0].deploy.status // empty')"
+            DEPLOY_URL="https://dashboard.render.com/web/${RENDER_SERVICE_ID}/deploys/${DEPLOY_ID}"
+
+            echo "Attempt ${i}/60 - status=${STATUS:-unknown} deploy=${DEPLOY_ID:-none}"
+            echo "::notice::Render deploy URL: ${DEPLOY_URL}"
+
+            case "${STATUS}" in
+              live)
+                echo "Render deploy succeeded."
+                exit 0
+                ;;
+              build_failed|update_failed|failed|deactivated|canceled|cancelled)
+                echo "::error::Render deploy failed with status ${STATUS}."
+                exit 1
+                ;;
+            esac
+
+            sleep 10
+          done
+
+          echo "::error::Timeout waiting for Render deploy"
+          exit 1
