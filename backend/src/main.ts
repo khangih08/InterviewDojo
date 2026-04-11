@@ -21,6 +21,7 @@ async function bootstrap() {
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [
       'http://localhost:3001',
       'http://localhost:3000',
+      'https://interview-dojo-smoky.vercel.app',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -76,7 +77,6 @@ async function bootstrap() {
       .swagger-ui .info .title {color: #4A90E2;}
     `,
   });
-
 
   const port = Number(process.env.PORT) || 8000;
   await app.listen(port);
