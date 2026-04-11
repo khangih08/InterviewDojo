@@ -1,5 +1,5 @@
 import { TrendingUp, Zap, Award } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 type DashboardStatsCardProps = {
   totalSessions: number;

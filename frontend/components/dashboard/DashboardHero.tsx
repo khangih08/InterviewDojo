@@ -123,7 +123,9 @@ export function DashboardHero({
           <p className="mt-3 max-w-2xl text-sm leading-6 text-violet-100/90 sm:text-base">
             Your current track is {guide.planName} ({guide.planLength}). Keep
             momentum by practicing focused sessions and reviewing feedback after
-            each round.
+            each round. You&apos;ve completed {totalSessions} session
+            {totalSessions === 1 ? "" : "s"} with an average score of {avgScore}
+            %.
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
