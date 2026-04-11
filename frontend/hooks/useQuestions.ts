@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { getQuestions } from "@/lib/api"; // Import hàm getQuestions mình vừa sửa ở api.ts
+import { getQuestions } from "@/lib/api/questions"; // Import hàm getQuestions mình vừa sửa ở api.ts
 import type { Question, Category, Difficulty } from "@/lib/api/types";
 
 export function useQuestions(categoryId?: string, q?: string) {
