@@ -19,27 +19,27 @@ export class InterviewsController {
           cb(null, `${randomName}${ext}`);
         },
       })
-      // ĐÃ TẠM ẨN LIMITS VÀ FILEFILTER ĐỂ TEST CHO THÔNG LUỒNG
     }),
   )
   async uploadAudio(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: any, // 🌟 Dùng 'any' để mọi data gửi lên đều được chấp nhận
+    @Body() body: any,
   ) {
     if (!file) {
       throw new BadRequestException('Không tìm thấy file gửi lên');
     }
 
-    // 🌟 Lấy câu hỏi từ body một cách đơn giản nhất
     const question = body.question || "Bạn hãy giới thiệu bản thân mình?";
 
     console.log('🎬 Đang xử lý file:', file.filename);
+    console.log(`📝 Câu hỏi đang chấm: "${question}"`);
 
     const transcript = await this.interviewsService.speechToText(file);
     console.log('🗣️ Ứng viên nói:', transcript);
 
-    console.log('🤖 Đang phân tích câu trả lời...');
+    console.log('🤖 AI đang phân tích câu trả lời...');
     const feedback = await this.interviewsService.evaluateAnswer(question, transcript);
+    console.log('✅ AI nhận xét:', feedback);
 
     return {
       success: true,

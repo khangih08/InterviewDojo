@@ -8,8 +8,19 @@ import RecordingStatus from "@/components/interview/RecordingStatus";
 import { Button } from "@/components/ui/button";
 import { useRecorder } from "@/hooks/useRecorder";
 
+interface QuestionData {
+  id: string;
+  content: string;
+  sampleAnswer: string;
+  difficultyLevel: number;
+  categoryId: string;
+  categoryName: string;
+  tags: string[];
+  createdAt: string;
+}
+
 type Props = {
-  questionId: string;
+  question: QuestionData | null;
 };
 
 type UiStatus =
@@ -82,7 +93,7 @@ function deriveMockScores(transcript: string, feedback: string) {
   return { technicalScore, communicationScore, metrics };
 }
 
-export default function RecorderPanel({ questionId }: Props) {
+export default function RecorderPanel({ question }: Props) {
   const router = useRouter();
 
   const {
@@ -171,7 +182,7 @@ export default function RecorderPanel({ questionId }: Props) {
   };
 
   const handleUpload = async () => {
-    if (!recordedVideo) return;
+    if (!recordedVideo || !question) return; // Đảm bảo đã có cả video và dữ liệu câu hỏi
 
     const confirmed = window.confirm(
       "Ban co chac muon gui video nay de cham diem khong?",
@@ -193,10 +204,9 @@ export default function RecorderPanel({ questionId }: Props) {
       const fileName = `interview-${Date.now()}.webm`;
       const formData = new FormData();
       formData.append("file", recordedVideo.blob, fileName);
-      formData.append(
-        "question",
-        "Su khac nhau giua Let, Var va Const trong JavaScript la gi?",
-      );
+
+      formData.append("question", question.content);
+      formData.append("sampleAnswer", question.sampleAnswer);
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/interviews/upload-audio`,
@@ -228,7 +238,7 @@ export default function RecorderPanel({ questionId }: Props) {
         status: "processing",
         transcript: data.transcript ?? "",
         feedback: data.feedback ?? "",
-        questionId,
+        questionId: question.id,
         createdAt: new Date().toISOString(),
         technicalScore,
         communicationScore,

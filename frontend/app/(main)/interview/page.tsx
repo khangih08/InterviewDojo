@@ -6,7 +6,17 @@ import { Pause, Play, RotateCcw, Tag } from "lucide-react";
 
 import RecorderPanel from "@/components/interview/RecorderPanel";
 import { getQuestionById } from "@/lib/api/questions";
-import type { Question } from "@/lib/api/types";
+
+interface QuestionData {
+  id: string;
+  content: string;
+  sampleAnswer: string;
+  difficultyLevel: number;
+  categoryId: string;
+  categoryName: string;
+  tags: string[];
+  createdAt: string;
+}
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60);
@@ -83,9 +93,9 @@ function CircularTimer({
 
 function InterviewPageContent() {
   const searchParams = useSearchParams();
-  const questionId = searchParams.get("questionId") ?? "q1";
+  const questionId = searchParams.get("questionId"); // Lấy ID từ thanh URL
 
-  const [question, setQuestion] = useState<Question | null>(null);
+  const [question, setQuestion] = useState<QuestionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [secondsLeft, setSeconds] = useState(120);
   const [isRunning, setRunning] = useState(false);
@@ -93,14 +103,19 @@ function InterviewPageContent() {
 
   useEffect(() => {
     void (async () => {
+      if (!questionId) {
+        setFetchErr("Không tìm thấy mã câu hỏi trên đường dẫn.");
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         const data = await getQuestionById(questionId);
         setQuestion(data);
-        setSeconds(data?.durationSeconds ?? 120);
+        setSeconds(120);
       } catch (err) {
         setFetchErr(
-          err instanceof Error ? err.message : "Khong tai duoc cau hoi.",
+          err instanceof Error ? err.message : "Không tải được câu hỏi.",
         );
       } finally {
         setLoading(false);
@@ -125,12 +140,19 @@ function InterviewPageContent() {
     return () => clearInterval(id);
   }, [isRunning, secondsLeft]);
 
-  const total = question?.durationSeconds ?? 120;
+  const total = 120;
   const progress = useMemo(
     () => Math.max(0, Math.min(100, (secondsLeft / total) * 100)),
     [secondsLeft, total],
   );
-  const diffKey = (question?.difficulty ?? "medium").toLowerCase();
+
+  const diffMap: Record<number, { text: string; colorKey: string }> = {
+    1: { text: "Dễ", colorKey: "easy" },
+    2: { text: "Trung Bình", colorKey: "medium" },
+    3: { text: "Nâng Cao", colorKey: "hard" },
+  };
+
+  const currentDiff = question ? diffMap[question.difficultyLevel] || diffMap[2] : diffMap[2];
 
   function reset() {
     setRunning(false);
@@ -151,15 +173,15 @@ function InterviewPageContent() {
       <div className="relative mx-auto max-w-6xl space-y-6">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight text-white">
-            Interview Practice
+            Phòng Phỏng Vấn AI
           </h2>
-          <p className="text-sm text-slate-400">Interview recorder</p>
+          <p className="text-sm text-slate-400">Trả lời câu hỏi trong thời gian quy định</p>
         </div>
 
         <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
           <Glass className="space-y-5 p-6">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
-              Question
+              Câu hỏi
             </p>
 
             {loading ? (
@@ -178,35 +200,38 @@ function InterviewPageContent() {
                 </p>
 
                 <div className="flex flex-wrap gap-2 pt-1">
+                  {/* Map đúng trường categoryName */}
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300 ring-1 ring-indigo-500/20">
-                    {question.category.name}
+                    {question.categoryName}
                   </span>
 
+                  {/* Map đúng màu và level */}
                   <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${DIFF_COLOR[diffKey] ?? DIFF_COLOR.medium}`}
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${DIFF_COLOR[currentDiff.colorKey]}`}
                   >
-                    {question.difficulty}
+                    {currentDiff.text}
                   </span>
 
-                  {question.tags.map((tag) => (
+                  {/* Mảng tags của ta bây giờ là chuỗi, nên truyền item thay vì tag.name */}
+                  {question.tags.map((tag, idx) => (
                     <span
-                      key={tag.id}
+                      key={idx}
                       className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400 ring-1 ring-white/10"
                     >
                       <Tag size={10} />
-                      {tag.name}
+                      {tag}
                     </span>
                   ))}
                 </div>
               </>
             ) : (
-              <p className="text-sm text-slate-400">Khong tim thay cau hoi.</p>
+              <p className="text-sm text-slate-400">Không tìm thấy câu hỏi.</p>
             )}
           </Glass>
 
           <Glass className="flex flex-col items-center gap-5 p-6">
             <p className="self-start text-xs font-semibold uppercase tracking-widest text-indigo-400">
-              Timer
+              Đếm ngược
             </p>
 
             <CircularTimer secondsLeft={secondsLeft} total={total} />
@@ -219,7 +244,7 @@ function InterviewPageContent() {
                 />
               </div>
               <p className="text-right text-[11px] text-slate-500">
-                {Math.round(progress)}% remaining
+                Còn lại {Math.round(progress)}%
               </p>
             </div>
 
@@ -229,26 +254,27 @@ function InterviewPageContent() {
                 disabled={isRunning || secondsLeft === 0}
                 className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-40"
               >
-                <Play size={12} /> Start
+                <Play size={12} /> Bắt đầu
               </button>
               <button
                 onClick={() => setRunning(false)}
                 disabled={!isRunning}
                 className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:opacity-40"
               >
-                <Pause size={12} /> Pause
+                <Pause size={12} /> Dừng
               </button>
               <button
                 onClick={reset}
                 className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
               >
-                <RotateCcw size={12} /> Reset
+                <RotateCcw size={12} /> Đặt lại
               </button>
             </div>
           </Glass>
         </div>
 
-        <RecorderPanel questionId={questionId} />
+        {/* Truyền toàn bộ câu hỏi (bao gồm nội dung) xuống cho Component ghi âm/chat AI */}
+        <RecorderPanel question={question} />
       </div>
     </div>
   );
