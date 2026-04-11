@@ -29,7 +29,7 @@ MulterModule.register({
     CategoriesModule,
     TagsModule,
     QuestionsModule,
-
+/*
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -44,5 +44,20 @@ MulterModule.register({
   ],
   controllers: [AppController,InterviewsController],
   providers: [AppService,InterviewsService],
-})
+})*/
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT),
+      username: process.env.DB_USERNAME,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
+      ssl:
+      process.env.DB_SSL === 'true'
+        ? { rejectUnauthorized: false }
+        : false,
+    entities: [User, Category, Tag, TagRelation, Question],
+    synchronize: true,
+    logging: true,
+  })
 export class AppModule {}
