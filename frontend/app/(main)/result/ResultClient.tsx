@@ -11,6 +11,8 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { sessionsApi } from "@/lib/api/sessions";
+import type { Session } from "@/lib/api/types";
 
 type AnalysisMetric = {
   label: string;
@@ -95,6 +97,55 @@ function deriveFallbackResult(
             score: clampScore((technicalScore + communicationScore) / 2),
           },
         ],
+  };
+}
+
+function deriveResultFromSession(session: Session): ResultViewModel | null {
+  if (!session.ai_analysis) return null;
+
+  const technicalScore = clampScore(session.ai_analysis.technical_score ?? 0);
+  const communicationScore = clampScore(
+    session.ai_analysis.communication_score ?? 0,
+  );
+  const feedback = session.ai_analysis.feedback ?? "";
+
+  return {
+    sessionId: session.id,
+    status: session.status === "COMPLETED" ? "done" : "processing",
+    transcript: session.ai_analysis.transcript ?? "",
+    feedback,
+    technicalScore,
+    communicationScore,
+    strengths: feedback
+      .split(".")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((item) => (item.endsWith(".") ? item : `${item}.`)),
+    weaknesses: [
+      "Can add more concrete evidence or examples.",
+      "Should go deeper into trade-offs and constraints.",
+    ],
+    suggestions: [
+      "Structure the answer around problem, solution, and trade-off.",
+      "Add one specific real-world example to strengthen the explanation.",
+    ],
+    metrics: [
+      { label: "Technical", score: technicalScore },
+      { label: "Communication", score: communicationScore },
+      {
+        label: "Depth",
+        score: clampScore((technicalScore * 3 + communicationScore) / 4),
+      },
+      {
+        label: "Clarity",
+        score: clampScore((communicationScore * 3 + technicalScore) / 4),
+      },
+      {
+        label: "Balance",
+        score: clampScore((technicalScore + communicationScore) / 2),
+      },
+    ],
   };
 }
 
@@ -321,60 +372,101 @@ export default function InterviewResultPageContent() {
   const [result, setResult] = useState<ResultViewModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"processing" | "done">("processing");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedSessionId =
-      typeof window !== "undefined"
-        ? window.sessionStorage.getItem("interview:lastSessionId")
-        : null;
+    let cancelled = false;
+    let timer: number | undefined;
 
-    const storedResultRaw =
-      typeof window !== "undefined"
-        ? window.sessionStorage.getItem("interview:lastResult")
-        : null;
+    async function loadResult() {
+      const storedSessionId =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem("interview:lastSessionId")
+          : null;
 
-    const sessionId = sessionIdFromUrl ?? storedSessionId;
+      const storedResultRaw =
+        typeof window !== "undefined"
+          ? window.sessionStorage.getItem("interview:lastResult")
+          : null;
 
-    if (!sessionId) {
-      setLoading(false);
-      setResult(null);
-      return;
+      const sessionId = sessionIdFromUrl ?? storedSessionId;
+
+      if (!sessionId) {
+        setLoading(false);
+        setResult(null);
+        setErrorMessage(null);
+        return;
+      }
+
+      let parsedStoredResult: StoredInterviewResult | null = null;
+      if (storedResultRaw) {
+        try {
+          parsedStoredResult = JSON.parse(storedResultRaw) as StoredInterviewResult;
+        } catch {
+          parsedStoredResult = null;
+        }
+      }
+
+      const storedFallback = deriveFallbackResult(parsedStoredResult);
+
+      try {
+        setLoading(true);
+        setErrorMessage(null);
+
+        const session = await sessionsApi.getSessionById(sessionId);
+        if (cancelled) return;
+
+        const sessionResult = deriveResultFromSession(session);
+        if (!sessionResult) {
+          setResult(storedFallback ? { ...storedFallback, sessionId } : null);
+          setPhase("done");
+          return;
+        }
+
+        setResult(sessionResult);
+        setPhase(session.status === "COMPLETED" ? "done" : "processing");
+
+        if (session.status !== "COMPLETED") {
+          timer = window.setTimeout(() => {
+            if (cancelled) return;
+            setResult((current) =>
+              current
+                ? {
+                    ...current,
+                    status: "done",
+                  }
+                : current,
+            );
+            setPhase("done");
+          }, 1200);
+        }
+      } catch (error) {
+        if (cancelled) return;
+
+        if (storedFallback) {
+          setResult({
+            ...storedFallback,
+            sessionId,
+            status: "done",
+          });
+          setPhase("done");
+        } else {
+          setResult(null);
+          setErrorMessage(
+            error instanceof Error ? error.message : "Unable to load interview result.",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
 
-    const parsedStoredResult = storedResultRaw
-      ? (JSON.parse(storedResultRaw) as StoredInterviewResult)
-      : null;
+    void loadResult();
 
-    const baseResult = deriveFallbackResult(parsedStoredResult);
-
-    if (!baseResult) {
-      setLoading(false);
-      setResult(null);
-      return;
-    }
-
-    setResult({
-      ...baseResult,
-      sessionId,
-      status: "processing",
-    });
-
-    setLoading(false);
-    setPhase("processing");
-
-    const timer = window.setTimeout(() => {
-      setResult((current) =>
-        current
-          ? {
-              ...current,
-              status: "done",
-            }
-          : current,
-      );
-      setPhase("done");
-    }, 1200);
-
-    return () => window.clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+    };
   }, [sessionIdFromUrl]);
 
   const isDone = phase === "done" && result?.status === "done";
@@ -402,7 +494,7 @@ export default function InterviewResultPageContent() {
               Analysis unavailable
             </h2>
             <p className="text-sm text-slate-400">
-              Complete an interview session to view your results.
+              {errorMessage ?? "Complete an interview session to view your results."}
             </p>
           </div>
           <Button onClick={() => router.push("/interview")} className="w-full">
@@ -492,7 +584,7 @@ export default function InterviewResultPageContent() {
               Interview Results
             </h1>
             <p className="text-sm text-slate-400">
-              Here's your performance breakdown
+              Here&apos;s your performance breakdown
             </p>
           </div>
         </div>
@@ -551,7 +643,8 @@ export default function InterviewResultPageContent() {
           </p>
           <div className="rounded-lg border border-white/5 bg-black/40 p-4">
             <p className="text-sm leading-relaxed text-slate-300 italic">
-              "{displayResult.transcript || "No transcript available."}"
+              &quot;{displayResult.transcript || "No transcript available."}
+              &quot;
             </p>
           </div>
         </Glass>
