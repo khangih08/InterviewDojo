@@ -13,9 +13,12 @@ on:
 jobs:
   deploy-and-wait:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Trigger Render deploy hook
-        shell: bash
         run: |
           set -euo pipefail
           curl --fail --silent --show-error -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
@@ -25,14 +28,12 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y jq
 
       - name: Wait for Render deploy result
-        shell: bash
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
           RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
           set -euo pipefail
 
-          # Normalize secret values to avoid hidden whitespace/newline issues.
           RENDER_API_KEY_CLEAN="$(echo "${RENDER_API_KEY}" | tr -d '[:space:]')"
           RENDER_SERVICE_ID_CLEAN="$(echo "${RENDER_SERVICE_ID}" | tr -d '[:space:]')"
 
@@ -48,7 +49,6 @@ jobs:
           echo "::notice::Render dashboard: ${DASHBOARD_URL}"
           echo "Waiting for Render deploy status..."
 
-          # Preflight service access so we fail fast with a clear reason.
           SERVICE_HTTP_CODE="$(curl -sS -o /tmp/render_service.json -w "%{http_code}" -H "Authorization: Bearer ${RENDER_API_KEY_CLEAN}" "${SERVICE_URL}")"
           if [ "${SERVICE_HTTP_CODE}" != "200" ]; then
             echo "::error::Render service preflight failed with HTTP ${SERVICE_HTTP_CODE}."
@@ -66,7 +66,6 @@ jobs:
             fi
 
             RESP="$(cat /tmp/render_deploys.json)"
-
             DEPLOY_ID="$(echo "${RESP}" | jq -r '.[0].id // .[0].deploy.id // empty')"
             STATUS="$(echo "${RESP}" | jq -r '.[0].status // .[0].deploy.status // empty')"
             DEPLOY_URL="https://dashboard.render.com/web/${RENDER_SERVICE_ID_CLEAN}/deploys/${DEPLOY_ID}"
