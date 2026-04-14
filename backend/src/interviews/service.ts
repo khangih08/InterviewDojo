@@ -4,7 +4,7 @@ import * as fs from 'fs';
 
 @Injectable()
 export class InterviewsService {
-  private groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  private groq = new Groq({ apiKey: process.env.GROQ_API_KEY || 'MISSING_GROQ_KEY' });
 
   async speechToText(file: Express.Multer.File): Promise<string> {
     try {
