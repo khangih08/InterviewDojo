@@ -1,5 +1,4 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
-
 import { getAccessToken } from "@/lib/auth";
 
 export type ApiError = {
@@ -31,6 +30,7 @@ export function createHttpClient(): AxiosInstance {
     },
   });
 
+  // Interceptor để tự động đính kèm JWT Token vào mọi request
   instance.interceptors.request.use((config) => {
     const token = getAccessToken();
     if (token) {
@@ -44,6 +44,10 @@ export function createHttpClient(): AxiosInstance {
 
 export const http = createHttpClient();
 
+/**
+ * Hàm chuyển đổi lỗi từ Axios sang định dạng chuẩn của ứng dụng
+ * Giúp hiển thị thông báo lỗi thân thiện hơn cho người dùng
+ */
 export function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string }>;
@@ -66,5 +70,5 @@ export function toApiError(error: unknown): ApiError {
     return { status: 0, message: error.message };
   }
 
-  return { status: 0, message: "Unknown error" };
+  return { status: 0, message: "Lỗi không xác định" };
 }

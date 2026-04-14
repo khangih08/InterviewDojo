@@ -75,7 +75,7 @@ export default function RegisterPage() {
       if (error) setError("");
       return { ...prev, [field]: value };
     });
-
+    
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -176,7 +176,7 @@ export default function RegisterPage() {
     }
   };
 
-  const isPasswordQualified = (pwd: string) =>
+   const isPasswordQualified = (pwd: string) =>
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
 
   const passwordStrength = (pwd: string) => {

@@ -19,7 +19,6 @@ export class InterviewsController {
           cb(null, `${randomName}${ext}`);
         },
       })
-      // ĐÃ TẠM ẨN LIMITS VÀ FILEFILTER ĐỂ TEST CHO THÔNG LUỒNG
     }),
   )
   async uploadAudio(

@@ -2,14 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Upload } from "lucide-react";
+import { CameraOff, Upload } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import RecordingStatus from "@/components/interview/RecordingStatus";
+import { Button } from "@/components/ui/button";
 import { useRecorder } from "@/hooks/useRecorder";
 
+interface QuestionData {
+  id: string;
+  content: string;
+  sampleAnswer: string;
+  difficultyLevel: number;
+  categoryId: string;
+  categoryName: string;
+  tags: string[];
+  createdAt: string;
+}
+
 type Props = {
-  questionId: string;
+  question: QuestionData | null;
 };
 
 type UiStatus =
@@ -82,7 +93,7 @@ function deriveMockScores(transcript: string, feedback: string) {
   return { technicalScore, communicationScore, metrics };
 }
 
-export default function RecorderPanel({ questionId }: Props) {
+export default function RecorderPanel({ question }: Props) {
   const router = useRouter();
 
   const {
@@ -119,12 +130,7 @@ export default function RecorderPanel({ questionId }: Props) {
 
   const handleEnableDevices = async () => {
     const isReady = await setupDevices();
-
-    if (isReady) {
-      setUiStatus("ready");
-    } else {
-      setUiStatus("error");
-    }
+    setUiStatus(isReady ? "ready" : "error");
   };
 
   const handleStart = () => {
@@ -168,11 +174,18 @@ export default function RecorderPanel({ questionId }: Props) {
     setSubmitError("");
   };
 
+  const handleDisableDevices = () => {
+    stopDevices();
+    setUiStatus("idle");
+    setUploadProgress(0);
+    setSubmitError("");
+  };
+
   const handleUpload = async () => {
-    if (!recordedVideo) return;
+    if (!recordedVideo || !question) return; // Đảm bảo đã có cả video và dữ liệu câu hỏi
 
     const confirmed = window.confirm(
-      "Bạn có chắc muốn gửi video này để chấm điểm không?",
+      "Ban co chac muon gui video nay de cham diem khong?",
     );
 
     if (!confirmed) return;
@@ -191,13 +204,12 @@ export default function RecorderPanel({ questionId }: Props) {
       const fileName = `interview-${Date.now()}.webm`;
       const formData = new FormData();
       formData.append("file", recordedVideo.blob, fileName);
-      formData.append(
-        "question",
-        "Sự khác nhau giữa Let, Var và Const trong JavaScript là gì?",
-      );
+
+      formData.append("question", question.content);
+      formData.append("sampleAnswer", question.sampleAnswer);
 
       const response = await fetch(
-        "http://localhost:8000/interviews/upload-audio",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/interviews/upload-audio`,
         {
           method: "POST",
           body: formData,
@@ -206,13 +218,13 @@ export default function RecorderPanel({ questionId }: Props) {
 
       if (!response.ok) {
         const errorDetail = await response.text();
-        throw new Error(`Lỗi ${response.status}: ${errorDetail}`);
+        throw new Error(`Loi ${response.status}: ${errorDetail}`);
       }
 
       const data = await response.json();
 
       if (!data?.success) {
-        throw new Error("Backend không trả về kết quả hợp lệ.");
+        throw new Error("Backend khong tra ve ket qua hop le.");
       }
 
       const { technicalScore, communicationScore, metrics } = deriveMockScores(
@@ -226,7 +238,7 @@ export default function RecorderPanel({ questionId }: Props) {
         status: "processing",
         transcript: data.transcript ?? "",
         feedback: data.feedback ?? "",
-        questionId,
+        questionId: question.id,
         createdAt: new Date().toISOString(),
         technicalScore,
         communicationScore,
@@ -244,13 +256,13 @@ export default function RecorderPanel({ questionId }: Props) {
       console.error(uploadError);
 
       if (!navigator.onLine) {
-        setSubmitError("Network fail: mất kết nối internet. Vui lòng thử lại.");
+        setSubmitError("Network fail: mat ket noi internet. Vui long thu lai.");
       } else if (uploadError instanceof TypeError) {
-        setSubmitError("Network fail: không thể kết nối đến máy chủ.");
+        setSubmitError("Network fail: khong the ket noi den may chu.");
       } else if (uploadError instanceof Error) {
         setSubmitError(`Upload fail: ${uploadError.message}`);
       } else {
-        setSubmitError("Upload fail: không thể tải file lên.");
+        setSubmitError("Upload fail: khong the tai file len.");
       }
 
       setUiStatus("error");
@@ -274,14 +286,14 @@ export default function RecorderPanel({ questionId }: Props) {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button
-          onClick={handleEnableDevices}
-          disabled={
-            currentStatus === "recording" || currentStatus === "uploading"
-          }
-        >
-          Turn on camera & mic
-        </Button>
+        {status === "idle" ? (
+          <Button
+            onClick={handleEnableDevices}
+            disabled={currentStatus === "uploading"}
+          >
+            Turn on camera & mic
+          </Button>
+        ) : null}
 
         <Button
           onClick={handleStart}
@@ -304,6 +316,15 @@ export default function RecorderPanel({ questionId }: Props) {
           disabled={currentStatus === "uploading"}
         >
           Reset
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={handleDisableDevices}
+          disabled={currentStatus === "uploading" || status === "idle"}
+        >
+          <CameraOff className="mr-2 h-4 w-4" />
+          Turn off camera & mic
         </Button>
 
         <Button
@@ -340,7 +361,7 @@ export default function RecorderPanel({ questionId }: Props) {
 
       {recordedVideo ? (
         <div className="space-y-3">
-          <p className="text-sm font-medium">Video đã quay</p>
+          <p className="text-sm font-medium">Video da quay</p>
           <video
             src={recordedVideo.url}
             controls

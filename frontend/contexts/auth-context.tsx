@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useSyncExternalStore,
+} from "react";
 
 import {
   clearAccessToken,
@@ -29,10 +35,74 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+type AuthSnapshot = {
+  user: User | null;
+  token: string | null;
+  hydrated: boolean;
+};
+
+const SERVER_AUTH_SNAPSHOT: AuthSnapshot = {
+  user: null,
+  token: null,
+  hydrated: false,
+};
+
+let cachedUserRaw: string | null | undefined;
+let cachedToken: string | null | undefined;
+let cachedSnapshot: AuthSnapshot | undefined;
+
+function subscribeAuthStore(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handleStorage = () => {
+    onStoreChange();
+  };
+
+  window.addEventListener("storage", handleStorage);
+  return () => {
+    window.removeEventListener("storage", handleStorage);
+  };
+}
+
+function getClientAuthSnapshot(): AuthSnapshot {
+  const userRaw =
+    typeof window === "undefined"
+      ? null
+      : window.localStorage.getItem("idc_user");
+  const token = getAccessToken();
+
+  if (
+    cachedSnapshot &&
+    cachedUserRaw === userRaw &&
+    cachedToken === token
+  ) {
+    return cachedSnapshot;
+  }
+
+  cachedUserRaw = userRaw;
+  cachedToken = token;
+  cachedSnapshot = {
+    user: userRaw ? (JSON.parse(userRaw) as User) : null,
+    token,
+    hydrated: true,
+  };
+
+  return cachedSnapshot;
+}
+
+function getServerAuthSnapshot(): AuthSnapshot {
+  return SERVER_AUTH_SNAPSHOT;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getUser<User>());
-  const [token, setToken] = useState<string | null>(() => getAccessToken());
-  const hydrated = true;
+  const authSnapshot = useSyncExternalStore(
+    subscribeAuthStore,
+    getClientAuthSnapshot,
+    getServerAuthSnapshot,
+  );
+  const { user, token, hydrated } = authSnapshot;
 
   const login = useCallback(
     async (input: { email: string; password: string; remember?: boolean }) => {
@@ -43,10 +113,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       saveAccessToken(response.token, input.remember);
       saveUser(response.user);
-      setToken(response.token);
-      setUser(response.user);
+      window.dispatchEvent(new Event("storage"));
     },
-    []
+    [],
   );
 
   const register = useCallback(async (input: AuthRegisterRequest) => {
@@ -56,8 +125,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     clearAccessToken();
     clearUser();
-    setToken(null);
-    setUser(null);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
   }, []);
 
   const value = useMemo<AuthContextValue>(
@@ -70,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       register,
       logout,
     }),
-    [user, token, hydrated, login, register, logout]
+    [user, token, hydrated, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

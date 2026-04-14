@@ -146,14 +146,39 @@ export async function getQuestions(params?: GetQuestionsParams): Promise<Paged<Q
         page: params?.page ?? 1,
         limit: params?.limit ?? 10,
       };
+
+      const response = await http.get<BackendPagedQuestions>(
+        "/questions",
+        { params: backendParams }
+      );
+
+      return normalizePagedQuestions(response.data);
+    } catch (error) {
+      console.error("❌ Lỗi gọi API Backend:", error);
     }
-    throw new Error(toApiError(error).message);
   }
+
+  const page = params?.page ?? 1;
+  const limit = params?.limit ?? 20;
+  const items = filterQuestions(params);
+  const start = (page - 1) * limit;
+
+  return {
+    items: items.slice(start, start + limit),
+    total: items.length,
+    page,
+    limit,
+  };
 }
 
 export async function getQuestionById(id: string) {
-  if (shouldUseMocks()) {
-    return mockQuestions.find((item) => item.id === id) ?? null;
+  if (!shouldUseMocks()) {
+    try {
+      const response = await http.get<BackendQuestion>(`/questions/${id}`);
+      return normalizeQuestion(response.data);
+    } catch (error) {
+      console.error("❌ Lỗi lấy chi tiết câu hỏi:", error);
+    }
   }
 
   try {

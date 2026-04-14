@@ -141,6 +141,10 @@ export function useRecorder() {
   const setupDevices = useCallback(async () => {
     try {
       setError("");
+      stopTimer();
+      stopAudioMeter();
+      recorderRef.current = null;
+      streamRef.current?.getTracks().forEach((track) => track.stop());
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
@@ -161,7 +165,7 @@ export function useRecorder() {
       setStatus("error");
       return false;
     }
-  }, []);
+  }, [stopAudioMeter, stopTimer]);
 
   const startRecording = useCallback(() => {
     try {
@@ -265,6 +269,16 @@ export function useRecorder() {
       previewVideoRef.current.srcObject = null;
     }
 
+    setRecordedVideo((current) => {
+      if (current?.url) {
+        URL.revokeObjectURL(current.url);
+      }
+      return null;
+    });
+    chunksRef.current = [];
+    setElapsedSec(0);
+    setError("");
+    setVolumeLevel(0);
     setStatus("idle");
   }, [stopAudioMeter, stopTimer]);
 
