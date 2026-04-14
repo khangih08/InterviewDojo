@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike, In } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Question } from '../entities/question.entity';
 import { Tag } from '../entities/tag.entity';
 import { TagRelation } from 'src/entities/tag_relation.entity';
@@ -46,7 +46,8 @@ export class QuestionsService {
   }
 
   async findAll(query: GetQuestionQueryDto) {
-    const { search, categoryId, difficulty, page = 1, limit = 10 } = query;
+    // CHỈ KHAI BÁO 1 LẦN DUY NHẤT Ở ĐÂY
+    const { search, categoryId, difficulty, page = 1, limit = 20 } = query;
 
     const queryBuilder = this.questionRepository
       .createQueryBuilder('question')
@@ -100,7 +101,7 @@ export class QuestionsService {
 
     if (updateDto.tagIds) {
       const tags = await this.tagRepository.findBy({ id: In(updateDto.tagIds) });
-      
+
       question.tagRelations = tags.map((tag) => {
         const relation = new TagRelation();
         relation.tag = tag;
@@ -117,7 +118,6 @@ export class QuestionsService {
   }
 
   async remove(id: string) {
-    const question = await this.findOne(id); 
     await this.questionRepository.delete(id);
     return { message: `Question ${id} has been deleted` };
   }

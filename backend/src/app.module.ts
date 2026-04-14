@@ -6,12 +6,15 @@ import { User } from './entities/user.entity';
 import { Category } from './entities/category.entity';
 import { Tag } from './entities/tag.entity';
 import { Question } from './entities/question.entity';
-import { TagRelation } from './entities/tag_relation.entity'; 
+import { TagRelation } from './entities/tag_relation.entity';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tag/tags.module';
 import { QuestionsModule } from './questions/questions.module';
+import { MulterModule } from '@nestjs/platform-express';
+import { InterviewsController } from './interviews/controller';
+import { InterviewsService } from './interviews/service';
 
 import { MulterModule } from '@nestjs/platform-express';
 
@@ -20,7 +23,10 @@ import { InterviewsService } from './interviews/service';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, 
+      isGlobal: true,
+    }),
+    MulterModule.register({
+      dest: './uploads',
     }),
 MulterModule.register({
       dest: './uploads',
@@ -29,14 +35,12 @@ MulterModule.register({
     CategoriesModule,
     TagsModule,
     QuestionsModule,
-
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
+      url: process.env.DATABASE_URL,
+      ssl: {
+        rejectUnauthorized: false,
+      },
       entities: [User, Category, Tag, TagRelation, Question],
       synchronize: true,
       logging: true,

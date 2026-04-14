@@ -14,7 +14,9 @@ export default function TestimonialsSection() {
       <div className="grid sm:grid-cols-3 gap-6">
         {testimonials.map((t) => (
           <Card key={t.name} className="flex flex-col gap-4 p-6">
-            <p className="text-sm text-muted-foreground flex-1">"{t.quote}"</p>
+            <p className="flex-1 text-sm text-muted-foreground">
+              &ldquo;{t.quote}&rdquo;
+            </p>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
                 {t.avatar}

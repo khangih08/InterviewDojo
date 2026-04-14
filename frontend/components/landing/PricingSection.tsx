@@ -15,7 +15,7 @@ export default function PricingSection() {
             Simple, transparent pricing
           </h2>
           <p className="text-muted-foreground max-w-sm mx-auto">
-            Start free. Upgrade when you're ready to go all-in.
+            Start free. Upgrade when you&apos;re ready to go all-in.
           </p>
         </div>
         <div className="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
