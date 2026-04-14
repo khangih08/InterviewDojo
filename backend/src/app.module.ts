@@ -12,11 +12,10 @@ import { TagRelation } from './entities/tag_relation.entity';
 import { User } from './entities/user.entity';
 import { QuestionsModule } from './questions/questions.module';
 import { TagsModule } from './tag/tags.module';
-
 import { MulterModule } from '@nestjs/platform-express';
-
 import { InterviewsController } from './interviews/controller';
 import { InterviewsService } from './interviews/service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
