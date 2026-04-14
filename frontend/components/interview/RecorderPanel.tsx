@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CameraOff, Upload } from "lucide-react";
 
+import CircularTimer from "@/components/interview/CircularTimer";
 import RecordingStatus from "@/components/interview/RecordingStatus";
 import { Button } from "@/components/ui/button";
 import { useRecorder } from "@/hooks/useRecorder";
@@ -182,7 +183,16 @@ export default function RecorderPanel({ question }: Props) {
   };
 
   const handleUpload = async () => {
-    if (!recordedVideo || !question) return; // Đảm bảo đã có cả video và dữ liệu câu hỏi
+    if (!recordedVideo) {
+      setSubmitError("Vui lòng ghi hình câu trả lời trước khi tải lên.");
+      setUiStatus("error");
+      return;
+    }
+    if (!question) {
+      setSubmitError("Lỗi: Không tìm thấy dữ liệu câu hỏi.");
+      setUiStatus("error");
+      return;
+    }
 
     const confirmed = window.confirm(
       "Ban co chac muon gui video nay de cham diem khong?",
@@ -274,8 +284,8 @@ export default function RecorderPanel({ question }: Props) {
   };
 
   return (
-    <div className="space-y-6 rounded-2xl border p-6">
-      <div className="overflow-hidden rounded-xl border bg-black">
+    <div className="space-y-6">
+      <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black shadow-lg">
         <video
           ref={previewVideoRef}
           autoPlay
@@ -283,69 +293,70 @@ export default function RecorderPanel({ question }: Props) {
           playsInline
           className="aspect-video w-full object-cover"
         />
+        
+        {(status === "recording" || status === "ready" || status === "stopped") && (
+          <div className="absolute right-4 top-4 origin-top-right scale-75 drop-shadow-2xl">
+             <CircularTimer secondsLeft={remainingSec} total={maxDurationSec} />
+          </div>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        {status === "idle" ? (
+      <div className="flex flex-wrap justify-center gap-4 py-2">
+        {status === "idle" && (
           <Button
+            size="lg"
+            className="bg-indigo-600 px-8 text-sm font-semibold hover:bg-indigo-500"
             onClick={handleEnableDevices}
             disabled={currentStatus === "uploading"}
           >
-            Turn on camera & mic
+            Sẵn sàng (Bật Camera)
           </Button>
-        ) : null}
+        )}
 
-        <Button
-          onClick={handleStart}
-          disabled={status !== "ready" && status !== "stopped"}
-        >
-          Start
-        </Button>
+        {status === "ready" && (
+          <Button
+            size="lg"
+            className="bg-indigo-600 px-8 text-sm font-semibold hover:bg-indigo-500"
+            onClick={handleStart}
+          >
+            Bắt đầu ghi hình
+          </Button>
+        )}
 
-        <Button
-          variant="destructive"
-          onClick={handleStop}
-          disabled={status !== "recording"}
-        >
-          Stop
-        </Button>
+        {status === "recording" && (
+          <Button
+            size="lg"
+            variant="destructive"
+            className="px-8 text-sm font-semibold shadow-lg"
+            onClick={handleStop}
+          >
+            Kết thúc ghi hình
+          </Button>
+        )}
 
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          disabled={currentStatus === "uploading"}
-        >
-          Reset
-        </Button>
+        {status === "stopped" && (
+          <>
+            <Button
+              size="lg"
+              variant="secondary"
+              className="px-8 text-sm font-semibold"
+              onClick={handleRetryRecording}
+              disabled={currentStatus === "error" || currentStatus === "uploading"}
+            >
+              Ghi hình lại
+            </Button>
 
-        <Button
-          variant="outline"
-          onClick={handleDisableDevices}
-          disabled={currentStatus === "uploading" || status === "idle"}
-        >
-          <CameraOff className="mr-2 h-4 w-4" />
-          Turn off camera & mic
-        </Button>
-
-        <Button
-          variant="secondary"
-          onClick={handleRetryRecording}
-          disabled={status !== "stopped" && currentStatus !== "error"}
-        >
-          Retry recording
-        </Button>
-
-        <Button
-          onClick={handleUpload}
-          disabled={
-            !recordedVideo ||
-            currentStatus === "uploading" ||
-            currentStatus === "recording"
-          }
-        >
-          <Upload className="mr-2 h-4 w-4" />
-          Upload
-        </Button>
+            <Button
+              size="lg"
+              className="bg-emerald-600 px-8 text-sm font-semibold text-white shadow-lg hover:bg-emerald-500"
+              onClick={handleUpload}
+              disabled={currentStatus === "uploading"}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Nộp câu trả lời
+            </Button>
+          </>
+        )}
       </div>
 
       <RecordingStatus
