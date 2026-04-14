@@ -103,7 +103,7 @@ function LoginPageContent() {
   };
 
   return (
-    <Card className="ring-0 border-zinc-200/80 bg-white shadow-lg shadow-slate-200/50 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
+    <Card className="border-none shadow-none bg-transparent">
       <CardHeader className="space-y-2 text-center">
         <CardTitle className="text-2xl font-semibold text-violet-600 dark:text-violet-400">
           Sign in

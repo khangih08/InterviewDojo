@@ -116,7 +116,7 @@ function RegisterForm() {
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
 
   return (
-    <Card className="border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+    <Card className="border-none shadow-none bg-transparent">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl font-semibold">Create your account</CardTitle>
         <CardDescription>Fill in the details to get started.</CardDescription>
@@ -150,13 +150,25 @@ function RegisterForm() {
             </button>
           </div>
 
+          <div className="relative">
+            <Input type={showConfirm ? "text" : "password"} placeholder="Confirm Password" value={form.confirmPassword} onChange={(e) => handleChange("confirmPassword", e.target.value)} required />
+            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-3 text-zinc-400">
+              {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
+
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? <Loader2 className="animate-spin" /> : "Register"}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="justify-center">
-        <Link href="/login" className="text-sm text-emerald-500 font-medium">Đăng nhập ngay</Link>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium text-violet-600 hover:underline">
+            Sign in
+          </Link>
+        </p>
       </CardFooter>
     </Card>
   );
@@ -164,7 +176,7 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <div className="container mx-auto max-w-lg py-10">
+    <div className="container mx-auto max-w-lg py-2">
       <Suspense fallback={
         <div className="flex h-40 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
