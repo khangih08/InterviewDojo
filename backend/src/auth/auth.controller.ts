@@ -1,7 +1,16 @@
 import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
+import {
+  GoogleLoginDto,
+  GoogleRegisterStartDto,
+  GoogleRegisterVerifyDto,
+} from './dto/google-auth.dto';
+import {
+  ForgotPasswordRequestDto,
+  ForgotPasswordResetDto,
+  ForgotPasswordVerifyDto,
+} from './dto/forgot-password.dto';
 import { AuthService } from './auth.service';
-import { Auth } from 'typeorm';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { LoginDto } from './dto/login.dto';
@@ -119,5 +128,53 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return await this.authService.login(loginDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordRequestDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.forgotPassword(forgotPasswordDto.email);
+  }
+
+  @Post('forgot-password/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyForgotPasswordCode(
+    @Body() forgotPasswordVerifyDto: ForgotPasswordVerifyDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.verifyResetCode(forgotPasswordVerifyDto);
+  }
+
+  @Post('forgot-password/reset')
+  @HttpCode(HttpStatus.OK)
+  async resetForgotPassword(
+    @Body() forgotPasswordResetDto: ForgotPasswordResetDto,
+  ): Promise<{ message: string }> {
+    return await this.authService.resetPassword(forgotPasswordResetDto);
+  }
+
+  @Post('google/login')
+  @HttpCode(HttpStatus.OK)
+  async googleLogin(
+    @Body() googleLoginDto: GoogleLoginDto,
+  ): Promise<AuthResponseDto> {
+    return await this.authService.googleLogin(googleLoginDto);
+  }
+
+  @Post('google/register')
+  @HttpCode(HttpStatus.OK)
+  async googleRegisterStart(
+    @Body() googleRegisterStartDto: GoogleRegisterStartDto,
+  ) {
+    return await this.authService.googleRegisterStart(googleRegisterStartDto);
+  }
+
+  @Post('google/register/verify')
+  @HttpCode(HttpStatus.OK)
+  async googleRegisterVerify(
+    @Body() googleRegisterVerifyDto: GoogleRegisterVerifyDto,
+  ): Promise<AuthResponseDto> {
+    return await this.authService.googleRegisterVerify(googleRegisterVerifyDto);
   }
 }

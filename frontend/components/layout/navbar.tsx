@@ -31,7 +31,8 @@ export function Navbar() {
         <button
           onClick={() => {
             logout();
-            router.push("/login");
+            // Force reload to clear all state
+            window.location.href = "/login";
           }}
           className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100"
         >

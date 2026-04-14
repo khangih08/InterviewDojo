@@ -5,22 +5,19 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }),
-  );
+  
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,        
+    forbidNonWhitelisted: true, 
+    transform: true,    
+    transformOptions : {
+      enableImplicitConversion: true,
+    },    
+  }));
 
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [
-      'http://localhost:3001',
-      'http://localhost:3000',
+    // Vẫn giữ cho phép Frontend (cổng 3000 hoặc 3001) gọi sang
+    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3001', 'http://localhost:3000',
       'https://interview-dojo-smoky.vercel.app',
     ],
     credentials: true,
@@ -28,6 +25,7 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
+  // Enable Swagger docs
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('API documentation related endpoints')
@@ -55,11 +53,8 @@ async function bootstrap() {
       },
       'JWT-refresh',
     )
-
-    .addServer(
-      process.env.PUBLIC_API_URL || 'http://localhost:8000',
-      'API server',
-    )
+    // 1️⃣ Đã sửa lại đường dẫn Swagger thành cổng 8000
+    .addServer('http://localhost:8000', 'Development server')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -78,7 +73,7 @@ async function bootstrap() {
     `,
   });
 
-  const port = Number(process.env.PORT) || 8000;
-  await app.listen(port);
+  // 2️⃣ Đã đổi cổng khởi chạy Backend thành 8000
+  await app.listen(8000);
 }
 bootstrap();

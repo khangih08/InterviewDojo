@@ -34,15 +34,13 @@ export class InterviewsService {
       const chatCompletion = await this.groq.chat.completions.create({
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
+          { role: 'user', content: `Câu hỏi: "${question}"\n\nỨng viên trả lời: "${answer}"\n\nHãy nhận xét.` }
         ],
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.3-70b-versatile', // Model xịn và nhanh của Groq
         temperature: 0.7,
       });
 
-      return (
-        chatCompletion.choices[0]?.message?.content || 'Không thể tạo feedback.'
-      );
+      return chatCompletion.choices[0]?.message?.content || 'Không thể tạo feedback.';
     } catch (error) {
       console.error('❌ Groq LLM Error:', error);
       return 'Có lỗi xảy ra khi AI đánh giá câu trả lời.';

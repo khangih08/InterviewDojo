@@ -40,8 +40,8 @@ type BackendPagedCategories = {
 };
 
 function toDifficulty(level: number): Difficulty {
-  if (level <= 1) return "easy";
-  if (level <= 2) return "medium";
+  if (level <= 2) return "easy";
+  if (level <= 4) return "medium";
   return "hard";
 }
 
@@ -101,83 +101,114 @@ function normalizePagedQuestions(
 }
 
 export async function getQuestions(params?: GetQuestionsParams): Promise<Paged<Question>> {
-  if (!shouldUseMocks()) {
-    try {
-      const backendParams = {
-        page: params?.page ?? 1,
-        limit: params?.limit ?? 20,
-        search: params?.q,
-        categoryId: params?.categoryId,
-        difficulty:
-          params?.difficulty === "easy"
-            ? 1
-            : params?.difficulty === "medium"
-              ? 2
-              : params?.difficulty === "hard"
-                ? 3
-                : undefined,
-        tagId: params?.tagId,
-      };
-
-      const response = await http.get<BackendPagedQuestions>(
-        "/questions",
-        { params: backendParams }
-      );
-
-      return normalizePagedQuestions(response.data);
-    } catch (error) {
-      console.error("❌ Lỗi gọi API Backend:", error);
-    }
+  // 1. Trường hợp dùng Mock do cấu hình
+  if (shouldUseMocks()) {
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 10;
+    const items = filterQuestions(params);
+    const start = (page - 1) * limit;
+    return {
+      items: items.slice(start, start + limit),
+      total: items.length,
+      page,
+      limit,
+    };
   }
 
-  const page = params?.page ?? 1;
-  const limit = params?.limit ?? 20;
-  const items = filterQuestions(params);
-  const start = (page - 1) * limit;
+  // 2. Gọi API từ Backend
+  try {
+    const backendParams = {
+      page: params?.page,
+      limit: params?.limit,
+      search: params?.q,
+      categoryId: params?.categoryId,
+      difficulty:
+        params?.difficulty === "easy"
+          ? 2
+          : params?.difficulty === "medium"
+            ? 3
+            : params?.difficulty === "hard"
+              ? 5
+              : undefined,
+      tagId: params?.tagId,
+    };
 
-  return {
-    items: items.slice(start, start + limit),
-    total: items.length,
-    page,
-    limit,
-  };
+    const response = await http.get<Paged<Question> | BackendPagedQuestions>(
+      "/questions",
+      { params: backendParams }
+    );
+
+    return normalizePagedQuestions(response.data);
+  } catch (error) {
+    console.error("❌ Lỗi gọi API Backend:", error);
+
+    // 3. Fallback: Nếu lỗi nhưng đang Dev thì dùng Mock, nếu không thì báo lỗi
+    if (process.env.NODE_ENV === "development") {
+      const page = params?.page ?? 1;
+      const limit = params?.limit ?? 10;
+      const items = filterQuestions(params);
+      const start = (page - 1) * limit;
+      return {
+        items: items.slice(start, start + limit),
+        total: items.length,
+        page,
+        limit,
+      };
+    }
+    throw new Error(toApiError(error).message);
+  }
 }
 
 export async function getQuestionById(id: string) {
-  if (!shouldUseMocks()) {
-    try {
+  try {
+    // Luôn ưu tiên gọi API nếu không ép buộc dùng Mock
+    if (!shouldUseMocks()) {
       const response = await http.get<BackendQuestion>(`/questions/${id}`);
       return normalizeQuestion(response.data);
-    } catch (error) {
-      console.error("❌ Lỗi lấy chi tiết câu hỏi:", error);
     }
+    
+    // Nếu ép buộc dùng mock
+    return mockQuestions.find((item) => item.id === id) ?? null;
+  } catch (error) {
+    console.error("❌ Lỗi lấy chi tiết câu hỏi:", error);
+    
+    if (process.env.NODE_ENV === "development") {
+      return mockQuestions.find((item) => item.id === id) ?? null;
+    }
+    throw new Error(toApiError(error).message);
   }
-
-  return mockQuestions.find((item) => item.id === id) ?? null;
 }
 
 export async function getQuestionFilters(): Promise<{ categories: Category[]; tags: Tag[] }> {
-  if (!shouldUseMocks()) {
-    try {
-      const [categoryRes, tagRes] = await Promise.all([
-        http.get<Category[] | BackendPagedCategories>("/categories"),
-        http.get<Tag[]>("/tags"),
-      ]);
-
-      const categories = Array.isArray(categoryRes.data)
-        ? categoryRes.data
-        : categoryRes.data.data ?? [];
-
-      const tags = Array.isArray(tagRes.data) ? tagRes.data : [];
-
-      return { categories, tags };
-    } catch (error) {
-      console.error("❌ Lỗi lấy danh sách Filter:", error);
-    }
+  if (shouldUseMocks()) {
+    return {
+      categories: mockCategories,
+      tags: mockTags,
+    };
   }
 
-  return {
-    categories: mockCategories,
-    tags: mockTags,
-  };
+  try {
+    const [categoryRes, tagRes] = await Promise.all([
+      http.get<Category[] | BackendPagedCategories>("/categories"),
+      http.get<Tag[]>("/tags"),
+    ]);
+
+    const categories = Array.isArray(categoryRes.data)
+      ? categoryRes.data
+      : (categoryRes.data as BackendPagedCategories).data ?? [];
+
+    return {
+      categories,
+      tags: Array.isArray(tagRes.data) ? tagRes.data : [],
+    };
+  } catch (error) {
+    console.error("❌ Lỗi lấy filters:", error);
+    if (process.env.NODE_ENV === "development") {
+      return {
+        categories: mockCategories,
+        tags: mockTags,
+      };
+    }
+    throw new Error(toApiError(error).message);
+  }
 }

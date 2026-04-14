@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
-import { login as loginRequest } from "@/lib/api/auth";
+import { googleLogin as googleLoginRequest, login as loginRequest } from "@/lib/api/auth";
 import { saveAccessToken, saveUser } from "@/lib/auth";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [googleError, setGoogleError] = useState("");
+  const componentKey = "google-auth-button";
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -70,6 +73,30 @@ function LoginPageContent() {
       setError(
         normalizedMessage || "Incorrect email or password. Please try again.",
       );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async (idToken: string) => {
+    setLoading(true);
+    setError("");
+    setGoogleError("");
+
+    try {
+      const result = await googleLoginRequest({ idToken });
+      const token = result.accessToken ?? result.token;
+      if (!token) {
+        throw new Error("Login failed. No access token was returned.");
+      }
+      saveAccessToken(token);
+      saveUser(result.user);
+      const next = searchParams.get("next");
+      router.push(next || "/dashboard");
+      router.refresh();
+    } catch (err) {
+      const rawMessage = err instanceof Error ? err.message : "";
+      setGoogleError(rawMessage || "Google login failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -165,7 +192,7 @@ function LoginPageContent() {
         </form>
       </CardContent>
 
-      <CardFooter className="justify-center">
+      <CardFooter className="flex-col items-center gap-4 justify-center">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Don&apos;t have an account?{" "}
           <Link
@@ -175,6 +202,20 @@ function LoginPageContent() {
             Create one
           </Link>
         </p>
+        <div className="w-full">
+          <GoogleAuthButton
+            key={componentKey}
+            label="Đăng nhập bằng Google"
+            buttonText="signin_with"
+            onSuccess={handleGoogleLogin}
+            onError={setGoogleError}
+          />
+          {googleError ? (
+            <p className="mt-3 text-sm text-red-600 dark:text-red-400">
+              {googleError}
+            </p>
+          ) : null}
+        </div>
       </CardFooter>
     </Card>
   );

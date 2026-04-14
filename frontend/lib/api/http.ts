@@ -20,9 +20,7 @@ function normalizeApiMessage(message: unknown, fallback: string) {
 }
 
 export function createHttpClient(): AxiosInstance {
-  // Lấy URL từ biến môi trường của bạn (NEXT_PUBLIC_API_BASE_URL)
-  // Nếu không có, mặc định trỏ về cổng 3001 (Backend NestJS)
-  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
+  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
   const instance = axios.create({
     baseURL,
@@ -53,17 +51,10 @@ export const http = createHttpClient();
 export function toApiError(error: unknown): ApiError {
   if (axios.isAxiosError(error)) {
     const axiosError = error as AxiosError<{ message?: string }>;
-    
-    // Xử lý lỗi mất kết nối (Backend chưa bật hoặc sai URL)
-    if (axiosError.code === "ERR_NETWORK" || !axiosError.response) {
-      return {
-        status: 0,
-        message: "Không thể kết nối đến máy chủ. Vui lòng đảm bảo Backend đang chạy tại cổng 3001.",
-        details: axiosError.code,
-      };
-    }
-
-    const fallbackMessage = axiosError.message ?? "Yêu cầu thất bại";
+    const fallbackMessage =
+      axiosError.code === "ERR_NETWORK"
+        ? "Cannot reach the server. Make sure the backend is running."
+        : axiosError.message ?? "Request failed";
 
     return {
       status: axiosError.response?.status ?? 0,

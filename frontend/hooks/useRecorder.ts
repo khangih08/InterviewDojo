@@ -262,12 +262,6 @@ export function useRecorder() {
     stopTimer();
     stopAudioMeter();
 
-    if (recorderRef.current && recorderRef.current.state !== "inactive") {
-      recorderRef.current.onstop = null;
-      recorderRef.current.stop();
-    }
-    recorderRef.current = null;
-
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
 

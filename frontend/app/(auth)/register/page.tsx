@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react"; // Thêm Suspense vào đây
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
-import { register as registerRequest } from "@/lib/api/auth";
-import type { ExperienceLevel, JobRole } from "@/lib/api/types";
+import { 
+  googleLogin as googleLoginRequest, 
+  googleRegisterStart, 
+  googleRegisterVerify, 
+  register as registerRequest 
+} from "@/lib/api/auth";
+import { saveAccessToken, saveUser } from "@/lib/auth";
+import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
+import type {
+  AuthGoogleRegisterStartResponse,
+  ExperienceLevel,
+  JobRole,
+} from "@/lib/api/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,15 +52,17 @@ const experienceOptions: { value: ExperienceLevel; label: string }[] = [
   { value: "senior", label: "Senior" },
 ];
 
-export default function RegisterPage() {
+// --- 1. COMPONENT CHỨA LOGIC (Nơi lỗi xảy ra nếu không có Suspense) ---
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams(); // Hook gây lỗi build nếu đứng một mình
+  
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const [form, setForm] = useState({
-    fullName: "",
+    full_name: "",
     email: "",
     targetRole: "Backend Developer" as JobRole,
     experienceLevel: "fresher" as ExperienceLevel,
@@ -57,49 +70,43 @@ export default function RegisterPage() {
     confirmPassword: "",
   });
 
-  const handleChange = (field: string, value: string | boolean) =>
-    setForm((prev) => {
-      if (error) setError("");
-      return { ...prev, [field]: value };
-    });
+  const handleChange = (field: string, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    if (error) setError("");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(form.password)) {
-      setError(
-        "Password must contain uppercase, lowercase, number, and special character."
-      );
-      return;
-    }
-
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-
+    if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
+    
     setLoading(true);
-
     try {
       await registerRequest({
         email: form.email.trim(),
         password: form.password,
-        full_name: form.fullName.trim(),
+        full_name: form.full_name.trim(),
         target_role: form.targetRole,
         experience_level: form.experienceLevel,
       });
-
       router.push("/login?registered=1");
-      router.refresh();
-    } catch (err) {
-      const rawMessage = err instanceof Error ? err.message : "";
-      const normalizedMessage =
-        rawMessage.includes("User with this email already exists")
-          ? "An account with this email already exists."
-          : rawMessage;
+    } catch (err: any) {
+      setError(err.message || "Registration failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      setError(normalizedMessage || "Registration failed. Please try again.");
+  const handleGoogleLogin = async (idToken: string) => {
+    setLoading(true);
+    try {
+      const result = await googleLoginRequest({ idToken });
+      saveAccessToken(result.accessToken || result.token);
+      saveUser(result.user);
+      
+      const next = searchParams.get("next"); // Sử dụng searchParams an toàn nhờ Suspense ở ngoài
+      router.push(next || "/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Google login failed.");
     } finally {
       setLoading(false);
     }
@@ -108,227 +115,63 @@ export default function RegisterPage() {
   const isPasswordQualified = (pwd: string) =>
     /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
 
-  const passwordStrength = (pwd: string) => {
-    if (!pwd) return null;
-    if (pwd.length < 6)
-      return { label: "Weak", color: "bg-red-500", w: "w-1/4" };
-    if (pwd.length < 10)
-      return { label: "Fair", color: "bg-amber-400", w: "w-2/4" };
-    if (!/[^a-zA-Z0-9]/.test(pwd))
-      return { label: "Good", color: "bg-emerald-400", w: "w-3/4" };
-    return { label: "Strong", color: "bg-emerald-600", w: "w-full" };
-  };
-
-  const strength = passwordStrength(form.password);
-  const showPasswordInvalid = form.password.length > 0 && !isPasswordQualified(form.password);
-
   return (
-    <Card className="border-zinc-200 bg-white shadow-xl shadow-zinc-200/60 dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none">
-      <CardHeader className="space-y-2 text-center">
-        <CardTitle className="text-2xl font-semibold text-zinc-950 dark:text-white">
-          Create your account
-        </CardTitle>
-        <CardDescription className="text-sm text-zinc-600 dark:text-zinc-400">
-          Fill in the required account details to match your profile data.
-        </CardDescription>
+    <Card className="border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+      <CardHeader className="text-center">
+        <CardTitle className="text-2xl font-semibold">Create your account</CardTitle>
+        <CardDescription>Fill in the details to get started.</CardDescription>
       </CardHeader>
-
-      <CardContent>
+      <CardContent className="space-y-6">
+        <GoogleAuthButton label="Google" onSuccess={handleGoogleLogin} onError={setError} />
+        
         {error && (
-          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>{error}</span>
+          <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle className="h-4 w-4" /> {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="fullName">
-              Full name
-            </Label>
-            <Input
-              id="fullName"
-              placeholder="Nguyen Van A"
-              autoComplete="name"
-              value={form.fullName}
-              onChange={(e) => handleChange("fullName", e.target.value)}
-              className="h-11"
-              required
-            />
+          <Input placeholder="Email" value={form.email} onChange={(e) => handleChange("email", e.target.value)} required />
+          <Input placeholder="Full Name" value={form.full_name} onChange={(e) => handleChange("full_name", e.target.value)} required />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <select value={form.targetRole} onChange={(e) => handleChange("targetRole", e.target.value)} className="h-10 rounded-md border text-sm px-2">
+              {jobRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+            <select value={form.experienceLevel} onChange={(e) => handleChange("experienceLevel", e.target.value)} className="h-10 rounded-md border text-sm px-2">
+              {experienceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">
-              Email address
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              autoComplete="email"
-              value={form.email}
-              onChange={(e) => handleChange("email", e.target.value)}
-              className="h-11"
-              required
-            />
+          <div className="relative">
+            <Input type={showPassword ? "text" : "password"} placeholder="Password" value={form.password} onChange={(e) => handleChange("password", e.target.value)} required />
+            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-zinc-400">
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="targetRole">Target role</Label>
-              <select
-                id="targetRole"
-                value={form.targetRole}
-                onChange={(e) => handleChange("targetRole", e.target.value)}
-                className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none"
-                required
-              >
-                {jobRoleOptions.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="experienceLevel">Experience level</Label>
-              <select
-                id="experienceLevel"
-                value={form.experienceLevel}
-                onChange={(e) =>
-                  handleChange("experienceLevel", e.target.value)
-                }
-                className="h-11 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none"
-                required
-              >
-                {experienceOptions.map((level) => (
-                  <option key={level.value} value={level.value}>
-                    {level.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="password">
-              Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Min. 8 characters"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={(e) => handleChange("password", e.target.value)}
-                className={`h-11 pr-10 ${showPasswordInvalid ? "border-red-500 focus-visible:ring-red-500" : ""}`}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            {showPasswordInvalid ? (
-              <p className="text-xs text-red-500">
-                Use at least 8 characters with 1 uppercase letter, 1 lowercase
-                letter, 1 number, and 1 special character.
-              </p>
-            ) : null}
-            {strength && (
-              <div className="space-y-1 pt-1">
-                <div className="h-1.5 w-full rounded-full bg-zinc-200 dark:bg-zinc-700">
-                  <div
-                    className={`h-1.5 rounded-full transition-all duration-300 ${strength.color} ${strength.w}`}
-                  />
-                </div>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Strength:{" "}
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                    {strength.label}
-                  </span>
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm">
-              Confirm password
-            </Label>
-            <div className="relative">
-              <Input
-                id="confirm"
-                type={showConfirm ? "text" : "password"}
-                placeholder="Re-enter password"
-                autoComplete="new-password"
-                value={form.confirmPassword}
-                onChange={(e) =>
-                  handleChange("confirmPassword", e.target.value)
-                }
-                className={`h-11 pr-10 ${
-                  form.confirmPassword && form.confirmPassword !== form.password
-                    ? "border-red-400 dark:border-red-500"
-                    : ""
-                }`}
-                required
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
-                aria-label={showConfirm ? "Hide password" : "Show password"}
-              >
-                {showConfirm ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-            {form.confirmPassword && form.confirmPassword !== form.password && (
-              <p className="text-xs text-red-500">Passwords do not match.</p>
-            )}
-          </div>
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="h-11 w-full"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              "Create account"
-            )}
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? <Loader2 className="animate-spin" /> : "Register"}
           </Button>
         </form>
       </CardContent>
-
       <CardFooter className="justify-center">
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-medium text-violet-600 hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
+        <Link href="/login" className="text-sm text-emerald-500 font-medium">Đăng nhập ngay</Link>
       </CardFooter>
     </Card>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <div className="container mx-auto max-w-lg py-10">
+      <Suspense fallback={
+        <div className="flex h-40 items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
+        </div>
+      }>
+        <RegisterForm />
+      </Suspense>
+    </div>
   );
 }

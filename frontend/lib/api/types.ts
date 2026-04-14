@@ -31,12 +31,52 @@ export type AuthLoginRequest = {
   password: string;
 };
 
+export type AuthGoogleLoginRequest = {
+  idToken: string;
+};
+
+export type AuthGoogleRegisterStartRequest = {
+  idToken: string;
+  target_role: JobRole;
+  experience_level: ExperienceLevel;
+};
+
+export type AuthGoogleRegisterVerifyRequest = {
+  email: string;
+  code: string;
+};
+
+export type AuthGoogleRegisterStartResponse = {
+  message: string;
+  email: string;
+  full_name: string;
+};
+
 export type AuthRegisterRequest = {
   email: string;
   password: string;
   full_name: string;
   target_role: JobRole;
   experience_level: ExperienceLevel;
+};
+
+export type AuthForgotPasswordRequest = {
+  email: string;
+};
+
+export type AuthForgotPasswordVerifyRequest = {
+  email: string;
+  code: string;
+};
+
+export type AuthForgotPasswordResetRequest = {
+  email: string;
+  code: string;
+  password: string;
+};
+
+export type AuthForgotPasswordResponse = {
+  message: string;
 };
 
 export type AuthLoginResponse = {
