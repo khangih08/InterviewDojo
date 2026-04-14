@@ -36,6 +36,10 @@ async function bootstrap() {
     .addTag('auth', 'Authentication related endpoints')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'JWT', in: 'header' }, 'JWT-auth')
     .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT', name: 'Refresh-JWT', in: 'header' }, 'JWT-refresh')
+    .addServer(
+      process.env.PUBLIC_API_URL || 'http://localhost:8000/',
+      'API server',
+    )
     // Để trống server hoặc dùng biến môi trường để Swagger tự nhận diện URL
     .build();
 
@@ -48,7 +52,7 @@ async function bootstrap() {
   // SỬA LỖI Ở ĐÂY:
   // Render cung cấp cổng qua process.env.PORT. Nếu không có (local) thì dùng 8000.
   // '0.0.0.0' là bắt buộc để Render có thể nhận diện service.
-  const port = process.env.PORT || 8000;
+  const port = Number(process.env.PORT) || 8000;
   await app.listen(port, '0.0.0.0');
   
   console.log(`Application is running on port: ${port}`);
