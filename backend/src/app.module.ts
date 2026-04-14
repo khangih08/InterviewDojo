@@ -1,17 +1,17 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './entities/user.entity';
-import { Category } from './entities/category.entity';
-import { Tag } from './entities/tag.entity';
-import { Question } from './entities/question.entity';
-import { TagRelation } from './entities/tag_relation.entity'; 
-import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
-import { TagsModule } from './tag/tags.module';
+import { Category } from './entities/category.entity';
+import { Question } from './entities/question.entity';
+import { Tag } from './entities/tag.entity';
+import { TagRelation } from './entities/tag_relation.entity';
+import { User } from './entities/user.entity';
 import { QuestionsModule } from './questions/questions.module';
+import { TagsModule } from './tag/tags.module';
 
 import { MulterModule } from '@nestjs/platform-express';
 

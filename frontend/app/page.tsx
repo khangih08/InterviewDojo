@@ -7,7 +7,6 @@ import TestimonialsSection from "@/components/landing/TestimonialsSection";
 import ComparisonSection from "@/components/landing/ComparisonSection";
 import PricingSection from "@/components/landing/PricingSection";
 import FaqSection from "@/components/landing/FaqSection";
-import CtaBanner from "@/components/landing/CtaBanner";
 import Footer from "@/components/landing/Footer";
 
 export default function LandingPage() {

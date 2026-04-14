@@ -2,18 +2,81 @@ export type User = {
   id?: string;
   email: string;
   full_name?: string;
+  target_role?: JobRole;
+  experience_level?: ExperienceLevel;
   role?: "admin" | "user";
 };
+
+export type JobRole =
+  | "Backend Developer"
+  | "Frontend Developer"
+  | "Fullstack Developer"
+  | "AI Engineer"
+  | "DevOps Engineer"
+  | "Data Scientist"
+  | "Cloud Engineer"
+  | "Mobile Developer"
+  | "Security Engineer"
+  | "Embedded Systems Engineer";
+
+export type ExperienceLevel =
+  | "intern"
+  | "fresher"
+  | "junior"
+  | "middle"
+  | "senior";
 
 export type AuthLoginRequest = {
   email: string;
   password: string;
 };
 
+export type AuthGoogleLoginRequest = {
+  idToken: string;
+};
+
+export type AuthGoogleRegisterStartRequest = {
+  idToken: string;
+  target_role: JobRole;
+  experience_level: ExperienceLevel;
+};
+
+export type AuthGoogleRegisterVerifyRequest = {
+  email: string;
+  code: string;
+};
+
+export type AuthGoogleRegisterStartResponse = {
+  message: string;
+  email: string;
+  full_name: string;
+};
+
 export type AuthRegisterRequest = {
   email: string;
   password: string;
-  full_name?: string;
+  full_name: string;
+  target_role: JobRole;
+  experience_level: ExperienceLevel;
+};
+
+export type AuthForgotPasswordRequest = {
+  email: string;
+};
+
+export type AuthForgotPasswordVerifyRequest = {
+  email: string;
+  code: string;
+};
+
+export type AuthForgotPasswordResetRequest = {
+  email: string;
+  code: string;
+  password: string;
+};
+
+export type AuthForgotPasswordResponse = {
+  message: string;
 };
 
 export type AuthLoginResponse = {
@@ -93,4 +156,42 @@ export type CompleteSessionRequest = {
 export type CompleteSessionResponse = {
   success: boolean;
   message?: string;
+};
+
+export type AnalysisStatus = "processing" | "done" | "error";
+
+export type AnalysisMetric = {
+  label: string;
+  score: number;
+};
+
+export type AnalysisResponse = {
+  sessionId: string;
+  status: AnalysisStatus;
+  transcript?: string;
+  technicalScore?: number;
+  communicationScore?: number;
+  strengths?: string[];
+  weaknesses?: string[];
+  suggestions?: string[];
+  metrics?: AnalysisMetric[];
+  summary?: string;
+  message?: string;
+};
+
+export type SessionStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+
+export type SessionAiAnalysis = {
+  technical_score?: number;
+  communication_score?: number;
+  feedback?: string;
+  transcript?: string;
+};
+
+export type Session = {
+  id: string;
+  created_at: string;
+  status: SessionStatus;
+  question_content?: string;
+  ai_analysis?: SessionAiAnalysis | null;
 };
