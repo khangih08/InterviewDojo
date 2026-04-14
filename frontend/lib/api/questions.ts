@@ -39,7 +39,6 @@ type BackendPagedCategories = {
   };
 };
 
-// --- Helper Functions ---
 function toDifficulty(level: number): Difficulty {
   if (level <= 2) return "easy";
   if (level <= 4) return "medium";
@@ -100,8 +99,6 @@ function normalizePagedQuestions(
     limit: payload.meta.limit,
   };
 }
-
-// --- API Functions ---
 
 export async function getQuestions(params?: GetQuestionsParams): Promise<Paged<Question>> {
   // 1. Trường hợp dùng Mock do cấu hình
