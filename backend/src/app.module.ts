@@ -11,14 +11,19 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TagsModule } from './tag/tags.module';
-import { TagRelation } from './entities/tag_relation.entity';
-import { Question } from './entities/question.entity';
 import { QuestionsModule } from './questions/questions.module';
 
+import { MulterModule } from '@nestjs/platform-express';
+
+import { InterviewsController } from './interviews/controller';
+import { InterviewsService } from './interviews/service';
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true, 
+    }),
+MulterModule.register({
+      dest: './uploads',
     }),
     AuthModule,
     CategoriesModule,
@@ -37,7 +42,7 @@ import { QuestionsModule } from './questions/questions.module';
       logging: true,
     }),
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController,InterviewsController],
+  providers: [AppService,InterviewsService],
 })
 export class AppModule {}

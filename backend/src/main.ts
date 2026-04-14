@@ -13,22 +13,25 @@ async function bootstrap() {
     transformOptions : {
       enableImplicitConversion: true,
     },    
-  })
-);
+  }));
+
   app.enableCors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3001', 'http://localhost:3000'],
+    // Vẫn giữ cho phép Frontend (cổng 3000 hoặc 3001) gọi sang
+    origin: process.env.ALLOWED_ORIGINS?.split(',') ?? ['http://localhost:3001', 'http://localhost:3000',
+      'https://interview-dojo-smoky.vercel.app',
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
   });
-  
+
   // Enable Swagger docs
   const config = new DocumentBuilder()
-  .setTitle('API Documentation')
-  .setDescription('API documentation related endpoints')
-  .setVersion('1.0')
-  .addTag('auth', 'Authentication related endpoints')
-   .addBearerAuth(
+    .setTitle('API Documentation')
+    .setDescription('API documentation related endpoints')
+    .setVersion('1.0')
+    .addTag('auth', 'Authentication related endpoints')
+    .addBearerAuth(
       {
         type: 'http',
         scheme: 'bearer',
@@ -50,7 +53,8 @@ async function bootstrap() {
       },
       'JWT-refresh',
     )
-    .addServer('http://localhost:3000', 'Development server')
+    // 1️⃣ Đã sửa lại đường dẫn Swagger thành cổng 8000
+    .addServer('http://localhost:8000', 'Development server')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
@@ -67,7 +71,9 @@ async function bootstrap() {
       .swagger-ui .info { margin: 50px 0; }
       .swagger-ui .info .title {color: #4A90E2;}
     `,
-  })
-  await app.listen(process.env.PORT ?? 3000);
+  });
+
+  // 2️⃣ Đã đổi cổng khởi chạy Backend thành 8000
+  await app.listen(8000);
 }
 bootstrap();
