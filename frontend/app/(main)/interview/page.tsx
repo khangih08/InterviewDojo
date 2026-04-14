@@ -45,51 +45,7 @@ function Glass({
   );
 }
 
-function CircularTimer({
-  secondsLeft,
-  total,
-}: {
-  secondsLeft: number;
-  total: number;
-}) {
-  const r = 54;
-  const c = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(1, secondsLeft / total));
-  const dash = pct * c;
-  const colour = pct > 0.5 ? "#6366f1" : pct > 0.2 ? "#f59e0b" : "#ef4444";
 
-  return (
-    <div className="relative flex items-center justify-center">
-      <svg width={128} height={128} className="-rotate-90">
-        <circle
-          cx={64}
-          cy={64}
-          r={r}
-          fill="none"
-          stroke="rgba(255,255,255,0.06)"
-          strokeWidth={8}
-        />
-        <circle
-          cx={64}
-          cy={64}
-          r={r}
-          fill="none"
-          stroke={colour}
-          strokeWidth={8}
-          strokeLinecap="round"
-          strokeDasharray={`${dash} ${c}`}
-          style={{ transition: "stroke-dasharray 1s linear, stroke 0.5s" }}
-        />
-      </svg>
-      <span
-        className="absolute text-3xl font-semibold tabular-nums tracking-widest text-white"
-        style={{ textShadow: `0 0 20px ${colour}88` }}
-      >
-        {formatTime(secondsLeft)}
-      </span>
-    </div>
-  );
-}
 
 function InterviewPageContent() {
   const searchParams = useSearchParams();
@@ -97,8 +53,6 @@ function InterviewPageContent() {
 
   const [question, setQuestion] = useState<QuestionData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [secondsLeft, setSeconds] = useState(120);
-  const [isRunning, setRunning] = useState(false);
   const [fetchError, setFetchErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -114,8 +68,6 @@ function InterviewPageContent() {
 
         // SỬA LỖI Ở ĐÂY: Ép kiểu dữ liệu về QuestionData để qua mặt TypeScript
         setQuestion(data as unknown as QuestionData);
-
-        setSeconds(120);
       } catch (err) {
         setFetchErr(
           err instanceof Error ? err.message : "Không tải được câu hỏi.",
@@ -126,29 +78,6 @@ function InterviewPageContent() {
     })();
   }, [questionId]);
 
-  useEffect(() => {
-    if (!isRunning || secondsLeft <= 0) return;
-
-    const id = window.setInterval(() => {
-      setSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(id);
-          return 0;
-        }
-
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(id);
-  }, [isRunning, secondsLeft]);
-
-  const total = 120;
-  const progress = useMemo(
-    () => Math.max(0, Math.min(100, (secondsLeft / total) * 100)),
-    [secondsLeft, total],
-  );
-
   const diffMap: Record<number, { text: string; colorKey: string }> = {
     1: { text: "Dễ", colorKey: "easy" },
     2: { text: "Trung Bình", colorKey: "medium" },
@@ -156,11 +85,6 @@ function InterviewPageContent() {
   };
 
   const currentDiff = question ? diffMap[question.difficultyLevel] || diffMap[2] : diffMap[2];
-
-  function reset() {
-    setRunning(false);
-    setSeconds(total);
-  }
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-[#080c18] px-4 py-8">
@@ -181,7 +105,7 @@ function InterviewPageContent() {
           <p className="text-sm text-slate-400">Trả lời câu hỏi trong thời gian quy định</p>
         </div>
 
-        <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-5">
           <Glass className="space-y-5 p-6">
             <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
               Câu hỏi
@@ -227,49 +151,6 @@ function InterviewPageContent() {
             ) : (
               <p className="text-sm text-slate-400">Không tìm thấy câu hỏi.</p>
             )}
-          </Glass>
-
-          <Glass className="flex flex-col items-center gap-5 p-6">
-            <p className="self-start text-xs font-semibold uppercase tracking-widest text-indigo-400">
-              Đếm ngược
-            </p>
-
-            <CircularTimer secondsLeft={secondsLeft} total={total} />
-
-            <div className="w-full space-y-1.5">
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/[0.07]">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-violet-500 transition-all duration-1000"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-right text-[11px] text-slate-500">
-                Còn lại {Math.round(progress)}%
-              </p>
-            </div>
-
-            <div className="grid w-full grid-cols-3 gap-2">
-              <button
-                onClick={() => setRunning(true)}
-                disabled={isRunning || secondsLeft === 0}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-40"
-              >
-                <Play size={12} /> Bắt đầu
-              </button>
-              <button
-                onClick={() => setRunning(false)}
-                disabled={!isRunning}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10 disabled:opacity-40"
-              >
-                <Pause size={12} /> Dừng
-              </button>
-              <button
-                onClick={reset}
-                className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold text-white transition hover:bg-white/10"
-              >
-                <RotateCcw size={12} /> Đặt lại
-              </button>
-            </div>
           </Glass>
         </div>
 

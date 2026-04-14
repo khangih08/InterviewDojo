@@ -38,37 +38,15 @@ import { InterviewsService } from './interviews/service';
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
     const dbUrl = configService.get<string>('DATABASE_URL');
-    
-    if (dbUrl) {
-      console.log('Connecting to URL:', dbUrl); 
-      return {
-        type: 'postgres',
-        url: dbUrl,
-        ssl: false,
-        extra: { ssl: false },
-        entities: [User, Category, Tag, TagRelation, Question],
-        synchronize: true,
-        logging: true,
-      };
-    }
-
-    const host = configService.get<string>('DB_HOST') || 'localhost';
-    const port = configService.get<number>('DB_PORT') || 5432;
-    const username = configService.get<string>('DB_USERNAME') || 'postgres';
-    const password = configService.get<string>('DB_PASSWORD') || 'postgres';
-    const database = configService.get<string>('DB_NAME') || 'interview_dojo';
-
-    console.log(`Connecting to Postgres DB: ${host}:${port}/${database} as ${username}`);
+    console.log('Connecting to:', dbUrl); 
 
     return {
       type: 'postgres',
-      host,
-      port,
-      username,
-      password,
-      database,
+      url: dbUrl,
       ssl: false,
-      extra: { ssl: false },
+      extra: {
+        ssl: false, 
+      },
       entities: [User, Category, Tag, TagRelation, Question],
       synchronize: true,
       logging: true,
