@@ -273,6 +273,7 @@ function RadarChart({ metrics }: { metrics: AnalysisMetric[] }) {
   if (!count) return null;
 
   const size = 340;
+  const pad = 40;
   const center = size / 2;
   const radius = 110;
   const levels = 4;
@@ -297,7 +298,10 @@ function RadarChart({ metrics }: { metrics: AnalysisMetric[] }) {
         <p className="text-xs text-slate-500">MVP+</p>
       </div>
 
-      <svg viewBox={`0 0 ${size} ${size}`} className="w-full">
+      <svg
+        viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
+        className="w-full overflow-visible"
+      >
         {Array.from({ length: levels }).map((_, levelIndex) => {
           const levelRadius = radius * ((levelIndex + 1) / levels);
           const points = safeMetrics
@@ -327,6 +331,15 @@ function RadarChart({ metrics }: { metrics: AnalysisMetric[] }) {
           const pct = clampScore(metric.score) / 100;
           const pointX = center + Math.cos(angle) * radius * pct;
           const pointY = center + Math.sin(angle) * radius * pct;
+          const labelDistance = radius + 18;
+          const labelXRaw = center + Math.cos(angle) * labelDistance;
+          const labelY = center + Math.sin(angle) * labelDistance;
+          const safeMinX = 14;
+          const safeMaxX = size - 14;
+          const labelX = Math.max(safeMinX, Math.min(safeMaxX, labelXRaw));
+          const cos = Math.cos(angle);
+          const textAnchor =
+            cos > 0.2 ? "start" : cos < -0.2 ? "end" : "middle";
 
           return (
             <g key={metric.label}>
@@ -340,12 +353,13 @@ function RadarChart({ metrics }: { metrics: AnalysisMetric[] }) {
               />
               <circle cx={pointX} cy={pointY} r={4} fill="rgb(56,189,248)" />
               <text
-                x={center + Math.cos(angle) * (radius + 24)}
-                y={center + Math.sin(angle) * (radius + 24)}
+                x={labelX}
+                y={labelY}
                 fill="rgba(226,232,240,0.9)"
                 fontSize="11"
-                textAnchor={Math.cos(angle) >= 0 ? "start" : "end"}
+                textAnchor={textAnchor}
                 dominantBaseline="middle"
+                pointerEvents="none"
               >
                 {metric.label} {clampScore(metric.score)}
               </text>
@@ -401,7 +415,9 @@ export default function InterviewResultPageContent() {
       let parsedStoredResult: StoredInterviewResult | null = null;
       if (storedResultRaw) {
         try {
-          parsedStoredResult = JSON.parse(storedResultRaw) as StoredInterviewResult;
+          parsedStoredResult = JSON.parse(
+            storedResultRaw,
+          ) as StoredInterviewResult;
         } catch {
           parsedStoredResult = null;
         }
@@ -453,7 +469,9 @@ export default function InterviewResultPageContent() {
         } else {
           setResult(null);
           setErrorMessage(
-            error instanceof Error ? error.message : "Unable to load interview result.",
+            error instanceof Error
+              ? error.message
+              : "Unable to load interview result.",
           );
         }
       } finally {
@@ -494,7 +512,8 @@ export default function InterviewResultPageContent() {
               Analysis unavailable
             </h2>
             <p className="text-sm text-slate-400">
-              {errorMessage ?? "Complete an interview session to view your results."}
+              {errorMessage ??
+                "Complete an interview session to view your results."}
             </p>
           </div>
           <Button onClick={() => router.push("/interview")} className="w-full">
