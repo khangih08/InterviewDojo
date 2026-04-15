@@ -106,7 +106,10 @@ export function GoogleAuthButton({
         onLoad={() => setReady(true)}
         onError={() => setScriptError(true)}
       />
-      <div ref={buttonContainer} className="w-full" />
+      <div
+        ref={buttonContainer}
+        className="flex w-full justify-center"
+      />
     </>
   );
 }
