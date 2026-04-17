@@ -2,6 +2,8 @@ import { User } from "./api/types";
 
 export const ACCESS_TOKEN_COOKIE = "idc_access_token";
 export const ACCESS_TOKEN_STORAGE = "idc_access_token";
+export const REFRESH_TOKEN_COOKIE = "idc_refresh_token";
+export const REFRESH_TOKEN_STORAGE = "idc_refresh_token";
 export const USER_STORAGE = "idc_user";
 
 type CookieOptions = {
@@ -62,6 +64,13 @@ export function saveAccessToken(token: string, remember = false) {
   window.localStorage.setItem(ACCESS_TOKEN_STORAGE, token);
 }
 
+export function saveRefreshToken(token: string, remember = false) {
+  if (!isBrowser()) return;
+
+  setCookie(REFRESH_TOKEN_COOKIE, token, { days: remember ? 30 : 7 });
+  window.localStorage.setItem(REFRESH_TOKEN_STORAGE, token);
+}
+
 export function getAccessToken() {
   if (!isBrowser()) return null;
 
@@ -71,11 +80,43 @@ export function getAccessToken() {
   );
 }
 
+export function getRefreshToken() {
+  if (!isBrowser()) return null;
+
+  return (
+    getCookie(REFRESH_TOKEN_COOKIE) ??
+    window.localStorage.getItem(REFRESH_TOKEN_STORAGE)
+  );
+}
+
 export function clearAccessToken() {
   if (!isBrowser()) return;
 
   deleteCookie(ACCESS_TOKEN_COOKIE);
   window.localStorage.removeItem(ACCESS_TOKEN_STORAGE);
+}
+
+export function clearRefreshToken() {
+  if (!isBrowser()) return;
+
+  deleteCookie(REFRESH_TOKEN_COOKIE);
+  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE);
+}
+
+export function saveAuthTokens(input: {
+  accessToken: string;
+  refreshToken?: string;
+  remember?: boolean;
+}) {
+  saveAccessToken(input.accessToken, input.remember);
+  if (input.refreshToken) {
+    saveRefreshToken(input.refreshToken, input.remember);
+  }
+}
+
+export function clearAuthTokens() {
+  clearAccessToken();
+  clearRefreshToken();
 }
 
 export function saveUser(user: User) {
@@ -104,7 +145,7 @@ export function clearUser() {
 }
 
 export function logout() {
-  clearAccessToken();
+  clearAuthTokens();
   clearUser();
 }
 

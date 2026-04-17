@@ -1,6 +1,7 @@
 import { mockLogin, mockForgotPassword, mockResetPassword, mockVerifyPasswordCode } from "@/lib/mocks/auth";
 import { shouldUseMocks } from "@/lib/api/mock";
 import { http, toApiError } from "@/lib/api/http";
+import { getRefreshToken } from "@/lib/auth";
 import type {
   AuthGoogleLoginRequest,
   AuthGoogleRegisterStartRequest,
@@ -28,6 +29,45 @@ export async function login(input: AuthLoginRequest): Promise<AuthLoginResponse>
       return mockLogin(input);
     }
     throw new Error(toApiError(error).message);
+  }
+}
+
+export async function refreshAccessToken(): Promise<AuthLoginResponse> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error("Missing refresh token.");
+  }
+
+  try {
+    const response = await http.post<AuthLoginResponse>(
+      "/auth/refresh",
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+        },
+        timeout: 10_000,
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(toApiError(error).message);
+  }
+}
+
+export async function logoutApi(): Promise<void> {
+  try {
+    await http.post(
+      "/auth/logout",
+      {},
+      {
+        // If logout endpoint fails, we still clear local tokens in caller.
+        // Suppress duplicate global toast for explicit user-initiated logout.
+        headers: { "x-skip-error-toast": "1" },
+      },
+    );
+  } catch {
+    // no-op: caller will always clear local session
   }
 }
 

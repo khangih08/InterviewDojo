@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
 import { googleLogin as googleLoginRequest, login as loginRequest } from "@/lib/api/auth";
-import { saveAccessToken, saveUser } from "@/lib/auth";
+import { saveAuthTokens, saveUser } from "@/lib/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ function LoginPageContent() {
         throw new Error("Login failed. No access token was returned.");
       }
 
-      saveAccessToken(token);
+      saveAuthTokens({ accessToken: token, refreshToken: result.refreshToken });
       saveUser(result.user);
 
       const next = searchParams.get("next");
@@ -89,7 +89,7 @@ function LoginPageContent() {
       if (!token) {
         throw new Error("Login failed. No access token was returned.");
       }
-      saveAccessToken(token);
+      saveAuthTokens({ accessToken: token, refreshToken: result.refreshToken });
       saveUser(result.user);
       const next = searchParams.get("next");
       router.push(next || "/dashboard");

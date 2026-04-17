@@ -6,10 +6,12 @@ import type { AuthLoginResponse } from "@/lib/api/types";
 
 const mockLogin = vi.fn();
 const mockRegister = vi.fn();
+const mockLogoutApi = vi.fn();
 
 vi.mock("@/lib/api/auth", () => ({
   login: (...args: unknown[]) => mockLogin(...args),
   register: (...args: unknown[]) => mockRegister(...args),
+  logoutApi: (...args: unknown[]) => mockLogoutApi(...args),
 }));
 
 describe("AuthProvider + useAuth", () => {

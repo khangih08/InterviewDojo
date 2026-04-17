@@ -9,14 +9,17 @@ import {
 } from "react";
 
 import {
-  clearAccessToken,
+  clearAuthTokens,
   clearUser,
   getAccessToken,
-  getUser,
-  saveAccessToken,
+  saveAuthTokens,
   saveUser,
 } from "@/lib/auth";
-import { login as loginApi, register as registerApi } from "@/lib/api/auth";
+import {
+  login as loginApi,
+  logoutApi,
+  register as registerApi,
+} from "@/lib/api/auth";
 import type { AuthRegisterRequest, User } from "@/lib/api/types";
 
 type AuthContextValue = {
@@ -111,7 +114,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         password: input.password,
       });
 
-      saveAccessToken(response.token, input.remember);
+      saveAuthTokens({
+        accessToken: response.accessToken ?? response.token,
+        refreshToken: response.refreshToken,
+        remember: input.remember,
+      });
       saveUser(response.user);
       window.dispatchEvent(new Event("storage"));
     },
@@ -123,7 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    clearAccessToken();
+    void logoutApi();
+    clearAuthTokens();
     clearUser();
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("storage"));
