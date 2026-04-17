@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Filter, Search, X } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -64,7 +64,7 @@ const difficultyClass: Record<Difficulty, string> = {
   hard: "border-rose-200 bg-rose-50 text-rose-700",
 };
 
-export default function QuestionsPage() {
+function QuestionsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -357,5 +357,13 @@ export default function QuestionsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function QuestionsPage() {
+  return (
+    <Suspense fallback={null}>
+      <QuestionsPageContent />
+    </Suspense>
   );
 }
