@@ -11,7 +11,7 @@ import {
   googleRegisterVerify, 
   register as registerRequest 
 } from "@/lib/api/auth";
-import { saveAccessToken, saveUser } from "@/lib/auth";
+import { saveAuthTokens, saveUser } from "@/lib/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 import type {
   AuthGoogleRegisterStartResponse,
@@ -100,7 +100,10 @@ function RegisterForm() {
     setLoading(true);
     try {
       const result = await googleLoginRequest({ idToken });
-      saveAccessToken(result.accessToken || result.token);
+      saveAuthTokens({
+        accessToken: result.accessToken || result.token,
+        refreshToken: result.refreshToken,
+      });
       saveUser(result.user);
       
       const next = searchParams.get("next"); // Sử dụng searchParams an toàn nhờ Suspense ở ngoài

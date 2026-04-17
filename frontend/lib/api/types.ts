@@ -82,6 +82,7 @@ export type AuthForgotPasswordResponse = {
 export type AuthLoginResponse = {
   token: string;
   accessToken?: string;
+  refreshToken?: string;
   user: User;
 };
 

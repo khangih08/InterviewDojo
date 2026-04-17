@@ -1,5 +1,14 @@
 import axios, { AxiosError, type AxiosInstance } from "axios";
-import { getAccessToken } from "@/lib/auth";
+import {
+  clearAuthTokens,
+  clearUser,
+  getAccessToken,
+  getRefreshToken,
+  saveAuthTokens,
+  saveUser,
+} from "@/lib/auth";
+import type { AuthLoginResponse } from "@/lib/api/types";
+import { toastError } from "@/lib/toast";
 
 export type ApiError = {
   status: number;
@@ -33,11 +42,102 @@ export function createHttpClient(): AxiosInstance {
   // Interceptor để tự động đính kèm JWT Token vào mọi request
   instance.interceptors.request.use((config) => {
     const token = getAccessToken();
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   });
+
+  let refreshPromise: Promise<string | null> | null = null;
+
+  async function refreshAccessToken(): Promise<string | null> {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return null;
+
+    const response = await axios.post<AuthLoginResponse>(
+      `${baseURL}/auth/refresh`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${refreshToken}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 10_000,
+      },
+    );
+
+    const payload = response.data;
+    const accessToken = payload.accessToken ?? payload.token;
+    if (!accessToken) return null;
+
+    saveAuthTokens({
+      accessToken,
+      refreshToken: payload.refreshToken,
+    });
+
+    if (payload.user) {
+      saveUser(payload.user);
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("storage"));
+    }
+
+    return accessToken;
+  }
+
+  instance.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError) => {
+      const originalConfig = (error.config ?? {}) as AxiosError["config"] & {
+        _retry?: boolean;
+        skipErrorToast?: boolean;
+      };
+
+      const status = error.response?.status;
+      const requestUrl = String(originalConfig?.url ?? "");
+      const isRefreshCall = requestUrl.includes("/auth/refresh");
+
+      if (status === 401 && !originalConfig?._retry && !isRefreshCall) {
+        originalConfig._retry = true;
+
+        try {
+          if (!refreshPromise) {
+            refreshPromise = refreshAccessToken().finally(() => {
+              refreshPromise = null;
+            });
+          }
+
+          const newAccessToken = await refreshPromise;
+          if (newAccessToken && originalConfig) {
+            originalConfig.headers = originalConfig.headers ?? {};
+            originalConfig.headers.Authorization = `Bearer ${newAccessToken}`;
+            return instance(originalConfig);
+          }
+        } catch {
+          // If refresh fails, fall through and clear session below.
+        }
+
+        clearAuthTokens();
+        clearUser();
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event("storage"));
+        }
+      }
+
+      const shouldSkipToast =
+        originalConfig?.skipErrorToast ||
+        originalConfig?.headers?.["x-skip-error-toast"] === "1" ||
+        error.code === "ERR_CANCELED";
+
+      if (!shouldSkipToast) {
+        const apiError = toApiError(error);
+        toastError(apiError.message);
+      }
+
+      return Promise.reject(error);
+    },
+  );
 
   return instance;
 }

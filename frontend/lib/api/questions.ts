@@ -141,20 +141,6 @@ export async function getQuestions(params?: GetQuestionsParams): Promise<Paged<Q
     return normalizePagedQuestions(response.data);
   } catch (error) {
     console.error("❌ Lỗi gọi API Backend:", error);
-
-    // 3. Fallback: Nếu lỗi nhưng đang Dev thì dùng Mock, nếu không thì báo lỗi
-    if (process.env.NODE_ENV === "development") {
-      const page = params?.page ?? 1;
-      const limit = params?.limit ?? 10;
-      const items = filterQuestions(params);
-      const start = (page - 1) * limit;
-      return {
-        items: items.slice(start, start + limit),
-        total: items.length,
-        page,
-        limit,
-      };
-    }
     throw new Error(toApiError(error).message);
   }
 }
@@ -171,10 +157,6 @@ export async function getQuestionById(id: string) {
     return mockQuestions.find((item) => item.id === id) ?? null;
   } catch (error) {
     console.error("❌ Lỗi lấy chi tiết câu hỏi:", error);
-    
-    if (process.env.NODE_ENV === "development") {
-      return mockQuestions.find((item) => item.id === id) ?? null;
-    }
     throw new Error(toApiError(error).message);
   }
 }
@@ -203,12 +185,6 @@ export async function getQuestionFilters(): Promise<{ categories: Category[]; ta
     };
   } catch (error) {
     console.error("❌ Lỗi lấy filters:", error);
-    if (process.env.NODE_ENV === "development") {
-      return {
-        categories: mockCategories,
-        tags: mockTags,
-      };
-    }
     throw new Error(toApiError(error).message);
   }
 }
