@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Pause, Play, RotateCcw, Tag } from "lucide-react";
+import { Tag } from "lucide-react";
 
 import RecorderPanel from "@/components/interview/RecorderPanel";
 import { getQuestionById } from "@/lib/api/questions";
@@ -16,11 +16,6 @@ interface QuestionData {
   categoryName: string;
   tags: string[];
   createdAt: string;
-}
-
-function formatTime(s: number) {
-  const m = Math.floor(s / 60);
-  return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
 const DIFF_COLOR: Record<string, string> = {
@@ -44,8 +39,6 @@ function Glass({
     </div>
   );
 }
-
-
 
 function InterviewPageContent() {
   const searchParams = useSearchParams();
@@ -84,7 +77,9 @@ function InterviewPageContent() {
     3: { text: "Nâng Cao", colorKey: "hard" },
   };
 
-  const currentDiff = question ? diffMap[question.difficultyLevel] || diffMap[2] : diffMap[2];
+  const currentDiff = question
+    ? diffMap[question.difficultyLevel] || diffMap[2]
+    : diffMap[2];
 
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-[#080c18] px-4 py-8">
@@ -102,7 +97,9 @@ function InterviewPageContent() {
           <h2 className="text-2xl font-bold tracking-tight text-white">
             Phòng Phỏng Vấn AI
           </h2>
-          <p className="text-sm text-slate-400">Trả lời câu hỏi trong thời gian quy định</p>
+          <p className="text-sm text-slate-400">
+            Trả lời câu hỏi trong thời gian quy định
+          </p>
         </div>
 
         <div className="space-y-5">

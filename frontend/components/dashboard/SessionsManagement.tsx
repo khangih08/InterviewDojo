@@ -1,12 +1,14 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { userSessionsApi } from '@/lib/api/sessions';
-import { UserSession } from '@/lib/api/types';
-import { toastError, toastSuccess } from '@/lib/toast';
-import { Loader2, LogOut, Smartphone, Trash2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { userSessionsApi } from "@/lib/api/sessions";
+import { UserSession } from "@/lib/api/types";
+import { toastError, toastSuccess } from "@/lib/toast";
+import { Loader2, LogOut, Smartphone, Trash2 } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 export function SessionsManagement() {
+  const { logout } = useAuth();
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export function SessionsManagement() {
       const data = await userSessionsApi.getAllSessions();
       setSessions(data);
     } catch (error) {
-      toastError('Failed to load sessions');
+      toastError("Failed to load sessions");
       console.error(error);
     } finally {
       setLoading(false);
@@ -32,10 +34,10 @@ export function SessionsManagement() {
     try {
       setRevoking(sessionId);
       await userSessionsApi.revokeSession(sessionId);
-      toastSuccess('Session revoked successfully');
-      setSessions(sessions.filter(s => s.id !== sessionId));
+      toastSuccess("Session revoked successfully");
+      setSessions(sessions.filter((s) => s.id !== sessionId));
     } catch (error) {
-      toastError('Failed to revoke session');
+      toastError("Failed to revoke session");
       console.error(error);
     } finally {
       setRevoking(null);
@@ -44,12 +46,12 @@ export function SessionsManagement() {
 
   const handleRevokeAllOther = async () => {
     try {
-      setRevoking('all-other');
+      setRevoking("all-other");
       const result = await userSessionsApi.revokeAllOtherSessions();
       toastSuccess(`${result.revoked_count} sessions revoked`);
       await loadSessions();
     } catch (error) {
-      toastError('Failed to revoke sessions');
+      toastError("Failed to revoke sessions");
       console.error(error);
     } finally {
       setRevoking(null);
@@ -57,17 +59,19 @@ export function SessionsManagement() {
   };
 
   const handleRevokeAll = async () => {
-    if (!confirm('This will log you out from all devices. Are you sure?')) {
+    if (!confirm("This will log you out from all devices. Are you sure?")) {
       return;
     }
 
     try {
-      setRevoking('all');
+      setRevoking("all");
       const result = await userSessionsApi.revokeAllSessions();
       toastSuccess(`All ${result.revoked_count} sessions revoked`);
-      setSessions([]);
+      logout();
+      window.location.href = "/login";
+      return;
     } catch (error) {
-      toastError('Failed to revoke all sessions');
+      toastError("Failed to revoke all sessions");
       console.error(error);
     } finally {
       setRevoking(null);
@@ -75,12 +79,12 @@ export function SessionsManagement() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -111,19 +115,21 @@ export function SessionsManagement() {
           {sessions.length > 1 && (
             <button
               onClick={handleRevokeAllOther}
-              disabled={revoking === 'all-other'}
+              disabled={revoking === "all-other"}
               className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors flex items-center gap-2"
             >
-              {revoking === 'all-other' && <Loader2 className="h-4 w-4 animate-spin" />}
+              {revoking === "all-other" && (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              )}
               Logout Other Devices
             </button>
           )}
           <button
             onClick={handleRevokeAll}
-            disabled={revoking === 'all'}
+            disabled={revoking === "all"}
             className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2"
           >
-            {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
+            {revoking === "all" && <Loader2 className="h-4 w-4 animate-spin" />}
             Logout All Devices
           </button>
         </div>
@@ -148,14 +154,18 @@ export function SessionsManagement() {
                     <Smartphone className="h-5 w-5 text-gray-400" />
                     <div>
                       <h3 className="font-semibold text-gray-900">
-                        {session.device_name || 'Unknown Device'}
+                        {session.device_name || "Unknown Device"}
                       </h3>
                       {session.ip_address && (
-                        <p className="text-sm text-gray-500">IP: {session.ip_address}</p>
+                        <p className="text-sm text-gray-500">
+                          IP: {session.ip_address}
+                        </p>
                       )}
                       <div className="flex gap-4 mt-2 text-xs text-gray-600">
                         <span>Created: {formatDate(session.created_at)}</span>
-                        <span>Last accessed: {formatDate(session.last_accessed_at)}</span>
+                        <span>
+                          Last accessed: {formatDate(session.last_accessed_at)}
+                        </span>
                       </div>
                       {isExpired(session.expires_at) && (
                         <p className="text-xs text-red-600 mt-1">Expired</p>
@@ -189,8 +199,9 @@ export function SessionsManagement() {
       {/* Info Box */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Each time you log in, a new session is created. Revoke sessions to
-          log out from specific devices. Sessions automatically expire after 7 days.
+          <strong>Tip:</strong> Each time you log in, a new session is created.
+          Revoke sessions to log out from specific devices. Sessions
+          automatically expire after 7 days.
         </p>
       </div>
     </div>

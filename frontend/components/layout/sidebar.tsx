@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   CircleHelp,
+  Code2,
   Video,
   UserCog,
   BarChart3,
@@ -40,6 +41,7 @@ const navItems: Array<{
   },
   { href: "/history", label: "History", icon: History, tone: "emerald" },
   { href: "/questions", label: "Questions", icon: CircleHelp, tone: "purple" },
+  { href: "/code-editor", label: "Code Editor", icon: Code2, tone: "purple" },
   { href: "/interview", label: "Interview", icon: Video, tone: "amber" },
   { href: "/result", label: "Result", icon: BarChart3, tone: "emerald" },
   { href: "/sessions", label: "Sessions", icon: Smartphone, tone: "rose" },
