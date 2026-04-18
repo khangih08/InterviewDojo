@@ -17,6 +17,7 @@ import { User } from 'src/entities/user.entity';
 import { LoginDto } from './dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import { CompleteGoogleProfileDto } from './dto/complete-google-profile.dto';
+import { SessionsService } from './sessions.service';
 
 @Injectable()
 export class AuthService {
@@ -26,9 +27,14 @@ export class AuthService {
     private UserRepository: Repository<User>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private sessionsService: SessionsService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(
+    registerDto: RegisterDto,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
     const { email, password, full_name, target_role, experience_level } =
       registerDto;
     // Check if user already exists
@@ -51,6 +57,13 @@ export class AuthService {
       const user = await this.UserRepository.save(userInstance);
       const tokens = await this.generateTokens(user.id, user.email, user.role);
       await this.updateRefreshToken(user.id, tokens.refreshToken);
+      // Create session
+      await this.sessionsService.createSession(
+        user.id,
+        tokens.refreshToken,
+        userAgent,
+        ipAddress,
+      );
       return {
         ...tokens,
         user: {
@@ -126,11 +139,19 @@ export class AuthService {
   }
 
   // Log out
-  async logout(userId: string): Promise<void> {
+  async logout(userId: string, sessionId?: string): Promise<void> {
     await this.UserRepository.update(userId, { refreshToken: null });
+    // If we have a session ID, revoke that specific session
+    if (sessionId) {
+      await this.sessionsService.revokeSession(sessionId, userId);
+    }
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(
+    loginDto: LoginDto,
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
     const user = await this.UserRepository.findOne({
       where: { email },
@@ -151,6 +172,13 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    // Create session
+    await this.sessionsService.createSession(
+      user.id,
+      tokens.refreshToken,
+      userAgent,
+      ipAddress,
+    );
 
     return {
       ...tokens,
@@ -165,9 +193,13 @@ export class AuthService {
     };
   }
 
-  async googleLogin(googleLoginDto: {
-    idToken: string;
-  }): Promise<AuthResponseDto> {
+  async googleLogin(
+    googleLoginDto: {
+      idToken: string;
+    },
+    userAgent?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
     const googleUser = await this.verifyGoogleIdToken(googleLoginDto.idToken);
     console.log('[GoogleLogin] Verified user:', googleUser.email);
     let isNewGoogleUser = false;
@@ -218,6 +250,13 @@ export class AuthService {
 
     const tokens = await this.generateTokens(user.id, user.email, user.role);
     await this.updateRefreshToken(user.id, tokens.refreshToken);
+    // Create session
+    await this.sessionsService.createSession(
+      user.id,
+      tokens.refreshToken,
+      userAgent,
+      ipAddress,
+    );
 
     return {
       ...tokens,

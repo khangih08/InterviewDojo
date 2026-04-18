@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Post,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import {
@@ -25,10 +26,26 @@ import { LoginDto } from './dto/login.dto';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  /**
+   * Extract user agent and IP address from request
+   */
+  private getClientInfo(req: Request): {
+    userAgent?: string;
+    ipAddress?: string;
+  } {
+    const userAgent = req.get('user-agent');
+    const ipAddress =
+      (req.get('x-forwarded-for') as string)?.split(',')[0] ||
+      req.ip ||
+      req.socket.remoteAddress;
+    return { userAgent, ipAddress };
+  }
 
   // Register api
   @Post('register')
@@ -54,8 +71,12 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    return await this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    const { userAgent, ipAddress } = this.getClientInfo(req);
+    return await this.authService.register(registerDto, userAgent, ipAddress);
   }
 
   // Refresh access token
@@ -130,8 +151,12 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return await this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    const { userAgent, ipAddress } = this.getClientInfo(req);
+    return await this.authService.login(loginDto, userAgent, ipAddress);
   }
 
   @Post('forgot-password')
@@ -162,8 +187,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async googleLogin(
     @Body() googleLoginDto: GoogleLoginDto,
+    @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    return await this.authService.googleLogin(googleLoginDto);
+    const { userAgent, ipAddress } = this.getClientInfo(req);
+    return await this.authService.googleLogin(
+      googleLoginDto,
+      userAgent,
+      ipAddress,
+    );
   }
 
   @Post('google/register')
