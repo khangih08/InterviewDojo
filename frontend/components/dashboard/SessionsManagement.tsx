@@ -68,7 +68,7 @@ export function SessionsManagement() {
       const result = await userSessionsApi.revokeAllSessions();
       toastSuccess(`All ${result.revoked_count} sessions revoked`);
       logout();
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     } catch (error) {
       toastError("Failed to revoke all sessions");
