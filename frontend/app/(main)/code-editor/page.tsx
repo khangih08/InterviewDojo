@@ -1,10 +1,19 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import CodeEditorPanel from "@/components/interview/CodeEditorPanel";
 
 export default function CodeEditorPage() {
+  return (
+    <Suspense fallback={<CodeEditorPageSkeleton />}>
+      <CodeEditorPageContent />
+    </Suspense>
+  );
+}
+
+function CodeEditorPageContent() {
   const searchParams = useSearchParams();
   const questionId = searchParams.get("questionId");
 
@@ -45,6 +54,18 @@ export default function CodeEditorPage() {
           Go to Interview Room
         </Link>
       </div>
+    </div>
+  );
+}
+
+function CodeEditorPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="h-8 w-40 animate-pulse rounded bg-slate-200" />
+        <div className="h-4 w-96 animate-pulse rounded bg-slate-200" />
+      </div>
+      <div className="h-96 animate-pulse rounded-xl border border-slate-200 bg-slate-100" />
     </div>
   );
 }
