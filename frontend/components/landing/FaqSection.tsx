@@ -11,7 +11,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
     <div className="border-b last:border-0">
       <button
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-4 text-left text-sm font-medium hover:text-primary transition-colors"
+        className="flex w-full items-center justify-between py-4 text-left text-base font-medium hover:text-primary transition-colors"
       >
         {q}
         <ChevronDown
@@ -21,7 +21,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
         />
       </button>
       {open && (
-        <p className="pb-4 text-sm text-muted-foreground leading-relaxed">
+        <p className="pb-4 text-base text-muted-foreground leading-relaxed">
           {a}
         </p>
       )}
