@@ -43,7 +43,7 @@ export default function ComparisonSection() {
         </div>
 
         <div className="overflow-x-auto max-w-3xl mx-auto">
-          <table className="w-full text-sm border-collapse rounded-xl overflow-hidden shadow-sm">
+          <table className="w-full text-base border-collapse rounded-xl overflow-hidden shadow-sm">
             <thead>
               <tr className="bg-primary text-primary-foreground">
                 <th className="text-left px-6 py-4 font-semibold w-1/2">
@@ -85,8 +85,8 @@ export default function ComparisonSection() {
               className="bg-background rounded-xl border p-5 space-y-2 hover:shadow-md transition-shadow"
             >
               {c.icon}
-              <h3 className="font-semibold text-sm">{c.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">
+              <h3 className="font-semibold text-base">{c.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
                 {c.desc}
               </p>
             </div>

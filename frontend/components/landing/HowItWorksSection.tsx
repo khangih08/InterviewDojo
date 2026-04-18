@@ -18,7 +18,9 @@ export default function HowItWorksSection() {
                 {s.step}
               </span>
               <h3 className="font-semibold text-lg">{s.title}</h3>
-              <p className="text-sm text-muted-foreground">{s.description}</p>
+              <p className="text-base text-muted-foreground leading-relaxed">
+                {s.description}
+              </p>
             </div>
           ))}
         </div>
