@@ -1,10 +1,19 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import {
   GoogleLoginDto,
   GoogleRegisterStartDto,
   GoogleRegisterVerifyDto,
 } from './dto/google-auth.dto';
+import { CompleteGoogleProfileDto } from './dto/complete-google-profile.dto';
 import {
   ForgotPasswordRequestDto,
   ForgotPasswordResetDto,
@@ -17,17 +26,31 @@ import { LoginDto } from './dto/login.dto';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {
-  } 
+  constructor(private readonly authService: AuthService) {}
+
+  /**
+   * Extract user agent and IP address from request
+   */
+  private getClientInfo(req: Request): {
+    userAgent?: string;
+    ipAddress?: string;
+  } {
+    const userAgent = req.get('user-agent');
+    const ipAddress =
+      (req.get('x-forwarded-for') as string)?.split(',')[0] ||
+      req.ip ||
+      req.socket.remoteAddress;
+    return { userAgent, ipAddress };
+  }
 
   // Register api
   @Post('register')
   @HttpCode(201)
-  @ApiOperation
-  ({
+  @ApiOperation({
     summary: 'Register a new user',
     description: 'Creates a new user account',
   })
@@ -48,11 +71,13 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-
-  async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
-    return await this.authService.register(registerDto);
+  async register(
+    @Body() registerDto: RegisterDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    const { userAgent, ipAddress } = this.getClientInfo(req);
+    return await this.authService.register(registerDto, userAgent, ipAddress);
   }
-        
 
   // Refresh access token
   @Post('refresh')
@@ -101,7 +126,7 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-  async logout (@GetUser('id') userId: string): Promise<{ message: string }> {
+  async logout(@GetUser('id') userId: string): Promise<{ message: string }> {
     await this.authService.logout(userId);
     return { message: 'Logged out successfully' };
   }
@@ -126,8 +151,12 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return await this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: Request,
+  ): Promise<AuthResponseDto> {
+    const { userAgent, ipAddress } = this.getClientInfo(req);
+    return await this.authService.login(loginDto, userAgent, ipAddress);
   }
 
   @Post('forgot-password')
@@ -158,8 +187,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async googleLogin(
     @Body() googleLoginDto: GoogleLoginDto,
+    @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    return await this.authService.googleLogin(googleLoginDto);
+    const { userAgent, ipAddress } = this.getClientInfo(req);
+    return await this.authService.googleLogin(
+      googleLoginDto,
+      userAgent,
+      ipAddress,
+    );
   }
 
   @Post('google/register')
@@ -176,5 +211,29 @@ export class AuthController {
     @Body() googleRegisterVerifyDto: GoogleRegisterVerifyDto,
   ): Promise<AuthResponseDto> {
     return await this.authService.googleRegisterVerify(googleRegisterVerifyDto);
+  }
+
+  @Post('google/complete-profile')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async completeGoogleProfile(
+    @GetUser('id') userId: string,
+    @Body() completeGoogleProfileDto: CompleteGoogleProfileDto,
+  ): Promise<{
+    message: string;
+    user: {
+      id: string;
+      email: string;
+      full_name: string;
+      target_role: string;
+      experience_level: string;
+      role: string;
+    };
+  }> {
+    return await this.authService.completeGoogleProfile(
+      userId,
+      completeGoogleProfileDto,
+    );
   }
 }

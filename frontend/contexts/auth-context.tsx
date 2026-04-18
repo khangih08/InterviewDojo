@@ -12,6 +12,7 @@ import {
   clearAuthTokens,
   clearUser,
   getAccessToken,
+  getUser,
   saveAuthTokens,
   saveUser,
 } from "@/lib/auth";
@@ -70,24 +71,18 @@ function subscribeAuthStore(onStoreChange: () => void) {
 }
 
 function getClientAuthSnapshot(): AuthSnapshot {
-  const userRaw =
-    typeof window === "undefined"
-      ? null
-      : window.localStorage.getItem("idc_user");
+  const user = getUser<User>();
+  const userRaw = user ? JSON.stringify(user) : null;
   const token = getAccessToken();
 
-  if (
-    cachedSnapshot &&
-    cachedUserRaw === userRaw &&
-    cachedToken === token
-  ) {
+  if (cachedSnapshot && cachedUserRaw === userRaw && cachedToken === token) {
     return cachedSnapshot;
   }
 
   cachedUserRaw = userRaw;
   cachedToken = token;
   cachedSnapshot = {
-    user: userRaw ? (JSON.parse(userRaw) as User) : null,
+    user,
     token,
     hydrated: true,
   };
@@ -119,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshToken: response.refreshToken,
         remember: input.remember,
       });
-      saveUser(response.user);
+      saveUser(response.user, input.remember);
       window.dispatchEvent(new Event("storage"));
     },
     [],

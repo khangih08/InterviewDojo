@@ -15,6 +15,7 @@ import { Question } from './entities/question.entity';
 import { Tag } from './entities/tag.entity';
 import { TagRelation } from './entities/tag_relation.entity';
 import { User } from './entities/user.entity';
+import { Session } from './entities/session.entity';
 
 import { InterviewsController } from './interviews/controller';
 import { InterviewsService } from './interviews/service';
@@ -25,7 +26,6 @@ import { InterviewsService } from './interviews/service';
       isGlobal: true,
     }),
 
-
     MulterModule.register({
       dest: './uploads',
     }),
@@ -35,24 +35,24 @@ import { InterviewsService } from './interviews/service';
     QuestionsModule,
 
     TypeOrmModule.forRootAsync({
-  inject: [ConfigService],
-  useFactory: (configService: ConfigService) => {
-    const dbUrl = configService.get<string>('DATABASE_URL');
-    console.log('Connecting to:', dbUrl); 
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const dbUrl = configService.get<string>('DATABASE_URL');
+        console.log('Connecting to:', dbUrl);
 
-    return {
-      type: 'postgres',
-      url: dbUrl,
-      ssl: false,
-      extra: {
-        ssl: false, 
+        return {
+          type: 'postgres',
+          url: dbUrl,
+          ssl: false,
+          extra: {
+            ssl: false,
+          },
+          entities: [User, Category, Tag, TagRelation, Question, Session],
+          synchronize: true,
+          logging: true,
+        };
       },
-      entities: [User, Category, Tag, TagRelation, Question],
-      synchronize: true,
-      logging: true,
-    };
-  },
-}),
+    }),
   ],
   controllers: [AppController, InterviewsController],
   providers: [AppService, InterviewsService],

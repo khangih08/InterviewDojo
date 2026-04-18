@@ -46,6 +46,17 @@ export type AuthGoogleRegisterVerifyRequest = {
   code: string;
 };
 
+export type CompleteGoogleProfileRequest = {
+  full_name: string;
+  target_role: JobRole;
+  experience_level: ExperienceLevel;
+};
+
+export type CompleteGoogleProfileResponse = {
+  message: string;
+  user: User;
+};
+
 export type AuthGoogleRegisterStartResponse = {
   message: string;
   email: string;
@@ -84,6 +95,7 @@ export type AuthLoginResponse = {
   accessToken?: string;
   refreshToken?: string;
   user: User;
+  requiresProfileCompletion?: boolean;
 };
 
 export type Category = {
@@ -195,4 +207,16 @@ export type Session = {
   status: SessionStatus;
   question_content?: string;
   ai_analysis?: SessionAiAnalysis | null;
+};
+
+// User/Auth Sessions
+export type UserSession = {
+  id: string;
+  device_name: string | null;
+  user_agent: string | null;
+  ip_address: string | null;
+  created_at: string;
+  last_accessed_at: string;
+  expires_at: string | null;
+  is_active: boolean;
 };

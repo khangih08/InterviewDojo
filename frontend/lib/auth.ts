@@ -2,12 +2,15 @@ import { User } from "./api/types";
 
 export const ACCESS_TOKEN_COOKIE = "idc_access_token";
 export const ACCESS_TOKEN_STORAGE = "idc_access_token";
+export const ACCESS_TOKEN_SESSION = "idc_access_token_session";
 export const REFRESH_TOKEN_COOKIE = "idc_refresh_token";
 export const REFRESH_TOKEN_STORAGE = "idc_refresh_token";
+export const REFRESH_TOKEN_SESSION = "idc_refresh_token_session";
 export const USER_STORAGE = "idc_user";
+export const USER_SESSION = "idc_user_session";
 
 type CookieOptions = {
-  days?: number;
+  days?: number | null;
   path?: string;
   sameSite?: "Lax" | "Strict" | "None";
   secure?: boolean;
@@ -20,19 +23,37 @@ function isBrowser() {
 function setCookie(name: string, value: string, options?: CookieOptions) {
   if (!isBrowser()) return;
 
-  const days = options?.days ?? 1;
+  const days = options?.days;
   const path = options?.path ?? "/";
   const sameSite = options?.sameSite ?? "Lax";
   const secure = options?.secure ?? window.location.protocol === "https:";
-  const expires = new Date(Date.now() + days * 864e5).toUTCString();
-
   let cookie = `${encodeURIComponent(name)}=${encodeURIComponent(
-    value
-  )}; Expires=${expires}; Path=${path}; SameSite=${sameSite}`;
+    value,
+  )}; Path=${path}; SameSite=${sameSite}`;
+
+  if (typeof days === "number") {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    cookie += `; Expires=${expires}`;
+  }
 
   if (secure) cookie += "; Secure";
 
   document.cookie = cookie;
+}
+
+function shouldPersist(
+  remember: boolean | undefined,
+  persistentKey: string,
+): boolean {
+  if (typeof remember === "boolean") {
+    return remember;
+  }
+
+  if (!isBrowser()) {
+    return false;
+  }
+
+  return window.localStorage.getItem(persistentKey) !== null;
 }
 
 function getCookie(name: string) {
@@ -53,22 +74,42 @@ function deleteCookie(name: string) {
   if (!isBrowser()) return;
 
   document.cookie = `${encodeURIComponent(
-    name
+    name,
   )}=; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Lax`;
 }
 
-export function saveAccessToken(token: string, remember = false) {
+export function saveAccessToken(token: string, remember?: boolean) {
   if (!isBrowser()) return;
 
-  setCookie(ACCESS_TOKEN_COOKIE, token, { days: remember ? 30 : 1 });
-  window.localStorage.setItem(ACCESS_TOKEN_STORAGE, token);
+  const persist = shouldPersist(remember, ACCESS_TOKEN_STORAGE);
+
+  setCookie(ACCESS_TOKEN_COOKIE, token, { days: persist ? 30 : null });
+
+  if (persist) {
+    window.localStorage.setItem(ACCESS_TOKEN_STORAGE, token);
+    window.sessionStorage.removeItem(ACCESS_TOKEN_SESSION);
+    return;
+  }
+
+  window.localStorage.removeItem(ACCESS_TOKEN_STORAGE);
+  window.sessionStorage.setItem(ACCESS_TOKEN_SESSION, token);
 }
 
-export function saveRefreshToken(token: string, remember = false) {
+export function saveRefreshToken(token: string, remember?: boolean) {
   if (!isBrowser()) return;
 
-  setCookie(REFRESH_TOKEN_COOKIE, token, { days: remember ? 30 : 7 });
-  window.localStorage.setItem(REFRESH_TOKEN_STORAGE, token);
+  const persist = shouldPersist(remember, REFRESH_TOKEN_STORAGE);
+
+  setCookie(REFRESH_TOKEN_COOKIE, token, { days: persist ? 30 : null });
+
+  if (persist) {
+    window.localStorage.setItem(REFRESH_TOKEN_STORAGE, token);
+    window.sessionStorage.removeItem(REFRESH_TOKEN_SESSION);
+    return;
+  }
+
+  window.localStorage.removeItem(REFRESH_TOKEN_STORAGE);
+  window.sessionStorage.setItem(REFRESH_TOKEN_SESSION, token);
 }
 
 export function getAccessToken() {
@@ -76,6 +117,7 @@ export function getAccessToken() {
 
   return (
     getCookie(ACCESS_TOKEN_COOKIE) ??
+    window.sessionStorage.getItem(ACCESS_TOKEN_SESSION) ??
     window.localStorage.getItem(ACCESS_TOKEN_STORAGE)
   );
 }
@@ -85,6 +127,7 @@ export function getRefreshToken() {
 
   return (
     getCookie(REFRESH_TOKEN_COOKIE) ??
+    window.sessionStorage.getItem(REFRESH_TOKEN_SESSION) ??
     window.localStorage.getItem(REFRESH_TOKEN_STORAGE)
   );
 }
@@ -94,6 +137,7 @@ export function clearAccessToken() {
 
   deleteCookie(ACCESS_TOKEN_COOKIE);
   window.localStorage.removeItem(ACCESS_TOKEN_STORAGE);
+  window.sessionStorage.removeItem(ACCESS_TOKEN_SESSION);
 }
 
 export function clearRefreshToken() {
@@ -101,6 +145,7 @@ export function clearRefreshToken() {
 
   deleteCookie(REFRESH_TOKEN_COOKIE);
   window.localStorage.removeItem(REFRESH_TOKEN_STORAGE);
+  window.sessionStorage.removeItem(REFRESH_TOKEN_SESSION);
 }
 
 export function saveAuthTokens(input: {
@@ -119,16 +164,28 @@ export function clearAuthTokens() {
   clearRefreshToken();
 }
 
-export function saveUser(user: User) {
+export function saveUser(user: User, remember?: boolean) {
   if (!isBrowser()) return;
 
-  window.localStorage.setItem(USER_STORAGE, JSON.stringify(user));
+  const persist = shouldPersist(remember, USER_STORAGE);
+  const serialized = JSON.stringify(user);
+
+  if (persist) {
+    window.localStorage.setItem(USER_STORAGE, serialized);
+    window.sessionStorage.removeItem(USER_SESSION);
+    return;
+  }
+
+  window.localStorage.removeItem(USER_STORAGE);
+  window.sessionStorage.setItem(USER_SESSION, serialized);
 }
 
 export function getUser<T = User>() {
   if (!isBrowser()) return null as T | null;
 
-  const raw = window.localStorage.getItem(USER_STORAGE);
+  const raw =
+    window.sessionStorage.getItem(USER_SESSION) ??
+    window.localStorage.getItem(USER_STORAGE);
   if (!raw) return null as T | null;
 
   try {
@@ -142,6 +199,7 @@ export function clearUser() {
   if (!isBrowser()) return;
 
   window.localStorage.removeItem(USER_STORAGE);
+  window.sessionStorage.removeItem(USER_SESSION);
 }
 
 export function logout() {

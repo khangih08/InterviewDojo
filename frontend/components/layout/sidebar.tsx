@@ -9,6 +9,7 @@ import {
   Video,
   UserCog,
   BarChart3,
+  Smartphone,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -29,6 +30,7 @@ const navItems: Array<{
   { href: "/questions", label: "Questions", icon: CircleHelp, tone: "purple" },
   { href: "/interview", label: "Interview", icon: Video, tone: "amber" },
   { href: "/result", label: "Result", icon: BarChart3, tone: "emerald" },
+  { href: "/sessions", label: "Sessions", icon: Smartphone, tone: "rose" },
   { href: "/admin", label: "Admin", icon: UserCog, tone: "blue" },
 ];
 

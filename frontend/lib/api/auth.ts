@@ -1,4 +1,9 @@
-import { mockLogin, mockForgotPassword, mockResetPassword, mockVerifyPasswordCode } from "@/lib/mocks/auth";
+import {
+  mockLogin,
+  mockForgotPassword,
+  mockResetPassword,
+  mockVerifyPasswordCode,
+} from "@/lib/mocks/auth";
 import { shouldUseMocks } from "@/lib/api/mock";
 import { http, toApiError } from "@/lib/api/http";
 import { getRefreshToken } from "@/lib/auth";
@@ -7,6 +12,8 @@ import type {
   AuthGoogleRegisterStartRequest,
   AuthGoogleRegisterStartResponse,
   AuthGoogleRegisterVerifyRequest,
+  CompleteGoogleProfileRequest,
+  CompleteGoogleProfileResponse,
   AuthForgotPasswordRequest,
   AuthForgotPasswordVerifyRequest,
   AuthForgotPasswordResetRequest,
@@ -16,7 +23,9 @@ import type {
   AuthRegisterRequest,
 } from "@/lib/api/types";
 
-export async function login(input: AuthLoginRequest): Promise<AuthLoginResponse> {
+export async function login(
+  input: AuthLoginRequest,
+): Promise<AuthLoginResponse> {
   if (shouldUseMocks()) {
     return mockLogin(input);
   }
@@ -105,6 +114,20 @@ export async function googleRegisterVerify(
   try {
     const response = await http.post<AuthLoginResponse>(
       "/auth/google/register/verify",
+      input,
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(toApiError(error).message);
+  }
+}
+
+export async function completeGoogleProfile(
+  input: CompleteGoogleProfileRequest,
+): Promise<CompleteGoogleProfileResponse> {
+  try {
+    const response = await http.post<CompleteGoogleProfileResponse>(
+      "/auth/google/complete-profile",
       input,
     );
     return response.data;

@@ -8,7 +8,7 @@ import {
   saveUser,
 } from "@/lib/auth";
 import type { AuthLoginResponse } from "@/lib/api/types";
-import { toastError } from "@/lib/toast";
+import { toastError, toastInfo } from "@/lib/toast";
 
 export type ApiError = {
   status: number;
@@ -29,7 +29,8 @@ function normalizeApiMessage(message: unknown, fallback: string) {
 }
 
 export function createHttpClient(): AxiosInstance {
-  const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+  const baseURL =
+    process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
   const instance = axios.create({
     baseURL,
@@ -97,8 +98,14 @@ export function createHttpClient(): AxiosInstance {
       const status = error.response?.status;
       const requestUrl = String(originalConfig?.url ?? "");
       const isRefreshCall = requestUrl.includes("/auth/refresh");
+      const hasAuthSession = Boolean(getAccessToken() || getRefreshToken());
 
-      if (status === 401 && !originalConfig?._retry && !isRefreshCall) {
+      if (
+        status === 401 &&
+        hasAuthSession &&
+        !originalConfig?._retry &&
+        !isRefreshCall
+      ) {
         originalConfig._retry = true;
 
         try {
@@ -120,6 +127,8 @@ export function createHttpClient(): AxiosInstance {
 
         clearAuthTokens();
         clearUser();
+        originalConfig.skipErrorToast = true;
+        toastInfo("Your login session has expired. Please sign in again.");
         if (typeof window !== "undefined") {
           window.dispatchEvent(new Event("storage"));
         }
@@ -154,13 +163,13 @@ export function toApiError(error: unknown): ApiError {
     const fallbackMessage =
       axiosError.code === "ERR_NETWORK"
         ? "Cannot reach the server. Make sure the backend is running."
-        : axiosError.message ?? "Request failed";
+        : (axiosError.message ?? "Request failed");
 
     return {
       status: axiosError.response?.status ?? 0,
       message: normalizeApiMessage(
         axiosError.response?.data?.message,
-        fallbackMessage
+        fallbackMessage,
       ),
       details: axiosError.response?.data,
     };

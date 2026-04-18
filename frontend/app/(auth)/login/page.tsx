@@ -5,7 +5,10 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
-import { googleLogin as googleLoginRequest, login as loginRequest } from "@/lib/api/auth";
+import {
+  googleLogin as googleLoginRequest,
+  login as loginRequest,
+} from "@/lib/api/auth";
 import { saveAuthTokens, saveUser } from "@/lib/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
@@ -33,6 +36,7 @@ function LoginPageContent() {
   const [form, setForm] = useState({
     email: "",
     password: "",
+    remember: false,
   });
 
   const handleChange = (field: "email" | "password", value: string) => {
@@ -56,8 +60,12 @@ function LoginPageContent() {
         throw new Error("Login failed. No access token was returned.");
       }
 
-      saveAuthTokens({ accessToken: token, refreshToken: result.refreshToken });
-      saveUser(result.user);
+      saveAuthTokens({
+        accessToken: token,
+        refreshToken: result.refreshToken,
+        remember: form.remember,
+      });
+      saveUser(result.user, form.remember);
 
       const next = searchParams.get("next");
       router.push(next || "/dashboard");
@@ -89,10 +97,25 @@ function LoginPageContent() {
       if (!token) {
         throw new Error("Login failed. No access token was returned.");
       }
-      saveAuthTokens({ accessToken: token, refreshToken: result.refreshToken });
-      saveUser(result.user);
-      const next = searchParams.get("next");
-      router.push(next || "/dashboard");
+      saveAuthTokens({
+        accessToken: token,
+        refreshToken: result.refreshToken,
+        remember: form.remember,
+      });
+      saveUser(result.user, form.remember);
+
+      const next = searchParams.get("next") || "/dashboard";
+      if (result.requiresProfileCompletion) {
+        const params = new URLSearchParams({
+          next,
+          remember: form.remember ? "1" : "0",
+        });
+        router.push(`/google-onboarding?${params.toString()}`);
+        router.refresh();
+        return;
+      }
+
+      router.push(next);
       router.refresh();
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : "";
@@ -176,6 +199,23 @@ function LoginPageContent() {
                   <Eye className="h-4 w-4" />
                 )}
               </button>
+            </div>
+
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                id="remember"
+                type="checkbox"
+                aria-label="Remember me"
+                title="Remember me"
+                checked={form.remember}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, remember: e.target.checked }))
+                }
+                className="h-4 w-4 rounded border-zinc-300 text-violet-600 focus:ring-violet-500"
+              />
+              <Label htmlFor="remember" className="text-sm font-normal">
+                Remember me
+              </Label>
             </div>
           </div>
 
