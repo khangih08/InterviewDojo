@@ -7,21 +7,14 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
 import {
   googleLogin as googleLoginRequest,
-  googleRegisterStart,
-  googleRegisterVerify,
   register as registerRequest,
 } from "@/lib/api/auth";
 import { saveAuthTokens, saveUser } from "@/lib/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
-import type {
-  AuthGoogleRegisterStartResponse,
-  ExperienceLevel,
-  JobRole,
-} from "@/lib/api/types";
+import type { ExperienceLevel, JobRole } from "@/lib/api/types";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -90,8 +83,9 @@ function RegisterForm() {
         experience_level: form.experienceLevel,
       });
       router.push("/login?registered=1");
-    } catch (err: any) {
-      setError(err.message || "Registration failed.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      setError(message || "Registration failed.");
     } finally {
       setLoading(false);
     }
@@ -107,17 +101,24 @@ function RegisterForm() {
       });
       saveUser(result.user);
 
-      const next = searchParams.get("next"); // Sử dụng searchParams an toàn nhờ Suspense ở ngoài
-      router.push(next || "/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Google login failed.");
+      const next = searchParams.get("next") || "/dashboard";
+      if (result.requiresProfileCompletion) {
+        const params = new URLSearchParams({
+          next,
+          remember: "0",
+        });
+        router.push(`/google-onboarding?${params.toString()}`);
+        return;
+      }
+
+      router.push(next);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      setError(message || "Google login failed.");
     } finally {
       setLoading(false);
     }
   };
-
-  const isPasswordQualified = (pwd: string) =>
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/.test(pwd);
 
   return (
     <Card className="border-none shadow-none bg-transparent">

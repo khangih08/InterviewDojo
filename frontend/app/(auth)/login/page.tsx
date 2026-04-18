@@ -103,8 +103,19 @@ function LoginPageContent() {
         remember: form.remember,
       });
       saveUser(result.user, form.remember);
-      const next = searchParams.get("next");
-      router.push(next || "/dashboard");
+
+      const next = searchParams.get("next") || "/dashboard";
+      if (result.requiresProfileCompletion) {
+        const params = new URLSearchParams({
+          next,
+          remember: form.remember ? "1" : "0",
+        });
+        router.push(`/google-onboarding?${params.toString()}`);
+        router.refresh();
+        return;
+      }
+
+      router.push(next);
       router.refresh();
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : "";

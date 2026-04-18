@@ -2,7 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { ACCESS_TOKEN_COOKIE } from "@/lib/auth";
 
-const protectedPrefixes = ["/dashboard", "/questions", "/interview", "/admin"];
+const protectedPrefixes = [
+  "/dashboard",
+  "/questions",
+  "/interview",
+  "/admin",
+  "/google-onboarding",
+];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -45,5 +51,6 @@ export const config = {
     "/questions/:path*",
     "/interview/:path*",
     "/admin/:path*",
+    "/google-onboarding",
   ],
 };

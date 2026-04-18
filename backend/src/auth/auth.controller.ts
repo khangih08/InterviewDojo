@@ -1,10 +1,18 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { RegisterDto } from './dto/register.dto';
 import {
   GoogleLoginDto,
   GoogleRegisterStartDto,
   GoogleRegisterVerifyDto,
 } from './dto/google-auth.dto';
+import { CompleteGoogleProfileDto } from './dto/complete-google-profile.dto';
 import {
   ForgotPasswordRequestDto,
   ForgotPasswordResetDto,
@@ -20,14 +28,12 @@ import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {
-  } 
+  constructor(private readonly authService: AuthService) {}
 
   // Register api
   @Post('register')
   @HttpCode(201)
-  @ApiOperation
-  ({
+  @ApiOperation({
     summary: 'Register a new user',
     description: 'Creates a new user account',
   })
@@ -48,11 +54,9 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
     return await this.authService.register(registerDto);
   }
-        
 
   // Refresh access token
   @Post('refresh')
@@ -101,7 +105,7 @@ export class AuthController {
     status: 429,
     description: 'Too Many Requests. Rate limit exceeded',
   })
-  async logout (@GetUser('id') userId: string): Promise<{ message: string }> {
+  async logout(@GetUser('id') userId: string): Promise<{ message: string }> {
     await this.authService.logout(userId);
     return { message: 'Logged out successfully' };
   }
@@ -176,5 +180,29 @@ export class AuthController {
     @Body() googleRegisterVerifyDto: GoogleRegisterVerifyDto,
   ): Promise<AuthResponseDto> {
     return await this.authService.googleRegisterVerify(googleRegisterVerifyDto);
+  }
+
+  @Post('google/complete-profile')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async completeGoogleProfile(
+    @GetUser('id') userId: string,
+    @Body() completeGoogleProfileDto: CompleteGoogleProfileDto,
+  ): Promise<{
+    message: string;
+    user: {
+      id: string;
+      email: string;
+      full_name: string;
+      target_role: string;
+      experience_level: string;
+      role: string;
+    };
+  }> {
+    return await this.authService.completeGoogleProfile(
+      userId,
+      completeGoogleProfileDto,
+    );
   }
 }

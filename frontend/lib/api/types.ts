@@ -46,6 +46,17 @@ export type AuthGoogleRegisterVerifyRequest = {
   code: string;
 };
 
+export type CompleteGoogleProfileRequest = {
+  full_name: string;
+  target_role: JobRole;
+  experience_level: ExperienceLevel;
+};
+
+export type CompleteGoogleProfileResponse = {
+  message: string;
+  user: User;
+};
+
 export type AuthGoogleRegisterStartResponse = {
   message: string;
   email: string;
@@ -84,6 +95,7 @@ export type AuthLoginResponse = {
   accessToken?: string;
   refreshToken?: string;
   user: User;
+  requiresProfileCompletion?: boolean;
 };
 
 export type Category = {
