@@ -4,10 +4,12 @@ import { ACCESS_TOKEN_COOKIE } from "@/lib/auth";
 
 const protectedPrefixes = [
   "/dashboard",
+  "/history",
   "/questions",
   "/interview",
   "/admin",
   "/sessions",
+  "/settings",
   "/google-onboarding",
 ];
 
@@ -49,10 +51,12 @@ export const config = {
     "/login",
     "/register",
     "/dashboard/:path*",
+    "/history/:path*",
     "/questions/:path*",
     "/interview/:path*",
     "/admin/:path*",
     "/sessions/:path*",
+    "/settings/:path*",
     "/google-onboarding",
   ],
 };
