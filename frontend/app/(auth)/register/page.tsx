@@ -5,11 +5,11 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 
-import { 
-  googleLogin as googleLoginRequest, 
-  googleRegisterStart, 
-  googleRegisterVerify, 
-  register as registerRequest 
+import {
+  googleLogin as googleLoginRequest,
+  googleRegisterStart,
+  googleRegisterVerify,
+  register as registerRequest,
 } from "@/lib/api/auth";
 import { saveAuthTokens, saveUser } from "@/lib/auth";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
@@ -56,7 +56,7 @@ const experienceOptions: { value: ExperienceLevel; label: string }[] = [
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams(); // Hook gây lỗi build nếu đứng một mình
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -77,8 +77,9 @@ function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) return setError("Passwords do not match.");
-    
+    if (form.password !== form.confirmPassword)
+      return setError("Passwords do not match.");
+
     setLoading(true);
     try {
       await registerRequest({
@@ -105,7 +106,7 @@ function RegisterForm() {
         refreshToken: result.refreshToken,
       });
       saveUser(result.user);
-      
+
       const next = searchParams.get("next"); // Sử dụng searchParams an toàn nhờ Suspense ở ngoài
       router.push(next || "/dashboard");
     } catch (err: any) {
@@ -121,12 +122,18 @@ function RegisterForm() {
   return (
     <Card className="border-none shadow-none bg-transparent">
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl font-semibold">Create your account</CardTitle>
+        <CardTitle className="text-2xl font-semibold">
+          Create your account
+        </CardTitle>
         <CardDescription>Fill in the details to get started.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <GoogleAuthButton label="Google" onSuccess={handleGoogleLogin} onError={setError} />
-        
+        <GoogleAuthButton
+          label="Google"
+          onSuccess={handleGoogleLogin}
+          onError={setError}
+        />
+
         {error && (
           <div className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-700">
             <AlertCircle className="h-4 w-4" /> {error}
@@ -134,28 +141,78 @@ function RegisterForm() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input placeholder="Email" value={form.email} onChange={(e) => handleChange("email", e.target.value)} required />
-          <Input placeholder="Full Name" value={form.full_name} onChange={(e) => handleChange("full_name", e.target.value)} required />
-          
+          <Input
+            placeholder="Email"
+            value={form.email}
+            onChange={(e) => handleChange("email", e.target.value)}
+            required
+          />
+          <Input
+            placeholder="Full Name"
+            value={form.full_name}
+            onChange={(e) => handleChange("full_name", e.target.value)}
+            required
+          />
+
           <div className="grid grid-cols-2 gap-4">
-            <select value={form.targetRole} onChange={(e) => handleChange("targetRole", e.target.value)} className="h-10 rounded-md border text-sm px-2">
-              {jobRoleOptions.map(r => <option key={r} value={r}>{r}</option>)}
+            <select
+              value={form.targetRole}
+              onChange={(e) => handleChange("targetRole", e.target.value)}
+              className="h-10 rounded-md border text-sm px-2"
+              aria-label="Target role"
+              title="Target role"
+            >
+              {jobRoleOptions.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
             </select>
-            <select value={form.experienceLevel} onChange={(e) => handleChange("experienceLevel", e.target.value)} className="h-10 rounded-md border text-sm px-2">
-              {experienceOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <select
+              value={form.experienceLevel}
+              onChange={(e) => handleChange("experienceLevel", e.target.value)}
+              className="h-10 rounded-md border text-sm px-2"
+              aria-label="Experience level"
+              title="Experience level"
+            >
+              {experienceOptions.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="relative">
-            <Input type={showPassword ? "text" : "password"} placeholder="Password" value={form.password} onChange={(e) => handleChange("password", e.target.value)} required />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-zinc-400">
+            <Input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              value={form.password}
+              onChange={(e) => handleChange("password", e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-3 text-zinc-400"
+            >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
 
           <div className="relative">
-            <Input type={showConfirm ? "text" : "password"} placeholder="Confirm Password" value={form.confirmPassword} onChange={(e) => handleChange("confirmPassword", e.target.value)} required />
-            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-3 text-zinc-400">
+            <Input
+              type={showConfirm ? "text" : "password"}
+              placeholder="Confirm Password"
+              value={form.confirmPassword}
+              onChange={(e) => handleChange("confirmPassword", e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3 top-3 text-zinc-400"
+            >
               {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
@@ -168,7 +225,10 @@ function RegisterForm() {
       <CardFooter className="justify-center">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-violet-600 hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-violet-600 hover:underline"
+          >
             Sign in
           </Link>
         </p>
@@ -179,14 +239,14 @@ function RegisterForm() {
 
 export default function RegisterPage() {
   return (
-    <div className="container mx-auto max-w-lg py-2">
-      <Suspense fallback={
+    <Suspense
+      fallback={
         <div className="flex h-40 items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-zinc-500" />
         </div>
-      }>
-        <RegisterForm />
-      </Suspense>
-    </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 }

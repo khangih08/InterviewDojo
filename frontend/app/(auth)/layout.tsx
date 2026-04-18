@@ -87,11 +87,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
               </span>
             </Link>
 
-            <div className="rounded-3xl border border-zinc-200/70 bg-white/85 p-1 shadow-[0_16px_50px_-20px_rgba(15,23,42,0.25)] backdrop-blur dark:border-zinc-800/70 dark:bg-zinc-900/80">
-              <section className="rounded-[22px] bg-white dark:bg-zinc-900">
-                {children}
-              </section>
-            </div>
+            {children}
           </div>
         </section>
       </div>
