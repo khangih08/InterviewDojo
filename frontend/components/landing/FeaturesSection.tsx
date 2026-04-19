@@ -28,8 +28,8 @@ export default function FeaturesSection() {
           Everything you need to ace it
         </h2>
         <p className="text-muted-foreground max-w-md mx-auto">
-          From coding rounds to culture-fit questions, we&apos;ve got every
-          stage of the interview covered.
+          From coding rounds to culture-fit questions, we&apos;ve got every stage of
+          the interview covered.
         </p>
       </div>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -37,12 +37,10 @@ export default function FeaturesSection() {
           <Card key={f.title} className="hover:shadow-md transition-shadow">
             <CardHeader className="pb-2">
               <div className="mb-2">{icons[f.title]}</div>
-              <CardTitle className="text-lg">{f.title}</CardTitle>
+              <CardTitle className="text-base">{f.title}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-base text-muted-foreground leading-relaxed">
-                {f.description}
-              </p>
+              <p className="text-sm text-muted-foreground">{f.description}</p>
             </CardContent>
           </Card>
         ))}

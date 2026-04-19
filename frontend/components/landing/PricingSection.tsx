@@ -25,17 +25,17 @@ export default function PricingSection() {
               className={`flex flex-col ${p.highlight ? "border-primary shadow-lg" : ""}`}
             >
               {p.highlight && (
-                <div className="bg-primary text-primary-foreground text-sm font-semibold text-center py-1 rounded-t-xl">
+                <div className="bg-primary text-primary-foreground text-xs font-semibold text-center py-1 rounded-t-xl">
                   Most popular
                 </div>
               )}
               <CardHeader>
-                <p className="text-base font-medium text-muted-foreground">
+                <p className="text-sm font-medium text-muted-foreground">
                   {p.name}
                 </p>
                 <div className="flex items-baseline gap-1">
                   <span className="text-4xl font-extrabold">{p.price}</span>
-                  <span className="text-base text-muted-foreground">
+                  <span className="text-sm text-muted-foreground">
                     {p.period}
                   </span>
                 </div>
@@ -43,10 +43,7 @@ export default function PricingSection() {
               <CardContent className="flex flex-col flex-1 gap-6">
                 <ul className="space-y-2 flex-1">
                   {p.features.map((feat) => (
-                    <li
-                      key={feat}
-                      className="flex items-center gap-2 text-base"
-                    >
+                    <li key={feat} className="flex items-center gap-2 text-sm">
                       <UserCheck className="h-4 w-4 text-primary shrink-0" />
                       {feat}
                     </li>

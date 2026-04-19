@@ -55,7 +55,7 @@ export default function Footer() {
                 InterviewDojo
               </span>
             </Link>
-            <p className="text-base text-muted-foreground leading-relaxed mb-6 max-w-xs">
+            <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
               AI-powered mock interviews to help you practice, improve, and land
               your dream job with confidence.
             </p>
@@ -78,7 +78,7 @@ export default function Footer() {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h3 className="text-base font-semibold text-foreground mb-4">
+              <h3 className="text-sm font-semibold text-foreground mb-4">
                 {category}
               </h3>
               <ul className="space-y-3">
@@ -86,7 +86,7 @@ export default function Footer() {
                   <li key={label}>
                     <Link
                       href={href}
-                      className="text-base text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {label}
                     </Link>
@@ -100,7 +100,7 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="border-t">
-        <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
+        <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
           <p>
             © {new Date().getFullYear()} InterviewDojo. All rights reserved.
           </p>
