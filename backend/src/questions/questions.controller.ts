@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Body, Param, Query, ParseUUIDPipe, Delete, Patch, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { QuestionsService } from './questions.service';
 import { CreateQuestionDto } from './dto/create_question.dto';
 import { GetQuestionQueryDto } from './dto/get_question_query.dto';
@@ -27,7 +27,7 @@ export class QuestionsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all questions with filters and pagination' })
-  findAll(@Query() query: GetQuestionQueryDto) {
+  findAll(@Query() query: any) {
     return this.questionsService.findAll(query);
   }
 

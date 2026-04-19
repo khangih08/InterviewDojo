@@ -19,19 +19,16 @@ async function bootstrap() {
   console.log('🧹 Bước 1: Đang dọn dẹp sạch bóng dữ liệu cũ...');
   try {
     await questionRepo.query('DELETE FROM "tag_relations"');
-
-
     await questionRepo.createQueryBuilder().delete().from(Question).execute();
     await tagRepo.createQueryBuilder().delete().from(Tag).execute();
     await categoryRepo.createQueryBuilder().delete().from(Category).execute();
-
   } catch (err) {
     console.log('⚠️ Thông báo: Hệ thống đang làm sạch hoặc bảng đã trống.');
   }
 
-  console.log('🚀 Bước 2: Đang đọc file dữ liệu...');
+  console.log('🚀 Bước 2: Đang đọc file dữ liệu mới...');
 
-  const fileName = 'dataquestion.json';
+  const fileName = 'Kho_Data_IT_Full_Dap_An.json';
   const filePath = path.join(process.cwd(), fileName);
 
   if (!fs.existsSync(filePath)) {
@@ -50,9 +47,14 @@ async function bootstrap() {
     if (t.includes('HTML')) return 'HTML';
     if (t.includes('CSS') || t.includes('SASS')) return 'CSS';
     if (t.includes('REACT')) return 'ReactJS';
-    if (t.includes('NODE')) return 'NodeJS';
+    if (t.includes('NODE') || t.includes('NEST') || t.includes('EXPRESS')) return 'NodeJS';
     if (t.includes('JAVASCRIPT') || t.includes(' JS ')) return 'Javascript';
     if (t.includes('TYPESCRIPT') || t.includes(' TS ')) return 'TypeScript';
+    if (t.includes('JAVA ') || t.includes('SPRING')) return 'Java';
+    if (t.includes('PYTHON') || t.includes('DJANGO')) return 'Python';
+    if (t.includes('SQL') || t.includes('DATABASE') || t.includes('MONGO')) return 'Database';
+    if (t.includes('ANDROID') || t.includes('KOTLIN')) return 'Android';
+    if (t.includes('IOS') || t.includes('SWIFT')) return 'iOS';
     return 'Tổng hợp IT';
   };
 
@@ -76,7 +78,7 @@ async function bootstrap() {
 
       await questionRepo.save({
         content: item.question,
-        sampleAnswer: item.answer_text || 'Chưa có đáp án mẫu',
+        sampleAnswer: item.answer_html || item.answer_text || 'Chưa có đáp án mẫu',
         difficultyLevel: level,
         category: category,
       });
@@ -91,8 +93,8 @@ async function bootstrap() {
   }
 
   console.log(`\n🎉 Done`);
-  console.log(`✅ Đã nạp: ${successCount}/${questionsData.length} câu hỏi mới.`);
-  console.log(`📁 Các Tab đã tạo: ${Array.from(categoriesMap.keys()).join(', ')}`);
+  console.log(`✅ Đã nạp: ${successCount}/${questionsData.length} câu hỏi mới lên Neon DB.`);
+  console.log(`📁 Các Category đã tạo: ${Array.from(categoriesMap.keys()).join(', ')}`);
 
   await app.close();
 }

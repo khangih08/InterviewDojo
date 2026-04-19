@@ -1,48 +1,17 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsString, Min } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class GetQuestionQueryDto {
-    @ApiPropertyOptional({
-        description: 'Search in question content'
-    })
-    @IsOptional()
-    @IsString()
-    search?: string;
-
-    @ApiPropertyOptional({
-        description: 'Filter by category UUID'
-    })
+    @ApiPropertyOptional()
     @IsOptional()
     @IsString()
     categoryId?: string;
 
-    @ApiPropertyOptional({
-        description: 'Filter by tag UUID'
-    })
+    @ApiPropertyOptional()
     @IsOptional()
-    @IsString()
-    tagId?: string;
+    page?: any;
 
-    @ApiPropertyOptional({ 
-        description: 'Filter by difficulty (1, 2, 3, 4, 5)' 
-    })
+    @ApiPropertyOptional()
     @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    difficulty?: number;
-
-    @ApiPropertyOptional({ default: 1 })
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    page?: number = 1;
-
-    @ApiPropertyOptional({ default: 10 })
-    @IsOptional()
-    @Type(() => Number)
-    @IsInt()
-    @Min(1)
-    limit?: number = 10;
+    limit?: any;
 }

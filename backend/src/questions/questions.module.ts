@@ -13,5 +13,6 @@ import { TagRelation } from '../entities/tag_relation.entity';
   ],
   controllers: [QuestionsController],
   providers: [QuestionsService],
+  exports: [QuestionsService],
 })
 export class QuestionsModule {}

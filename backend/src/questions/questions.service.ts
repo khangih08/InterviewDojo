@@ -7,7 +7,6 @@ import { TagRelation } from 'src/entities/tag_relation.entity';
 import { Category } from '../entities/category.entity';
 import { CreateQuestionDto } from './dto/create_question.dto';
 import { UpdateQuestionDto } from './dto/update_question.dto';
-import { GetQuestionQueryDto } from './dto/get_question_query.dto';
 import { QuestionResponseDto } from './dto/question_response.dto';
 
 @Injectable()
@@ -45,35 +44,29 @@ export class QuestionsService {
     return this.mapToResponse(savedQuestion);
   }
 
-  async findAll(query: GetQuestionQueryDto) {
-    // CHỈ KHAI BÁO 1 LẦN DUY NHẤT Ở ĐÂY
-    const { search, categoryId, difficulty, page = 1, limit = 20 } = query;
+  async findAll(query: any) {
+    const { categoryId } = query;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
 
     const queryBuilder = this.questionRepository
       .createQueryBuilder('question')
       .leftJoinAndSelect('question.category', 'category')
       .leftJoinAndSelect('question.tagRelations', 'tagRelations')
-      .leftJoinAndSelect('tagRelations.tag', 'tag')
-      .skip((page - 1) * limit)
-      .take(limit);
+      .leftJoinAndSelect('tagRelations.tag', 'tag');
 
-    if (search) {
-      queryBuilder.andWhere('question.content ILike :search', { search: `%${search}%` });
-    }
-
-    if (categoryId) {
+    if (categoryId && categoryId !== 'all' && categoryId !== '') {
       queryBuilder.andWhere('category.id = :categoryId', { categoryId });
     }
 
-    if (difficulty) {
-      queryBuilder.andWhere('question.difficultyLevel = :difficulty', { difficulty });
-    }
+    queryBuilder.orderBy('question.createdAt', 'DESC');
+    queryBuilder.skip((page - 1) * limit).take(limit);
 
     const [items, total] = await queryBuilder.getManyAndCount();
 
     return {
-      data: items.map((q) => this.mapToResponse(q)),
-      meta: { total, page, limit },
+      items: items.map((q) => this.mapToResponse(q)),
+      total: total,
     };
   }
 
@@ -122,11 +115,38 @@ export class QuestionsService {
     return { message: `Question ${id} has been deleted` };
   }
 
+  /**
+   * Chuyển đổi Entity sang DTO và xử lý làm sạch dữ liệu JSON từ DB
+   */
   private mapToResponse(q: Question): QuestionResponseDto {
+    let cleanAnswer = q.sampleAnswer || '';
+
+    // KIỂM TRA VÀ XỬ LÝ JSON NẾU CÓ
+    if (cleanAnswer.trim().startsWith('{') || cleanAnswer.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(cleanAnswer);
+
+        // Nếu là định dạng Editor.js (có mảng blocks)
+        if (parsed.blocks && Array.isArray(parsed.blocks)) {
+          cleanAnswer = parsed.blocks
+            .map((block: any) => block.data?.text || '')
+            .filter((text: string) => text.length > 0)
+            .join('\n'); // Hoặc dùng '<br>' nếu bạn hiển thị HTML trực tiếp
+        }
+        // Nếu là một JSON object đơn giản, lấy giá trị chuỗi
+        else if (typeof parsed === 'object') {
+          cleanAnswer = parsed.text || parsed.content || JSON.stringify(parsed);
+        }
+      } catch (e) {
+        // Nếu parse lỗi, giữ nguyên text gốc
+        cleanAnswer = q.sampleAnswer || '';
+      }
+    }
+
     return {
       id: q.id,
       content: q.content,
-      sampleAnswer: q.sampleAnswer || '',
+      sampleAnswer: cleanAnswer,
       difficultyLevel: q.difficultyLevel,
       categoryId: q.category?.id,
       categoryName: q.category?.name ?? 'Uncategorized',

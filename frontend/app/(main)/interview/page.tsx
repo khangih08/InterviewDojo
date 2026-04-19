@@ -1,28 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Tag } from "lucide-react";
+import { Mic, Square, Loader2, User, Bot, Zap, FileText, CheckCircle2, Tag } from "lucide-react";
 
-import RecorderPanel from "@/components/interview/RecorderPanel";
-import { getQuestionById } from "@/lib/api/questions";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-interface QuestionData {
-  id: string;
+interface Message {
+  role: "user" | "assistant" | "system";
   content: string;
-  sampleAnswer: string;
-  difficultyLevel: number;
-  categoryId: string;
-  categoryName: string;
-  tags: string[];
-  createdAt: string;
 }
-
-const DIFF_COLOR: Record<string, string> = {
-  easy: "bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/30",
-  medium: "bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30",
-  hard: "bg-rose-500/15 text-rose-300 ring-1 ring-rose-500/30",
-};
 
 function Glass({
   children,
@@ -32,9 +19,7 @@ function Glass({
   className?: string;
 }) {
   return (
-    <div
-      className={`rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-xl backdrop-blur-md ${className}`}
-    >
+    <div className={`rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-xl backdrop-blur-md ${className}`}>
       {children}
     </div>
   );
@@ -42,116 +27,150 @@ function Glass({
 
 function InterviewPageContent() {
   const searchParams = useSearchParams();
-  const questionId = searchParams.get("questionId"); // Lấy ID từ thanh URL
+  const questionId = searchParams.get("questionId");
 
-  const [question, setQuestion] = useState<QuestionData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchErr] = useState<string | null>(null);
+  const [step, setStep] = useState<"SELECT" | "CHAT">("SELECT");
+  const [interviewId, setInterviewId] = useState<string>("");
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [jdText, setJdText] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    void (async () => {
-      if (!questionId) {
-        setFetchErr("Không tìm thấy mã câu hỏi trên đường dẫn.");
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const data = await getQuestionById(questionId);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-        // SỬA LỖI Ở ĐÂY: Ép kiểu dữ liệu về QuestionData để qua mặt TypeScript
-        setQuestion(data as unknown as QuestionData);
-      } catch (err) {
-        setFetchErr(
-          err instanceof Error ? err.message : "Không tải được câu hỏi.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [questionId]);
-
-  const diffMap: Record<number, { text: string; colorKey: string }> = {
-    1: { text: "Dễ", colorKey: "easy" },
-    2: { text: "Trung Bình", colorKey: "medium" },
-    3: { text: "Nâng Cao", colorKey: "hard" },
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const currentDiff = question
-    ? diffMap[question.difficultyLevel] || diffMap[2]
-    : diffMap[2];
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const handleStartFree = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/interviews/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "FREE" }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setInterviewId(data.interviewId);
+        setMessages([{ role: "assistant", content: data.firstMessage || "Chào bạn, chúng ta bắt đầu nhé!" }]);
+        setStep("CHAT");
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStartTargeted = async () => {
+    if (!cvFile) return alert("Vui lòng tải CV!");
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("type", "TARGETED");
+      formData.append("cvFile", cvFile);
+      formData.append("jobDescription", jdText);
+      const res = await fetch(`${API_BASE_URL}/interviews/start`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        setInterviewId(data.interviewId);
+        setMessages([{ role: "assistant", content: data.firstMessage || "Tôi đã đọc CV của bạn!" }]);
+        setStep("CHAT");
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+    audioChunksRef.current = [];
+    mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
+    mediaRecorder.onstop = handleAudioStop;
+    mediaRecorder.start();
+    setIsRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRecorderRef.current?.stop();
+    setIsRecording(false);
+  };
+
+  const handleAudioStop = async () => {
+    setIsLoading(true);
+    setMessages(prev => [...prev, { role: "user", content: "🎤 Đang xử lý..." }]);
+    const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+    const formData = new FormData();
+    formData.append("file", audioBlob, "audio.webm");
+    formData.append("interviewId", interviewId);
+    try {
+      const res = await fetch(`${API_BASE_URL}/interviews/upload-audio`, { method: "POST", body: formData });
+      const data = await res.json();
+      setMessages(prev => {
+        const filtered = prev.filter(m => m.content !== "🎤 Đang xử lý...");
+        return [...filtered, { role: "user", content: data.userText }, { role: "assistant", content: data.aiResponse }];
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#080c18] px-4 py-8">
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
-        aria-hidden
-      >
-        <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px]" />
-        <div className="absolute -right-40 top-1/3 h-[400px] w-[400px] rounded-full bg-violet-600/15 blur-[120px]" />
-        <div className="absolute bottom-0 left-1/3 h-[300px] w-[300px] rounded-full bg-sky-600/10 blur-[100px]" />
-      </div>
-
-      <div className="relative mx-auto max-w-6xl space-y-6">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-white">
-            Phòng Phỏng Vấn AI
-          </h2>
-          <p className="text-sm text-slate-400">
-            Trả lời câu hỏi trong thời gian quy định
-          </p>
+    <div className="relative isolate min-h-screen overflow-hidden bg-[#080c18] px-4 py-8 flex flex-col text-white">
+      <div className="relative mx-auto w-full max-w-4xl flex-1 flex flex-col space-y-6">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold">AI Interview Agent</h2>
+          <p className="text-slate-400">Luyện tập phỏng vấn với AI</p>
         </div>
 
-        <div className="space-y-5">
-          <Glass className="space-y-5 p-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400">
-              Câu hỏi
-            </p>
-
-            {loading ? (
-              <div className="animate-pulse space-y-3">
-                <div className="h-4 w-3/4 rounded-full bg-white/10" />
-                <div className="h-4 w-1/2 rounded-full bg-white/10" />
+        {step === "SELECT" ? (
+          <div className="grid md:grid-cols-2 gap-6">
+            <Glass className="p-6 space-y-4">
+              <Zap className="text-indigo-400" size={36} />
+              <h3 className="text-xl font-bold">Tự do</h3>
+              <button onClick={handleStartFree} className="w-full py-3 bg-indigo-600 rounded-xl">Bắt đầu</button>
+            </Glass>
+            <Glass className="p-6 space-y-4">
+              <FileText className="text-teal-400" size={36} />
+              <h3 className="text-xl font-bold">Theo CV</h3>
+              <input type="file" onChange={(e) => setCvFile(e.target.files?.[0] || null)} className="w-full text-sm" />
+              <button onClick={handleStartTargeted} className="w-full py-3 bg-teal-600 rounded-xl">Phân tích</button>
+            </Glass>
+          </div>
+        ) : (
+          <Glass className="flex-1 overflow-y-auto p-6 space-y-4 max-h-[60vh]">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`p-4 rounded-xl ${msg.role === "user" ? "bg-indigo-600/20" : "bg-white/5"}`}>{msg.content}</div>
               </div>
-            ) : fetchError ? (
-              <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-300">
-                {fetchError}
-              </p>
-            ) : question ? (
-              <>
-                <p className="text-lg leading-8 text-slate-100">
-                  {question.content}
-                </p>
-
-                <div className="flex flex-wrap gap-2 pt-1">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-500/10 px-3 py-1 text-xs font-medium text-indigo-300 ring-1 ring-indigo-500/20">
-                    {question.categoryName}
-                  </span>
-
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase ${DIFF_COLOR[currentDiff.colorKey]}`}
-                  >
-                    {currentDiff.text}
-                  </span>
-
-                  {question.tags?.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1 rounded-full bg-white/5 px-3 py-1 text-xs text-slate-400 ring-1 ring-white/10"
-                    >
-                      <Tag size={10} />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-slate-400">Không tìm thấy câu hỏi.</p>
-            )}
+            ))}
+            <div ref={messagesEndRef} />
+            <div className="flex justify-center pt-4">
+              {!isRecording ? (
+                <button onClick={startRecording} className="h-16 w-16 bg-indigo-600 rounded-full flex items-center justify-center"><Mic /></button>
+              ) : (
+                <button onClick={stopRecording} className="h-16 w-16 bg-rose-600 rounded-full flex items-center justify-center animate-pulse"><Square /></button>
+              )}
+            </div>
           </Glass>
-        </div>
-
-        <RecorderPanel question={question} />
+        )}
       </div>
     </div>
   );
@@ -159,7 +178,7 @@ function InterviewPageContent() {
 
 export default function InterviewPage() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div>Loading...</div>}>
       <InterviewPageContent />
     </Suspense>
   );
