@@ -36,5 +36,6 @@ lerna-debug.log*
 
 backend/uploads/**/*
 !backend/uploads/.gitkeep
-
+.idea/
+backend/uploads/
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
