@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 12;
 
+// --- COMPONENT FLASHCARD ITEM (ĐÃ FIX RENDER HTML) ---
 function FlashCardItem({ question }: { question: any }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -53,9 +54,13 @@ function FlashCardItem({ question }: { question: any }) {
                 <span className="text-sm">ĐÁP ÁN CHI TIẾT</span>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto pr-2 text-slate-700 text-sm leading-relaxed">
-               {question.sampleAnswer || "Chưa có đáp án mẫu."}
-            </div>
+            {/* FIX TẠI ĐÂY: Sử dụng dangerouslySetInnerHTML để hiển thị <b> và xuống dòng */}
+            <div
+              className="flex-1 overflow-y-auto pr-2 text-slate-700 text-sm leading-relaxed whitespace-pre-line"
+              dangerouslySetInnerHTML={{
+                __html: question.sampleAnswer || "Chưa có đáp án mẫu."
+              }}
+            />
             <p className="mt-2 text-[10px] text-blue-400 text-center italic">Click để quay lại</p>
           </CardContent>
         </Card>
@@ -64,6 +69,7 @@ function FlashCardItem({ question }: { question: any }) {
   );
 }
 
+// --- PHẦN QUẢN LÝ DANH SÁCH (GIỮ NGUYÊN) ---
 function QuestionsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -89,7 +95,7 @@ function QuestionsPageContent() {
       const res = await getQuestions({
         page: p,
         limit: PAGE_SIZE,
-        categoryId: catId || undefined, // Chỉ gửi categoryId
+        categoryId: catId || undefined,
       });
 
       setItems((prev) => (append ? [...prev, ...res.items] : res.items));

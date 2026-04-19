@@ -115,11 +115,38 @@ export class QuestionsService {
     return { message: `Question ${id} has been deleted` };
   }
 
+  /**
+   * Chuyển đổi Entity sang DTO và xử lý làm sạch dữ liệu JSON từ DB
+   */
   private mapToResponse(q: Question): QuestionResponseDto {
+    let cleanAnswer = q.sampleAnswer || '';
+
+    // KIỂM TRA VÀ XỬ LÝ JSON NẾU CÓ
+    if (cleanAnswer.trim().startsWith('{') || cleanAnswer.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(cleanAnswer);
+
+        // Nếu là định dạng Editor.js (có mảng blocks)
+        if (parsed.blocks && Array.isArray(parsed.blocks)) {
+          cleanAnswer = parsed.blocks
+            .map((block: any) => block.data?.text || '')
+            .filter((text: string) => text.length > 0)
+            .join('\n'); // Hoặc dùng '<br>' nếu bạn hiển thị HTML trực tiếp
+        }
+        // Nếu là một JSON object đơn giản, lấy giá trị chuỗi
+        else if (typeof parsed === 'object') {
+          cleanAnswer = parsed.text || parsed.content || JSON.stringify(parsed);
+        }
+      } catch (e) {
+        // Nếu parse lỗi, giữ nguyên text gốc
+        cleanAnswer = q.sampleAnswer || '';
+      }
+    }
+
     return {
       id: q.id,
       content: q.content,
-      sampleAnswer: q.sampleAnswer || '',
+      sampleAnswer: cleanAnswer,
       difficultyLevel: q.difficultyLevel,
       categoryId: q.category?.id,
       categoryName: q.category?.name ?? 'Uncategorized',
