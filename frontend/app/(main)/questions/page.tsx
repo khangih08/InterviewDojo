@@ -100,8 +100,8 @@ function QuestionsPageContent() {
 
       setItems((prev) => (append ? [...prev, ...res.items] : res.items));
       setTotal(res.total);
-    } catch (error) {
-      toastError(error);
+    } catch (error: any) {
+     toastError(error?.message || "Đã có lỗi xảy ra");
     } finally {
       setLoading(false);
       setLoadingMore(false);
