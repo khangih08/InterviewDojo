@@ -37,5 +37,43 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run frontend tests
-        run: npm run test
+      - name: Run frontend coverage
+        run: npm run test:coverage
+
+      - name: Upload frontend coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+          if-no-files-found: error
+
+      - name: Add frontend coverage summary
+        run: |
+          node <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const summaryPath = path.join(process.cwd(), 'coverage', 'coverage-summary.json');
+          const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
+          const rows = Object.entries(summary)
+            .filter(([key]) => key !== 'total')
+            .map(([file, metrics]) => ({
+              file: file.replace(`${process.cwd()}${path.sep}`, ''),
+              lines: metrics.lines.pct,
+            }))
+            .sort((a, b) => a.lines - b.lines)
+            .slice(0, 5);
+          const total = summary.total;
+          const output = [
+            '## Frontend Coverage',
+            '',
+            `- Statements: ${total.statements.pct}%`,
+            `- Branches: ${total.branches.pct}%`,
+            `- Functions: ${total.functions.pct}%`,
+            `- Lines: ${total.lines.pct}%`,
+            '',
+            '### Lowest 5 Files By Line Coverage',
+            ...rows.map((row) => `- ${row.file}: ${row.lines}%`),
+            '',
+          ].join('\n');
+          fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${output}\n`);
+          EOF
