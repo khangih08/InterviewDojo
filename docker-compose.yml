@@ -16,6 +16,52 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - interviewdojo
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: interviewdojo-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/interview_dojo
+      PORT: 3001
+      NODE_ENV: production
+    ports:
+      - "3001:3001"
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - interviewdojo
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+    container_name: interviewdojo-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - interviewdojo
+
+networks:
+  interviewdojo:
+    driver: bridge
 
 volumes:
   postgres_data:
+  backend_uploads:
