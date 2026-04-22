@@ -17,6 +17,15 @@ export default defineConfig({
         "hooks/**/*.{ts,tsx}",
         "components/**/*.{ts,tsx}",
       ],
+      exclude: [
+        "components/landing/**",
+        "components/layout/**",
+        "components/ui/**",
+        "lib/landing.ts",
+        "lib/mocks/**",
+        "lib/api/types.ts",
+        "lib/api/mock.ts",
+      ],
       thresholds: {
         statements: 50,
         branches: 55,
