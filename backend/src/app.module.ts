@@ -38,7 +38,6 @@ import { InterviewsService } from './interviews/interviews.service';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const dbUrl = configService.get<string>('DATABASE_URL');
-        console.log('Connecting to:', dbUrl);
 
         return {
           type: 'postgres',
