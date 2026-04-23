@@ -17,7 +17,7 @@ type BackendQuestion = {
   difficultyLevel: number;
   categoryId?: string | null;
   categoryName?: string | null;
-  tags: string[];
+  tags: Array<string | { id?: string | null; name?: string | null }>;
   createdAt?: string;
 };
 
@@ -45,6 +45,16 @@ function toDifficulty(level: number): Difficulty {
   return "hard";
 }
 
+function normalizeTag(tag: string | { id?: string | null; name?: string | null }): Tag {
+  if (typeof tag === "string") {
+    return { id: tag, name: tag };
+  }
+
+  const id = tag.id ?? tag.name ?? "unknown-tag";
+  const name = tag.name ?? tag.id ?? "unknown-tag";
+  return { id, name };
+}
+
 function normalizeQuestion(question: BackendQuestion): Question {
   return {
     id: question.id,
@@ -54,10 +64,7 @@ function normalizeQuestion(question: BackendQuestion): Question {
       name: question.categoryName ?? "Uncategorized",
     },
     difficulty: toDifficulty(question.difficultyLevel),
-    tags: (question.tags ?? []).map((tagName) => ({
-      id: tagName,
-      name: tagName,
-    })),
+    tags: (question.tags ?? []).map(normalizeTag),
     durationSeconds: undefined,
   };
 }

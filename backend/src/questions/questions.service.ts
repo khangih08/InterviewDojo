@@ -45,7 +45,16 @@ export class QuestionsService {
   }
 
   async findAll(query: any) {
+<<<<<<< HEAD
     const { categoryId, search } = query;
+=======
+<<<<<<< HEAD
+    const { categoryId } = query;
+    const search = String(query.search ?? query.q ?? '').trim();
+=======
+    const { categoryId, search } = query;
+>>>>>>> 0c20a06 (feat: polish question card hover effect)
+>>>>>>> 6cbfa88 (fix frontend test)
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
 
@@ -59,6 +68,16 @@ export class QuestionsService {
       queryBuilder.andWhere('category.id = :categoryId', { categoryId });
     }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+    if (search) {
+      queryBuilder.andWhere(
+        '(question.content ILIKE :search OR question.sampleAnswer ILIKE :search OR category.name ILIKE :search OR tag.name ILIKE :search)',
+        { search: `%${search}%` },
+      );
+=======
+>>>>>>> 6cbfa88 (fix frontend test)
     const normalizedSearch =
       typeof search === 'string' ? search.trim().toLowerCase() : '';
 
@@ -66,6 +85,10 @@ export class QuestionsService {
       queryBuilder.andWhere('LOWER(question.content) LIKE :search', {
         search: `%${normalizedSearch}%`,
       });
+<<<<<<< HEAD
+=======
+>>>>>>> 0c20a06 (feat: polish question card hover effect)
+>>>>>>> 6cbfa88 (fix frontend test)
     }
 
     queryBuilder.orderBy('question.createdAt', 'DESC');

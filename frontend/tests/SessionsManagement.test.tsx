@@ -2,6 +2,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+vi.mock("@/contexts/auth-context", () => ({
+  useAuth: vi.fn(() => ({
+    hydrated: true,
+    isAuthenticated: true,
+  })),
+}));
+
 vi.mock("@/lib/api/sessions", () => ({
   userSessionsApi: {
     getAllSessions: vi.fn(),

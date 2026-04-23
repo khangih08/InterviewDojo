@@ -90,6 +90,28 @@ export function Sidebar() {
       : navItems;
 
   return (
+<<<<<<< HEAD
+    <aside className="hidden w-72 shrink-0 border-r border-slate-200/80 bg-white/85 px-5 py-6 backdrop-blur md:block">
+      <div className="mb-8 px-2">
+=======
+<<<<<<< HEAD
+    <aside className="hidden w-72 shrink-0 border-r border-slate-200 bg-white px-5 py-6 md:block">
+      <div className="mb-8 px-1">
+>>>>>>> 6cbfa88 (fix frontend test)
+        <Link href="/dashboard" className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-black tracking-wide text-white shadow-lg shadow-slate-900/30">
+            ID
+          </span>
+          <span className="text-xl font-bold tracking-tight text-slate-950">
+            InterviewDojo
+          </span>
+        </Link>
+<<<<<<< HEAD
+        <p className="mt-3 text-xs leading-relaxed text-slate-500">
+          Luyện phỏng vấn có cấu trúc, theo dõi tiến bộ mỗi ngày.
+        </p>
+=======
+=======
     <aside className="hidden w-72 shrink-0 border-r border-slate-200/80 bg-white/85 px-5 py-6 backdrop-blur md:block">
       <div className="mb-8 px-2">
         <Link href="/dashboard" className="flex items-center gap-3">
@@ -103,6 +125,8 @@ export function Sidebar() {
         <p className="mt-3 text-xs leading-relaxed text-slate-500">
           Luyện phỏng vấn có cấu trúc, theo dõi tiến bộ mỗi ngày.
         </p>
+>>>>>>> 0c20a06 (feat: polish question card hover effect)
+>>>>>>> 6cbfa88 (fix frontend test)
       </div>
 
       <nav className="space-y-2">
@@ -116,15 +140,37 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={[
+<<<<<<< HEAD
                 "group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition",
                 active
                   ? `${palette.activeBorder} bg-slate-100 text-slate-950 shadow-sm`
                   : `border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-950 ${palette.hoverBorder}`,
+=======
+<<<<<<< HEAD
+                "group flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-sm transition",
+                active
+                  ? `${palette.activeBorder} bg-slate-100 text-slate-950 shadow-sm`
+                  : `border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-950 ${palette.hoverBorder}`,
+=======
+                "group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition",
+                active
+                  ? `${palette.activeBorder} bg-slate-100 text-slate-950 shadow-sm`
+                  : `border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-950 ${palette.hoverBorder}`,
+>>>>>>> 0c20a06 (feat: polish question card hover effect)
+>>>>>>> 6cbfa88 (fix frontend test)
               ].join(" ")}
             >
               <span
                 className={[
+<<<<<<< HEAD
                   "inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+=======
+<<<<<<< HEAD
+                  "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
+=======
+                  "inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+>>>>>>> 0c20a06 (feat: polish question card hover effect)
+>>>>>>> 6cbfa88 (fix frontend test)
                   active ? palette.activeWrap : palette.idleWrap,
                 ].join(" ")}
               >

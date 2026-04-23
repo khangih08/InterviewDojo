@@ -1,6 +1,13 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+vi.mock("@/contexts/auth-context", () => ({
+  useAuth: vi.fn(() => ({
+    hydrated: true,
+    isAuthenticated: true,
+  })),
+}));
+
 const mockGetAllSessions = vi.fn();
 
 vi.mock("@/lib/api/sessions", () => ({
