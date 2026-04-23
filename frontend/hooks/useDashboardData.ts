@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { sessionsApi } from "@/lib/api/sessions";
 import type { Session } from "@/lib/api/types";
-import { useAuth } from "@/contexts/auth-context";
 
 export type ChartPoint = {
   date: string;
@@ -36,23 +35,11 @@ function getAverageScore(session: Session) {
 }
 
 export function useDashboardData(): DashboardDataState {
-  const { hydrated, isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!hydrated) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      setSessions([]);
-      setErrorMessage(null);
-      setLoading(false);
-      return;
-    }
-
     let cancelled = false;
 
     async function load() {
@@ -84,7 +71,7 @@ export function useDashboardData(): DashboardDataState {
     return () => {
       cancelled = true;
     };
-  }, [hydrated, isAuthenticated]);
+  }, []);
 
   const completedSessions = useMemo(
     () => sessions.filter((s) => s.status === "COMPLETED" && !!s.ai_analysis),

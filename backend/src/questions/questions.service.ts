@@ -45,7 +45,7 @@ export class QuestionsService {
   }
 
   async findAll(query: any) {
-    const { categoryId, search } = query;
+    const { categoryId } = query;
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
 
@@ -57,15 +57,6 @@ export class QuestionsService {
 
     if (categoryId && categoryId !== 'all' && categoryId !== '') {
       queryBuilder.andWhere('category.id = :categoryId', { categoryId });
-    }
-
-    const normalizedSearch =
-      typeof search === 'string' ? search.trim().toLowerCase() : '';
-
-    if (normalizedSearch) {
-      queryBuilder.andWhere('LOWER(question.content) LIKE :search', {
-        search: `%${normalizedSearch}%`,
-      });
     }
 
     queryBuilder.orderBy('question.createdAt', 'DESC');

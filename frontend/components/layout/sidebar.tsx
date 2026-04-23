@@ -90,19 +90,20 @@ export function Sidebar() {
       : navItems;
 
   return (
-    <aside className="hidden w-72 shrink-0 border-r border-slate-200/80 bg-white/85 px-5 py-6 backdrop-blur md:block">
+    <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white px-4 py-6 md:block">
       <div className="mb-8 px-2">
+        {" "}
         <Link href="/dashboard" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 text-sm font-black tracking-wide text-white shadow-lg shadow-slate-900/30">
-            ID
-          </span>
+          {" "}
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-xl font-black text-white shadow-lg shadow-violet-900/50">
+            {" "}
+            ID{" "}
+          </span>{" "}
           <span className="text-xl font-bold tracking-tight text-slate-950">
-            InterviewDojo
-          </span>
-        </Link>
-        <p className="mt-3 text-xs leading-relaxed text-slate-500">
-          Luyện phỏng vấn có cấu trúc, theo dõi tiến bộ mỗi ngày.
-        </p>
+            {" "}
+            InterviewDojo{" "}
+          </span>{" "}
+        </Link>{" "}
       </div>
 
       <nav className="space-y-2">
@@ -116,15 +117,15 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={[
-                "group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition",
+                "group flex items-center gap-3 rounded-md border px-3 py-2 text-sm transition",
                 active
-                  ? `${palette.activeBorder} bg-slate-100 text-slate-950 shadow-sm`
-                  : `border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-950 ${palette.hoverBorder}`,
+                  ? `${palette.activeBorder} bg-slate-100 text-slate-950`
+                  : `border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-950 ${palette.hoverBorder}`,
               ].join(" ")}
             >
               <span
                 className={[
-                  "inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
+                  "inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors",
                   active ? palette.activeWrap : palette.idleWrap,
                 ].join(" ")}
               >
