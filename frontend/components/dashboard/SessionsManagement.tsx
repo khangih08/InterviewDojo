@@ -4,25 +4,36 @@ import { useEffect, useState } from 'react';
 import { userSessionsApi } from '@/lib/api/sessions';
 import { UserSession } from '@/lib/api/types';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { Loader2, LogOut, Smartphone, Trash2 } from 'lucide-react';
+import { Loader2, Smartphone, Trash2 } from 'lucide-react';
+import { useAuth } from '@/contexts/auth-context';
 
 export function SessionsManagement() {
+  const { hydrated, isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
+
     loadSessions();
-  }, []);
+  }, [hydrated, isAuthenticated]);
 
   const loadSessions = async () => {
     try {
       setLoading(true);
       const data = await userSessionsApi.getAllSessions();
       setSessions(data);
-    } catch (error) {
+    } catch {
       toastError('Failed to load sessions');
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -34,9 +45,8 @@ export function SessionsManagement() {
       await userSessionsApi.revokeSession(sessionId);
       toastSuccess('Session revoked successfully');
       setSessions(sessions.filter(s => s.id !== sessionId));
-    } catch (error) {
+    } catch {
       toastError('Failed to revoke session');
-      console.error(error);
     } finally {
       setRevoking(null);
     }
@@ -48,9 +58,8 @@ export function SessionsManagement() {
       const result = await userSessionsApi.revokeAllOtherSessions();
       toastSuccess(`${result.revoked_count} sessions revoked`);
       await loadSessions();
-    } catch (error) {
+    } catch {
       toastError('Failed to revoke sessions');
-      console.error(error);
     } finally {
       setRevoking(null);
     }
@@ -66,9 +75,8 @@ export function SessionsManagement() {
       const result = await userSessionsApi.revokeAllSessions();
       toastSuccess(`All ${result.revoked_count} sessions revoked`);
       setSessions([]);
-    } catch (error) {
+    } catch {
       toastError('Failed to revoke all sessions');
-      console.error(error);
     } finally {
       setRevoking(null);
     }
