@@ -8,16 +8,50 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function HistoryPage() {
+  const { hydrated, isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    sessionsApi.getAllSessions()
-      .then(setSessions)
-      .finally(() => setLoading(false));
-  }, []);
+    if (!hydrated) {
+      return;
+    }
+
+    if (!isAuthenticated) {
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSessions() {
+      try {
+        setLoading(true);
+        const data = await sessionsApi.getAllSessions();
+        if (!cancelled) {
+          setSessions(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setSessions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadSessions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, isAuthenticated]);
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
