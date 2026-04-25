@@ -46,6 +46,7 @@ export class QuestionsService {
 
   async findAll(query: any) {
     const { categoryId } = query;
+    const keyword = String(query.q ?? query.search ?? '').trim();
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
 
@@ -57,6 +58,12 @@ export class QuestionsService {
 
     if (categoryId && categoryId !== 'all' && categoryId !== '') {
       queryBuilder.andWhere('category.id = :categoryId', { categoryId });
+    }
+
+    if (keyword) {
+      queryBuilder.andWhere('LOWER(question.content) LIKE :keyword', {
+        keyword: `%${keyword.toLowerCase()}%`,
+      });
     }
 
     queryBuilder.orderBy('question.createdAt', 'DESC');
