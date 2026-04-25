@@ -9,6 +9,16 @@ export class GetQuestionQueryDto {
 
     @ApiPropertyOptional()
     @IsOptional()
+    @IsString()
+    q?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
+    @IsString()
+    search?: string;
+
+    @ApiPropertyOptional()
+    @IsOptional()
     page?: any;
 
     @ApiPropertyOptional()

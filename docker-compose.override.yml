@@ -1,0 +1,31 @@
+# Auto-merged by Docker Compose in local dev (never commit secrets here).
+# Production uses docker-compose.yml only.
+services:
+  backend:
+    build:
+      target: builder
+    command: npm run start:dev
+    env_file: ./backend/.env
+    environment:
+      NODE_ENV: development
+      # Override localhost URL from .env so backend can reach postgres service
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/interview_dojo
+    volumes:
+      - ./backend/src:/app/src:delegated
+      - ./backend/.env:/app/.env:ro
+    ports:
+      - "9229:9229"
+
+  frontend:
+    build:
+      target: builder
+    command: npm run dev
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+      # Required for hot reload to work inside Docker on Windows
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+      - /app/.next

@@ -10,13 +10,28 @@ export default defineConfig({
     exclude: ["tests/**/*.e2e.spec.ts", "node_modules/**", ".next/**"],
     coverage: {
       provider: "v8",
-      reporter: ["text", "html"],
+      reporter: ["text", "html", "json-summary"],
       reportsDirectory: "./coverage",
       include: [
         "lib/**/*.{ts,tsx}",
         "hooks/**/*.{ts,tsx}",
         "components/**/*.{ts,tsx}",
       ],
+      exclude: [
+        "components/landing/**",
+        "components/layout/**",
+        "components/ui/**",
+        "lib/landing.ts",
+        "lib/mocks/**",
+        "lib/api/types.ts",
+        "lib/api/mock.ts",
+      ],
+      thresholds: {
+        statements: 50,
+        branches: 55,
+        lines: 60,
+        functions: 60,
+      },
     },
   },
   resolve: {
