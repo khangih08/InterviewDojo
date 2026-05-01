@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
 
 permissions:
@@ -122,7 +122,7 @@ jobs:
   deploy-backend:
     name: Deploy Backend to Render
     needs: [build-backend, test-backend]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     uses: ./.github/workflows/render-deploy.yml
     secrets:
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
@@ -132,7 +132,7 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend to Vercel
     needs: [build-frontend, test-frontend]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     uses: ./.github/workflows/vercel-deploy.yml
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
