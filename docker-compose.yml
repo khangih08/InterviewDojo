@@ -1,4 +1,7 @@
+version: "3.9"
+
 services:
+  # Postgres used by both prod and dev; always enabled
   postgres:
     image: postgres:16
     container_name: interviewdojo-postgres
@@ -19,7 +22,9 @@ services:
     networks:
       - interviewdojo
 
+  # Production backend
   backend:
+    profiles: ["prod"]
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -40,7 +45,35 @@ services:
     networks:
       - interviewdojo
 
+  # Development backend (use: --profile dev)
+  backend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: interviewdojo-backend-dev
+    command: npm run start:dev
+    restart: unless-stopped
+    env_file: ./backend/.env
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/interview_dojo
+    volumes:
+      - ./backend/src:/app/src:delegated
+      - ./backend/.env:/app/.env:ro
+      - backend_uploads:/app/uploads
+    ports:
+      - "3001:3001"
+      - "9229:9229"
+    depends_on:
+      - postgres
+    networks:
+      - interviewdojo
+
+  # Production frontend
   frontend:
+    profiles: ["prod"]
     build:
       context: ./frontend
       dockerfile: Dockerfile
@@ -55,6 +88,31 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - interviewdojo
+
+  # Development frontend (use: --profile dev)
+  frontend-dev:
+    profiles: ["dev"]
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    container_name: interviewdojo-frontend-dev
+    command: npm run dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+      WATCHPACK_POLLING: "true"
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+      - /app/.next
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-dev
     networks:
       - interviewdojo
 
