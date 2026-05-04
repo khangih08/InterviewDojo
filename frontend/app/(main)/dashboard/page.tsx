@@ -25,6 +25,9 @@ export default function DashboardPage() {
     avgScore,
     bestScore,
     chartData,
+    categoryData,
+    statusData,
+    latestScoreDelta,
     sessions,
     completedSessions,
   } = useDashboardData();
@@ -46,6 +49,7 @@ export default function DashboardPage() {
         totalSessions={totalSessions}
         avgScore={avgScore}
         bestScore={bestScore}
+        latestScoreDelta={latestScoreDelta}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
@@ -53,6 +57,8 @@ export default function DashboardPage() {
           loading={loading}
           errorMessage={errorMessage}
           chartData={chartData}
+          categoryData={categoryData}
+          statusData={statusData}
         />
         <DashboardNextActionCard guide={guide} />
       </div>
