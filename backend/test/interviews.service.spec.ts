@@ -14,6 +14,8 @@ jest.mock('fs', () => {
     ...actualFs,
     writeFileSync: jest.fn(),
     copyFileSync: jest.fn(),
+    mkdirSync: jest.fn(),
+    statSync: jest.fn().mockReturnValue({ size: 123 }),
     existsSync: jest.fn().mockReturnValue(false),
     unlinkSync: jest.fn(),
     createReadStream: jest.fn().mockReturnValue('mock-stream'),
@@ -40,6 +42,8 @@ describe('InterviewsService', () => {
   };
 
   beforeEach(async () => {
+    process.env.GROQ_API_KEY = 'test-groq-key';
+    process.env.Gemini_API_KEY = 'test-gemini-key';
     mockTranscribe = jest.fn();
     mockChat = jest.fn();
 

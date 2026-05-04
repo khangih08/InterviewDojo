@@ -3,10 +3,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { sessionsApi } from "@/lib/api/sessions";
 import type { Session } from "@/lib/api/types";
+import {
+  getAverageScore,
+  inferSessionCategory,
+  type SessionCategory,
+} from "@/lib/session-insights";
 
 export type ChartPoint = {
   date: string;
   score: number;
+};
+
+export type CategoryPoint = {
+  category: SessionCategory;
+  sessions: number;
+};
+
+export type StatusPoint = {
+  label: string;
+  value: number;
 };
 
 export type DashboardDataState = {
@@ -18,21 +33,10 @@ export type DashboardDataState = {
   avgScore: number;
   bestScore: number;
   chartData: ChartPoint[];
+  categoryData: CategoryPoint[];
+  statusData: StatusPoint[];
+  latestScoreDelta: number;
 };
-
-function clampScore(value: number) {
-  if (Number.isNaN(value)) return 0;
-  return Math.max(0, Math.min(100, Math.round(value)));
-}
-
-function getAverageScore(session: Session) {
-  if (!session.ai_analysis) return 0;
-  const technical = clampScore(session.ai_analysis.technical_score ?? 0);
-  const communication = clampScore(
-    session.ai_analysis.communication_score ?? 0,
-  );
-  return Math.round((technical + communication) / 2);
-}
 
 export function useDashboardData(): DashboardDataState {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -109,6 +113,54 @@ export function useDashboardData(): DashboardDataState {
     [completedSessions],
   );
 
+  const categoryData = useMemo<CategoryPoint[]>(() => {
+    const counts = new Map<SessionCategory, number>();
+
+    for (const session of sessions) {
+      const category = inferSessionCategory(session.question_content);
+      counts.set(category, (counts.get(category) ?? 0) + 1);
+    }
+
+    return Array.from(counts.entries())
+      .map(([category, sessionsCount]) => ({
+        category,
+        sessions: sessionsCount,
+      }))
+      .sort((a, b) => b.sessions - a.sessions)
+      .slice(0, 5);
+  }, [sessions]);
+
+  const statusData = useMemo<StatusPoint[]>(
+    () => [
+      {
+        label: "Completed",
+        value: sessions.filter((session) => session.status === "COMPLETED")
+          .length,
+      },
+      {
+        label: "Processing",
+        value: sessions.filter((session) => session.status === "PROCESSING")
+          .length,
+      },
+      {
+        label: "Pending",
+        value: sessions.filter((session) => session.status === "PENDING").length,
+      },
+      {
+        label: "Failed",
+        value: sessions.filter((session) => session.status === "FAILED").length,
+      },
+    ],
+    [sessions],
+  );
+
+  const latestScoreDelta = useMemo(() => {
+    if (completedSessions.length < 2) return 0;
+    return (
+      getAverageScore(completedSessions[0]) - getAverageScore(completedSessions[1])
+    );
+  }, [completedSessions]);
+
   return {
     loading,
     errorMessage,
@@ -118,5 +170,8 @@ export function useDashboardData(): DashboardDataState {
     avgScore,
     bestScore,
     chartData,
+    categoryData,
+    statusData,
+    latestScoreDelta,
   };
 }

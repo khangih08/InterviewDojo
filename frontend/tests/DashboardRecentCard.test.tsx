@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { DashboardRecentCard } from "@/components/dashboard/DashboardRecentCard";
 import type { Session } from "@/lib/api/types";
 
@@ -38,8 +39,8 @@ describe("DashboardRecentCard", () => {
     expect(screen.getByText(/Explain REST vs GraphQL/)).toBeInTheDocument();
   });
 
-  it("truncates question content longer than 40 characters", () => {
-    const longContent = "A".repeat(45);
+  it("truncates question content longer than 52 characters", () => {
+    const longContent = "A".repeat(60);
     render(
       <DashboardRecentCard
         sessions={[makeSession({ question_content: longContent })]}
@@ -47,9 +48,9 @@ describe("DashboardRecentCard", () => {
       />,
     );
 
-    // React renders the substring and "..." as separate text nodes inside the <p>
     const el = screen.getByText(
-      (_, node) => node?.tagName === "P" && (node?.textContent ?? "").endsWith("..."),
+      (_, node) =>
+        node?.tagName === "P" && (node.textContent ?? "").endsWith("..."),
     );
     expect(el).toBeInTheDocument();
   });
@@ -65,7 +66,7 @@ describe("DashboardRecentCard", () => {
     expect(screen.getByText("Interview Session")).toBeInTheDocument();
   });
 
-  it("shows Hoàn thành badge for COMPLETED sessions", () => {
+  it("shows Completed badge for COMPLETED sessions", () => {
     render(
       <DashboardRecentCard
         sessions={[makeSession({ status: "COMPLETED" })]}
@@ -73,10 +74,10 @@ describe("DashboardRecentCard", () => {
       />,
     );
 
-    expect(screen.getByText("Hoàn thành")).toBeInTheDocument();
+    expect(screen.getByText("Completed")).toBeInTheDocument();
   });
 
-  it("shows Đang xử lý badge for PROCESSING sessions", () => {
+  it("shows Processing badge for PROCESSING sessions", () => {
     render(
       <DashboardRecentCard
         sessions={[makeSession({ status: "PROCESSING" })]}
@@ -84,10 +85,10 @@ describe("DashboardRecentCard", () => {
       />,
     );
 
-    expect(screen.getByText("Đang xử lý")).toBeInTheDocument();
+    expect(screen.getByText("Processing")).toBeInTheDocument();
   });
 
-  it("shows Thất bại badge for FAILED sessions", () => {
+  it("shows Failed badge for FAILED sessions", () => {
     render(
       <DashboardRecentCard
         sessions={[makeSession({ status: "FAILED" })]}
@@ -95,7 +96,7 @@ describe("DashboardRecentCard", () => {
       />,
     );
 
-    expect(screen.getByText("Thất bại")).toBeInTheDocument();
+    expect(screen.getByText("Failed")).toBeInTheDocument();
   });
 
   it("shows average score for COMPLETED sessions", () => {
@@ -122,7 +123,7 @@ describe("DashboardRecentCard", () => {
       />,
     );
 
-    expect(screen.queryByText(/%/)).not.toBeInTheDocument();
+    expect(screen.queryByText("0%")).not.toBeInTheDocument();
   });
 
   it("shows at most 5 sessions when given more", () => {

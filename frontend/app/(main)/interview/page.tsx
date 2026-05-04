@@ -130,6 +130,7 @@ export default function InterviewAgentPage() {
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
       setIsRecording(false);
     }
   };
@@ -145,6 +146,13 @@ export default function InterviewAgentPage() {
     setMessages(prev => [...prev, { role: "user", content: "🎤 Đang bóc băng ghi âm..." }]);
 
     const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+    if (audioBlob.size === 0) {
+      alert("Khong co du lieu ghi am. Hay thu ghi lai va noi ro hon.");
+      setMessages(prev => prev.filter(msg => msg.content !== "🎤 Đang bóc băng ghi âm..."));
+      setIsLoading(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", audioBlob, "audio.webm");
     formData.append("interviewId", interviewId);
