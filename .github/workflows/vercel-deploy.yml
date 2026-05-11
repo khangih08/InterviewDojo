@@ -14,10 +14,6 @@ jobs:
   deploy-and-wait:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    defaults:
-      run:
-        shell: bash
-        #working-directory: frontend
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -49,25 +45,23 @@ jobs:
             echo "VERCEL_PROJECT_ID is provided."
           fi
 
-      - name: Debug and remove any local .vercel directories
-        run: |
-          echo "Searching for .vercel directories (show up to 5 results)"
-          find . -type d -name '.vercel' -print | head -n 5 || true
+      # Xóa bất kỳ .vercel directory nào có sẵn trong repo (nếu bị commit nhầm)
+      - name: Clean local Vercel config
+        run: find . -type d -name '.vercel' -exec rm -rf {} + 2>/dev/null || true
 
-          echo "Listing contents of workspace root and frontend for context"
-          ls -la . | head -n 50 || true
-          ls -la frontend || true
-
-          echo "Removing any .vercel directories found under workspace"
-          find . -type d -name '.vercel' -print -exec sh -c 'echo "Removing: $1"; rm -rf "$1"' _ {} \; || true
-
-          echo "Verify no .vercel directories remain"
-          find . -type d -name '.vercel' -print || true
-          ls -la frontend || true
-
+      # Tạo project.json để Vercel CLI biết deploy vào project nào
+      # Phải làm TRƯỚC khi chạy bất kỳ lệnh vercel nào
       - name: Link Vercel project
         run: |
-          vercel link --yes --project="${{ secrets.VERCEL_PROJECT_ID }}" --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend
+          mkdir -p frontend/.vercel
+          cat > frontend/.vercel/project.json << EOF
+          {
+            "projectId": "${{ secrets.VERCEL_PROJECT_ID }}",
+            "orgId": "${{ secrets.VERCEL_ORG_ID }}"
+          }
+          EOF
+          echo "✅ Created frontend/.vercel/project.json"
+          cat frontend/.vercel/project.json
 
       - name: Deploy to Vercel
         id: deploy
@@ -76,7 +70,11 @@ jobs:
           rm -f /tmp/vercel_deploy.log
 
           set +e
-          vercel deploy --prod --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend 2>&1 | tee /tmp/vercel_deploy.log
+          vercel deploy --prod \
+            --token="${{ secrets.VERCEL_TOKEN }}" \
+            --cwd frontend \
+            --yes \
+            2>&1 | tee /tmp/vercel_deploy.log
           deploy_status=${PIPESTATUS[0]}
           set -e
 
@@ -101,7 +99,9 @@ jobs:
         if: always()
         run: |
           if [ -n "${{ steps.deploy.outputs.deployment_url }}" ]; then
-            vercel inspect "${{ steps.deploy.outputs.deployment_url }}" --logs --token="${{ secrets.VERCEL_TOKEN }}" || true
+            vercel inspect "${{ steps.deploy.outputs.deployment_url }}" \
+              --logs \
+              --token="${{ secrets.VERCEL_TOKEN }}" || true
           else
             echo "No deployment URL found. Check previous Vercel step output for errors."
           fi
