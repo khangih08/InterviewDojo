@@ -115,7 +115,7 @@ export function SessionsManagement() {
               className="px-4 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
             >
               {revoking === 'all-other' && <Loader2 className="h-4 w-4 animate-spin" />}
-              Logout Others
+              Logout Other Devices
             </button>
           )}
           <button
@@ -124,7 +124,7 @@ export function SessionsManagement() {
             className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
-            Logout All
+            Logout All Devices
           </button>
         </div>
       </div>
