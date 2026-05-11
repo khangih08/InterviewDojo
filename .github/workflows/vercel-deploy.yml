@@ -36,16 +36,16 @@ jobs:
         run: npm install -g vercel@latest
 
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
+        run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend
 
       - name: Build Vercel project
-        run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
+        run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend
 
       - name: Deploy to Vercel
         id: deploy
         run: |
           set -euo pipefail
-          DEPLOYMENT_URL="$(vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}" 2>&1 | tee /tmp/vercel_deploy.log | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n 1 | tr -d '\r')"
+          DEPLOYMENT_URL="$(vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend 2>&1 | tee /tmp/vercel_deploy.log | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n 1 | tr -d '\r')"
 
           if [ -z "${DEPLOYMENT_URL}" ]; then
             echo "::error::Could not detect deployment URL from Vercel CLI output."
