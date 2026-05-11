@@ -6,7 +6,12 @@ import { DashboardStatsCard } from "@/components/dashboard/DashboardStatsCard";
 describe("DashboardStatsCard", () => {
   it("renders all stats with correct values", () => {
     render(
-      <DashboardStatsCard totalSessions={12} avgScore={78} bestScore={95} />,
+      <DashboardStatsCard
+        totalSessions={12}
+        avgScore={78}
+        bestScore={95}
+        latestScoreDelta={4}
+      />,
     );
 
     expect(screen.getByText("Total Sessions")).toBeInTheDocument();

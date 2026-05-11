@@ -1,18 +1,23 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
   AlertCircle,
+  ArrowLeft,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Lightbulb,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { sessionsApi } from "@/lib/api/sessions";
 import type { Session } from "@/lib/api/types";
+import { clampScore, getScoreTone } from "@/lib/session-insights";
 
 type AnalysisMetric = {
   label: string;
@@ -44,9 +49,12 @@ type ResultViewModel = {
   metrics: AnalysisMetric[];
 };
 
-function clampScore(value: number) {
-  if (Number.isNaN(value)) return 0;
-  return Math.max(0, Math.min(100, Math.round(value)));
+function deriveFeedbackLines(feedback: string) {
+  return feedback
+    .split(".")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => (item.endsWith(".") ? item : `${item}.`));
 }
 
 function deriveFallbackResult(
@@ -56,6 +64,7 @@ function deriveFallbackResult(
 
   const technicalScore = clampScore(stored.technicalScore ?? 0);
   const communicationScore = clampScore(stored.communicationScore ?? 0);
+  const feedbackLines = deriveFeedbackLines(stored.feedback);
 
   return {
     sessionId: stored.sessionId,
@@ -64,20 +73,14 @@ function deriveFallbackResult(
     feedback: stored.feedback,
     technicalScore,
     communicationScore,
-    strengths:
-      stored.feedback
-        .split(".")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((item) => (item.endsWith(".") ? item : `${item}.`)) ?? [],
+    strengths: feedbackLines.slice(0, 2),
     weaknesses: [
-      "Cần mở rộng thêm ví dụ cụ thể khi trả lời.",
-      "Có thể nói chậm hơn và rõ hơn ở phần kết luận.",
+      "Add more concrete examples to back up the explanation.",
+      "Go one level deeper on trade-offs and constraints.",
     ],
     suggestions: [
-      "Giữ cấu trúc trả lời theo: hiểu vấn đề, giải pháp, trade-off.",
-      "Thêm một ví dụ thực tế để tăng độ thuyết phục.",
+      "Answer in a problem, solution, trade-off structure.",
+      "Anchor the explanation with one real implementation detail.",
     ],
     metrics: stored.metrics?.length
       ? stored.metrics
@@ -93,7 +96,11 @@ function deriveFallbackResult(
             score: clampScore((communicationScore * 3 + technicalScore) / 4),
           },
           {
-            label: "Balance",
+            label: "Confidence",
+            score: clampScore((technicalScore + communicationScore + 8) / 2),
+          },
+          {
+            label: "Structure",
             score: clampScore((technicalScore + communicationScore) / 2),
           },
         ],
@@ -108,6 +115,7 @@ function deriveResultFromSession(session: Session): ResultViewModel | null {
     session.ai_analysis.communication_score ?? 0,
   );
   const feedback = session.ai_analysis.feedback ?? "";
+  const feedbackLines = deriveFeedbackLines(feedback);
 
   return {
     sessionId: session.id,
@@ -116,19 +124,14 @@ function deriveResultFromSession(session: Session): ResultViewModel | null {
     feedback,
     technicalScore,
     communicationScore,
-    strengths: feedback
-      .split(".")
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((item) => (item.endsWith(".") ? item : `${item}.`)),
+    strengths: feedbackLines.slice(0, 3),
     weaknesses: [
-      "Can add more concrete evidence or examples.",
-      "Should go deeper into trade-offs and constraints.",
+      "Use more specific examples instead of broad claims.",
+      "Expand on alternative approaches before concluding.",
     ],
     suggestions: [
-      "Structure the answer around problem, solution, and trade-off.",
-      "Add one specific real-world example to strengthen the explanation.",
+      "Lead with the main decision, then justify it with trade-offs.",
+      "Close with one concrete impact or implementation detail.",
     ],
     metrics: [
       { label: "Technical", score: technicalScore },
@@ -142,7 +145,11 @@ function deriveResultFromSession(session: Session): ResultViewModel | null {
         score: clampScore((communicationScore * 3 + technicalScore) / 4),
       },
       {
-        label: "Balance",
+        label: "Confidence",
+        score: clampScore((technicalScore + communicationScore + 8) / 2),
+      },
+      {
+        label: "Structure",
         score: clampScore((technicalScore + communicationScore) / 2),
       },
     ],
@@ -153,227 +160,161 @@ function Glass({
   children,
   className = "",
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
     <div
-      className={`rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-xl backdrop-blur-md ${className}`}
+      className={`rounded-[1.75rem] border border-white/10 bg-white/[0.05] shadow-2xl backdrop-blur-xl ${className}`}
     >
       {children}
     </div>
   );
 }
 
-function ScoreBadge({ label, score }: { label: string; score: number }) {
-  const radius = 45;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+function useCountUp(target: number, active: boolean) {
+  const [value, setValue] = useState(0);
 
-  const scoreColor =
-    score >= 80
-      ? "text-emerald-400"
-      : score >= 60
-        ? "text-amber-400"
-        : "text-rose-400";
+  useEffect(() => {
+    if (!active) return;
 
-  return (
-    <div className="flex flex-col items-center gap-3">
-      <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest">
-        {label}
-      </p>
+    let frame = 0;
+    const duration = 900;
+    const startedAt = performance.now();
 
-      <div className="relative flex items-center justify-center">
-        <svg width={120} height={120} className="-rotate-90">
-          <circle
-            cx={60}
-            cy={60}
-            r={radius}
-            fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth={6}
-          />
-          <circle
-            cx={60}
-            cy={60}
-            r={radius}
-            fill="none"
-            stroke="url(#scoreGradient)"
-            strokeWidth={6}
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
-            style={{
-              transition: "stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-          />
-          <defs>
-            <linearGradient
-              id="scoreGradient"
-              x1="0%"
-              y1="0%"
-              x2="100%"
-              y2="100%"
-            >
-              <stop offset="0%" stopColor="rgb(59,130,246)" />
-              <stop offset="100%" stopColor="rgb(6,182,212)" />
-            </linearGradient>
-          </defs>
-        </svg>
+    function tick(now: number) {
+      const progress = Math.min((now - startedAt) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(target * eased));
 
-        <div className="absolute text-center">
-          <div className={`text-3xl font-bold ${scoreColor}`}>{score}</div>
-          <div className="text-xs text-slate-500">/100</div>
-        </div>
-      </div>
-    </div>
-  );
+      if (progress < 1) {
+        frame = window.requestAnimationFrame(tick);
+      }
+    }
+
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, target]);
+
+  return active ? value : target;
 }
 
-function FeedbackSection({
-  title,
-  items,
-  icon,
-  accentClassName,
+function ScoreCard({
+  label,
+  score,
+  animate,
 }: {
-  title: string;
-  items: string[];
-  icon: React.ReactNode;
-  accentClassName: string;
+  label: string;
+  score: number;
+  animate: boolean;
 }) {
-  return (
-    <Glass className="p-6 space-y-4">
-      <div className="flex items-center gap-2">
-        <div className={accentClassName}>{icon}</div>
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-      </div>
+  const displayScore = useCountUp(score, animate);
+  const tone = getScoreTone(score);
 
-      <div className="space-y-3">
-        {items.length > 0 ? (
-          items.map((item, idx) => (
-            <div
-              key={idx}
-              className="rounded-lg border border-white/10 bg-white/5 p-3"
-            >
-              <p className="text-sm leading-relaxed text-slate-200">{item}</p>
-            </div>
-          ))
-        ) : (
-          <p className="text-xs text-slate-500 italic">No items to display</p>
-        )}
+  return (
+    <Glass className="relative overflow-hidden p-6">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" />
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+            {label}
+          </p>
+          <div className="mt-4 flex items-end gap-2">
+            <p className={`text-5xl font-bold ${tone.textClassName}`}>
+              {displayScore}
+            </p>
+            <p className="pb-1 text-sm text-slate-500">/100</p>
+          </div>
+          <p className="mt-3 text-sm text-slate-300">{tone.label}</p>
+        </div>
+
+        <div className="relative h-20 w-20">
+          <svg viewBox="0 0 120 120" className="-rotate-90">
+            <circle
+              cx="60"
+              cy="60"
+              r="46"
+              fill="none"
+              stroke="rgba(255,255,255,0.08)"
+              strokeWidth="10"
+            />
+            <circle
+              cx="60"
+              cy="60"
+              r="46"
+              fill="none"
+              stroke="url(#result-score-gradient)"
+              strokeWidth="10"
+              strokeLinecap="round"
+              strokeDasharray={289}
+              strokeDashoffset={289 - (displayScore / 100) * 289}
+            />
+            <defs>
+              <linearGradient
+                id="result-score-gradient"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="100%"
+              >
+                <stop offset="0%" stopColor="#22d3ee" />
+                <stop offset="100%" stopColor="#6366f1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
       </div>
     </Glass>
   );
 }
 
-function RadarChart({ metrics }: { metrics: AnalysisMetric[] }) {
-  const safeMetrics = metrics.slice(0, 6);
-  const count = safeMetrics.length;
-
-  if (!count) return null;
-
-  const size = 340;
-  const pad = 40;
-  const center = size / 2;
-  const radius = 110;
-  const levels = 4;
-  const angleStep = (Math.PI * 2) / count;
-
-  const polygonPoints = safeMetrics
-    .map((metric, index) => {
-      const angle = -Math.PI / 2 + index * angleStep;
-      const pct = clampScore(metric.score) / 100;
-      const x = center + Math.cos(angle) * radius * pct;
-      const y = center + Math.sin(angle) * radius * pct;
-      return `${x},${y}`;
-    })
-    .join(" ");
-
+function InsightCard({
+  title,
+  icon,
+  items,
+  accentClassName,
+}: {
+  title: string;
+  icon: ReactNode;
+  items: string[];
+  accentClassName: string;
+}) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-      <div className="mb-3 flex items-center justify-between">
-        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300">
-          Radar overview
-        </p>
-        <p className="text-xs text-slate-500">MVP+</p>
+    <Glass className="p-6">
+      <div className="flex items-center gap-2">
+        <div className={accentClassName}>{icon}</div>
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
       </div>
 
-      <svg
-        viewBox={`${-pad} ${-pad} ${size + pad * 2} ${size + pad * 2}`}
-        className="w-full overflow-visible"
-      >
-        {Array.from({ length: levels }).map((_, levelIndex) => {
-          const levelRadius = radius * ((levelIndex + 1) / levels);
-          const points = safeMetrics
-            .map((_, metricIndex) => {
-              const angle = -Math.PI / 2 + metricIndex * angleStep;
-              const x = center + Math.cos(angle) * levelRadius;
-              const y = center + Math.sin(angle) * levelRadius;
-              return `${x},${y}`;
-            })
-            .join(" ");
+      <div className="mt-4 space-y-3">
+        {items.map((item, index) => (
+          <div
+            key={`${title}-${index}`}
+            className="rounded-2xl border border-white/10 bg-black/20 p-4"
+          >
+            <p className="text-sm leading-6 text-slate-200">{item}</p>
+          </div>
+        ))}
+      </div>
+    </Glass>
+  );
+}
 
-          return (
-            <polygon
-              key={levelIndex}
-              points={points}
-              fill="none"
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth={1}
-            />
-          );
-        })}
-
-        {safeMetrics.map((metric, index) => {
-          const angle = -Math.PI / 2 + index * angleStep;
-          const outerX = center + Math.cos(angle) * radius;
-          const outerY = center + Math.sin(angle) * radius;
-          const pct = clampScore(metric.score) / 100;
-          const pointX = center + Math.cos(angle) * radius * pct;
-          const pointY = center + Math.sin(angle) * radius * pct;
-          const labelDistance = radius + 18;
-          const labelXRaw = center + Math.cos(angle) * labelDistance;
-          const labelY = center + Math.sin(angle) * labelDistance;
-          const safeMinX = 14;
-          const safeMaxX = size - 14;
-          const labelX = Math.max(safeMinX, Math.min(safeMaxX, labelXRaw));
-          const cos = Math.cos(angle);
-          const textAnchor =
-            cos > 0.2 ? "start" : cos < -0.2 ? "end" : "middle";
-
-          return (
-            <g key={metric.label}>
-              <line
-                x1={center}
-                y1={center}
-                x2={outerX}
-                y2={outerY}
-                stroke="rgba(255,255,255,0.12)"
-                strokeWidth={1}
-              />
-              <circle cx={pointX} cy={pointY} r={4} fill="rgb(56,189,248)" />
-              <text
-                x={labelX}
-                y={labelY}
-                fill="rgba(226,232,240,0.9)"
-                fontSize="11"
-                textAnchor={textAnchor}
-                dominantBaseline="middle"
-                pointerEvents="none"
-              >
-                {metric.label} {clampScore(metric.score)}
-              </text>
-            </g>
-          );
-        })}
-
-        <polygon
-          points={polygonPoints}
-          fill="rgba(56,189,248,0.18)"
-          stroke="rgb(56,189,248)"
-          strokeWidth={2}
+function MetricBar({ metric }: { metric: AnalysisMetric }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-sm font-medium text-slate-200">{metric.label}</p>
+        <p className="text-sm font-semibold text-white">
+          {clampScore(metric.score)}/100
+        </p>
+      </div>
+      <div className="mt-3 h-2 rounded-full bg-white/10">
+        <div
+          className="h-2 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 transition-[width] duration-700"
+          style={{ width: `${clampScore(metric.score)}%` }}
         />
-      </svg>
+      </div>
     </div>
   );
 }
@@ -387,6 +328,8 @@ export default function InterviewResultPageContent() {
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState<"processing" | "done">("processing");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const [animateScores, setAnimateScores] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -397,12 +340,10 @@ export default function InterviewResultPageContent() {
         typeof window !== "undefined"
           ? window.sessionStorage.getItem("interview:lastSessionId")
           : null;
-
       const storedResultRaw =
         typeof window !== "undefined"
           ? window.sessionStorage.getItem("interview:lastResult")
           : null;
-
       const sessionId = sessionIdFromUrl ?? storedSessionId;
 
       if (!sessionId) {
@@ -446,25 +387,16 @@ export default function InterviewResultPageContent() {
           timer = window.setTimeout(() => {
             if (cancelled) return;
             setResult((current) =>
-              current
-                ? {
-                    ...current,
-                    status: "done",
-                  }
-                : current,
+              current ? { ...current, status: "done" } : current,
             );
             setPhase("done");
-          }, 1200);
+          }, 1600);
         }
       } catch (error) {
         if (cancelled) return;
 
         if (storedFallback) {
-          setResult({
-            ...storedFallback,
-            sessionId,
-            status: "done",
-          });
+          setResult({ ...storedFallback, sessionId, status: "done" });
           setPhase("done");
         } else {
           setResult(null);
@@ -487,16 +419,28 @@ export default function InterviewResultPageContent() {
     };
   }, [sessionIdFromUrl]);
 
-  const isDone = phase === "done" && result?.status === "done";
+  useEffect(() => {
+    if (phase !== "done" || result?.status !== "done") return;
+    setAnimateScores(false);
+
+    const timer = window.setTimeout(() => setAnimateScores(true), 80);
+    return () => window.clearTimeout(timer);
+  }, [phase, result?.sessionId, result?.status]);
 
   const displayResult = useMemo(() => result, [result]);
+  const isDone = phase === "done" && result?.status === "done";
+  const overallScore = displayResult
+    ? Math.round(
+        (displayResult.technicalScore + displayResult.communicationScore) / 2,
+      )
+    : 0;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#080c18] flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-12 w-12 rounded-full border-4 border-white/10 border-t-indigo-500 animate-spin mx-auto" />
-          <p className="text-slate-400">Loading your results...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#050816]">
+        <div className="space-y-4 text-center">
+          <div className="mx-auto h-14 w-14 rounded-full border-4 border-white/10 border-t-cyan-400 animate-spin" />
+          <p className="text-sm text-slate-400">Loading your results...</p>
         </div>
       </div>
     );
@@ -504,9 +448,9 @@ export default function InterviewResultPageContent() {
 
   if (!displayResult) {
     return (
-      <div className="min-h-screen bg-[#080c18] px-4 py-8 flex items-center justify-center">
-        <Glass className="p-12 max-w-md text-center space-y-6">
-          <AlertCircle className="h-12 w-12 text-amber-400 mx-auto" />
+      <div className="flex min-h-screen items-center justify-center bg-[#050816] px-4 py-8">
+        <Glass className="max-w-md space-y-6 p-10 text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-amber-400" />
           <div className="space-y-2">
             <h2 className="text-xl font-semibold text-white">
               Analysis unavailable
@@ -517,7 +461,7 @@ export default function InterviewResultPageContent() {
             </p>
           </div>
           <Button onClick={() => router.push("/interview")} className="w-full">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Interview
           </Button>
         </Glass>
@@ -527,58 +471,82 @@ export default function InterviewResultPageContent() {
 
   if (!isDone) {
     return (
-      <div className="min-h-screen bg-[#080c18] px-4 py-8">
-        <div className="relative mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col items-center justify-center text-center">
-          <Glass className="w-full p-10 space-y-6">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-indigo-500/15">
-              <Loader2 className="h-8 w-8 animate-spin text-indigo-300" />
-            </div>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_30%),linear-gradient(180deg,_#050816,_#09111f)] px-4 py-8">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center justify-center">
+          <Glass className="w-full overflow-hidden p-8 sm:p-10">
+            <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
+                  <Sparkles className="h-4 w-4" />
+                  Analyzing
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                    Processing your interview
+                  </h1>
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400 sm:text-base">
+                    We are generating transcript insights, score breakdowns, and
+                    coaching notes for this response.
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-white">
-                Processing your interview
-              </h1>
-              <p className="text-sm leading-relaxed text-slate-400">
-                The analysis is being prepared. This screen simulates the
-                Processing state before showing Done.
-              </p>
-            </div>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {[
+                    "Transcribing answer",
+                    "Scoring communication",
+                    "Generating coaching notes",
+                  ].map((step, index) => (
+                    <div
+                      key={step}
+                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                    >
+                      <div className="mb-3 flex items-center gap-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-400/10 text-xs font-semibold text-cyan-200">
+                          0{index + 1}
+                        </span>
+                        <Loader2 className="h-4 w-4 animate-spin text-cyan-300" />
+                      </div>
+                      <p className="text-sm text-slate-300">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <div className="grid gap-3 rounded-2xl border border-white/10 bg-black/20 p-4 text-left sm:grid-cols-3">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <p className="text-xs uppercase tracking-widest text-slate-500">
-                  Status
-                </p>
-                <p className="mt-1 text-sm font-semibold text-white">
-                  Processing
-                </p>
+              <div className="rounded-[1.5rem] border border-white/10 bg-black/30 p-6">
+                <div className="space-y-5">
+                  <div className="flex gap-3">
+                    {[0, 1, 2].map((item) => (
+                      <div
+                        key={item}
+                        className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"
+                      >
+                        <div
+                          className="h-full animate-pulse rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500"
+                          style={{ width: `${70 + item * 10}%` }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="space-y-4">
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Session
+                      </p>
+                      <p className="mt-2 truncate text-sm font-medium text-white">
+                        {displayResult.sessionId}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                        Current stage
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-white">
+                        AI review in progress
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <p className="text-xs uppercase tracking-widest text-slate-500">
-                  Session
-                </p>
-                <p className="mt-1 truncate text-sm font-semibold text-white">
-                  {displayResult.sessionId}
-                </p>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-                <p className="text-xs uppercase tracking-widest text-slate-500">
-                  Mode
-                </p>
-                <p className="mt-1 text-sm font-semibold text-white">
-                  Frontend mock
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => router.push("/interview")}
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Interview
-              </Button>
             </div>
           </Glass>
         </div>
@@ -587,117 +555,137 @@ export default function InterviewResultPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#080c18] px-4 py-8">
-      <div className="relative mx-auto max-w-6xl space-y-8">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push("/interview")}
-            className="rounded-lg border border-white/10 p-2 transition-colors hover:bg-white/5"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-5 w-5 text-slate-400" />
-          </button>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(99,102,241,0.16),_transparent_30%),linear-gradient(180deg,_#050816,_#0a1220_42%,_#08101d)] px-4 py-8">
+      <div className="mx-auto max-w-6xl space-y-8">
+        <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex items-start gap-4">
+            <button
+              onClick={() => router.push("/interview")}
+              className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10"
+              aria-label="Back"
+            >
+              <ArrowLeft className="h-5 w-5 text-slate-300" />
+            </button>
 
-          <div className="space-y-1">
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Interview Results
-            </h1>
-            <p className="text-sm text-slate-400">
-              Here&apos;s your performance breakdown
-            </p>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
+                Interview Result
+              </p>
+              <h1 className="mt-2 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                Performance breakdown
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400 sm:text-base">
+                Review the score summary, metrics, and coaching notes from this
+                interview attempt.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <Glass className="p-5 lg:min-w-[280px]">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Overall score
+            </p>
+            <p className="mt-2 text-4xl font-bold text-white">{overallScore}%</p>
+            <p className="mt-2 text-sm text-slate-400">
+              Based on technical depth and communication clarity.
+            </p>
+          </Glass>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-3">
+          <ScoreCard
+            label="Technical Score"
+            score={displayResult.technicalScore}
+            animate={animateScores}
+          />
+          <ScoreCard
+            label="Communication Score"
+            score={displayResult.communicationScore}
+            animate={animateScores}
+          />
           <Glass className="p-6">
-            <div className="mb-6 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
+              Coach summary
+            </p>
+            <p className="mt-4 text-sm leading-7 text-slate-200">
+              {displayResult.feedback || "Your answer was analyzed successfully."}
+            </p>
+          </Glass>
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+          <Glass className="p-6">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300">
-                  Analysis Status
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
+                  Transcript
                 </p>
                 <p className="mt-1 text-sm text-slate-400">
-                  {displayResult.feedback || "Completed successfully."}
+                  Expand to inspect the full spoken response.
                 </p>
               </div>
-              <div className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/30">
-                Done
-              </div>
+              <button
+                onClick={() => setTranscriptOpen((value) => !value)}
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200 transition hover:bg-white/10"
+              >
+                {transcriptOpen ? "Collapse" : "Expand"}
+                {transcriptOpen ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
+              </button>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2">
-              <ScoreBadge
-                label="Technical Score"
-                score={displayResult.technicalScore}
-              />
-              <ScoreBadge
-                label="Communication Score"
-                score={displayResult.communicationScore}
-              />
+            <div
+              className={`overflow-hidden transition-[max-height,opacity] duration-300 ${transcriptOpen ? "max-h-[480px] opacity-100" : "max-h-24 opacity-90"}`}
+            >
+              <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
+                <p className="text-sm leading-7 text-slate-300">
+                  {displayResult.transcript || "No transcript available."}
+                </p>
+              </div>
             </div>
           </Glass>
 
           <Glass className="p-6">
-            <RadarChart metrics={displayResult.metrics} />
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              {displayResult.metrics.slice(0, 6).map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border border-white/10 bg-white/5 p-3"
-                >
-                  <p className="text-xs uppercase tracking-widest text-slate-500">
-                    {metric.label}
-                  </p>
-                  <p className="mt-1 font-semibold text-white">
-                    {clampScore(metric.score)}/100
-                  </p>
-                </div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-200">
+              Metrics
+            </p>
+            <div className="mt-4 space-y-3">
+              {displayResult.metrics.map((metric) => (
+                <MetricBar key={metric.label} metric={metric} />
               ))}
             </div>
           </Glass>
-        </div>
+        </section>
 
-        <Glass className="p-6 space-y-4">
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-300">
-            Your Response
-          </p>
-          <div className="rounded-lg border border-white/5 bg-black/40 p-4">
-            <p className="text-sm leading-relaxed text-slate-300 italic">
-              &quot;{displayResult.transcript || "No transcript available."}
-              &quot;
-            </p>
-          </div>
-        </Glass>
-
-        <div className="grid gap-6 lg:grid-cols-3">
-          <FeedbackSection
+        <section className="grid gap-6 lg:grid-cols-3">
+          <InsightCard
             title="Strengths"
-            items={displayResult.feedback ? [displayResult.feedback] : []}
+            items={
+              displayResult.strengths.length
+                ? displayResult.strengths
+                : ["The response showed a workable baseline structure."]
+            }
             icon={<CheckCircle2 className="h-5 w-5" />}
             accentClassName="text-emerald-400"
           />
-
-          <FeedbackSection
+          <InsightCard
             title="Weaknesses"
-            items={[
-              "Cần thêm dẫn chứng cụ thể",
-              "Nên đi sâu hơn vào trade-off",
-            ]}
+            items={displayResult.weaknesses}
             icon={<AlertCircle className="h-5 w-5" />}
             accentClassName="text-amber-400"
           />
-
-          <FeedbackSection
+          <InsightCard
             title="Suggestions"
-            items={[
-              "Giữ cấu trúc câu trả lời rõ ràng hơn.",
-              "Thêm một ví dụ thực tế để tăng độ tin cậy.",
-            ]}
+            items={displayResult.suggestions}
             icon={<Lightbulb className="h-5 w-5" />}
-            accentClassName="text-blue-400"
+            accentClassName="text-sky-400"
           />
-        </div>
+        </section>
 
-        <div className="flex gap-3 pt-4">
+        <section className="flex gap-3 pt-2">
           <Button
             onClick={() => router.push("/interview")}
             variant="outline"
@@ -708,7 +696,7 @@ export default function InterviewResultPageContent() {
           <Button onClick={() => router.push("/dashboard")} className="flex-1">
             Back to Dashboard
           </Button>
-        </div>
+        </section>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { UpdateQuestionDto } from './dto/update_question.dto';
 import { Role } from 'src/entities/user.entity';
 import { Roles } from 'src/common/decorator/roles.decorator';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 
 @ApiTags('Questions')
 @Controller('questions')

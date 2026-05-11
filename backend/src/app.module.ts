@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
 import { QuestionsModule } from './questions/questions.module';
 import { TagsModule } from './tag/tags.module';
+import { RedisModule } from './common/redis/redis.module';
 
 import { Category } from './entities/category.entity';
 import { Question } from './entities/question.entity';
@@ -33,6 +34,7 @@ import { InterviewsService } from './interviews/interviews.service';
     CategoriesModule,
     TagsModule,
     QuestionsModule,
+    RedisModule,
 
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],

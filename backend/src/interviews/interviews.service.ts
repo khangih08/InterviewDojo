@@ -12,17 +12,19 @@ import * as path from 'path';
 export class InterviewsService {
   private groq: OpenAI;
   private genAI: GoogleGenerativeAI;
+  private groqApiKey: string;
 
   constructor(
     @InjectRepository(Interview) private interviewRepo: Repository<Interview>,
     @InjectRepository(Message) private messageRepo: Repository<Message>,
   ) {
+    this.groqApiKey = (process.env.GROQ_API_KEY || '').trim();
     this.groq = new OpenAI({
-      apiKey: process.env.GROQ_API_KEY || '',
+      apiKey: this.groqApiKey,
       baseURL: 'https://api.groq.com/openai/v1',
     });
 
-    this.genAI = new GoogleGenerativeAI(process.env.Gemini_API_KEY || '');
+    this.genAI = new GoogleGenerativeAI((process.env.Gemini_API_KEY || '').trim());
   }
 
   async startInterview(type: string, cvText?: string, jdText?: string) {
@@ -80,11 +82,10 @@ export class InterviewsService {
     const interview = await this.interviewRepo.findOne({ where: { id: interviewId } });
     if (!interview) throw new BadRequestException('Phỏng vấn không tồn tại!');
 
+    if (!this.groqApiKey) throw new BadRequestException('Thiáº¿u GROQ_API_KEY trÃªn backend.');
     let audioFilePath = '';
-    let isTempFile = false;
 
     try {
-
       let ext = 'webm';
       if (file.originalname && file.originalname.includes('.')) {
         ext = file.originalname.split('.').pop()?.toLowerCase() || 'webm';
@@ -95,16 +96,21 @@ export class InterviewsService {
         ext = 'webm';
       }
 
-      audioFilePath = path.join(__dirname, `temp_${Date.now()}.${ext}`);
+      audioFilePath = path.join(process.cwd(), 'uploads', `temp_${Date.now()}.${ext}`);
+      fs.mkdirSync(path.dirname(audioFilePath), { recursive: true });
 
-      if (file.buffer) {
+      if (file.buffer?.length) {
         fs.writeFileSync(audioFilePath, file.buffer);
       } else if (file.path) {
         fs.copyFileSync(file.path, audioFilePath);
       } else {
-        throw new Error("File âm thanh bị lỗi cấu trúc.");
+        throw new Error('File âm thanh bị lỗi cấu trúc.');
       }
-      isTempFile = true;
+
+      const audioStats = fs.statSync(audioFilePath);
+      if (!audioStats.size) {
+        throw new Error('File âm thanh rỗng.');
+      }
 
       const transcription = await this.groq.audio.transcriptions.create({
         file: fs.createReadStream(audioFilePath),
@@ -114,7 +120,7 @@ export class InterviewsService {
       const userText = transcription.text || '';
 
       if (!userText || userText.trim() === "") {
-        throw new Error("Không nhận diện được giọng nói.");
+        throw new Error('Không nhận diện được giọng nói.');
       }
 
       const history = await this.messageRepo.find({
@@ -142,12 +148,23 @@ export class InterviewsService {
 
       return { success: true, userText, aiResponse };
 
-    } catch (error) {
-      console.error("Lỗi AI:", error);
-      throw new BadRequestException("AI đang bận hoặc không nghe rõ, thử lại sau!");
+    } catch (error: any) {
+      console.error('Lỗi AI:', error);
+      if (error?.status === 401) {
+        throw new BadRequestException('GROQ_API_KEY khong hop le hoac da het hieu luc. Hay cap nhat key trong backend/.env va khoi dong lai backend.');
+      }
+      const message =
+        typeof error?.message === 'string' && error.message.trim() !== ''
+          ? error.message
+          : 'AI đang bận hoặc không nghe rõ, thử lại sau!';
+      throw new BadRequestException(message);
     } finally {
-      if (isTempFile && fs.existsSync(audioFilePath)) {
+      if (audioFilePath && fs.existsSync(audioFilePath)) {
         fs.unlinkSync(audioFilePath);
+      }
+
+      if (file.path && file.path !== audioFilePath && fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
       }
     }
   }
