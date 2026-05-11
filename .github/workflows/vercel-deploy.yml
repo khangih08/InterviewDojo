@@ -69,10 +69,24 @@ jobs:
         id: deploy
         run: |
           set -euo pipefail
-          DEPLOYMENT_URL="$(vercel deploy --prod --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend 2>&1 | tee /tmp/vercel_deploy.log | grep -Eo 'https://[^ ]+\.vercel\.app' | tail -n 1 | tr -d '\r')"
+          rm -f /tmp/vercel_deploy.log
+
+          set +e
+          vercel deploy --prod --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend 2>&1 | tee /tmp/vercel_deploy.log
+          deploy_status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$deploy_status" -ne 0 ]; then
+            echo "::error::Vercel deploy failed. Full log follows."
+            cat /tmp/vercel_deploy.log
+            exit "$deploy_status"
+          fi
+
+          DEPLOYMENT_URL="$(grep -Eo 'https://[^ ]+\.vercel\.app' /tmp/vercel_deploy.log | tail -n 1 | tr -d '\r')"
 
           if [ -z "${DEPLOYMENT_URL}" ]; then
             echo "::error::Could not detect deployment URL from Vercel CLI output."
+            cat /tmp/vercel_deploy.log
             exit 1
           fi
 
