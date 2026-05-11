@@ -100,19 +100,19 @@ export function SessionsManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Active Sessions</h2>
-          <p className="text-gray-600 mt-1">
+          <h2 className="text-2xl font-bold text-slate-950 dark:text-white">Active Sessions</h2>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">
             Manage your active sessions across devices
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {sessions.length > 1 && (
             <button
               onClick={handleRevokeAllOther}
               disabled={revoking === 'all-other'}
-              className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
             >
               {revoking === 'all-other' && <Loader2 className="h-4 w-4 animate-spin" />}
               Logout Other Devices
@@ -121,7 +121,7 @@ export function SessionsManagement() {
           <button
             onClick={handleRevokeAll}
             disabled={revoking === 'all'}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
             Logout All Devices
@@ -131,37 +131,45 @@ export function SessionsManagement() {
 
       {/* Sessions List */}
       {sessions.length === 0 ? (
-        <div className="bg-gray-50 rounded-lg p-8 text-center">
-          <Smartphone className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-600">No active sessions found</p>
+        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-800">
+          <Smartphone className="h-12 w-12 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-400 font-medium">No active sessions found</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4">
           {sessions.map((session) => (
             <div
               key={session.id}
-              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none transition-all group"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <Smartphone className="h-5 w-5 text-gray-400" />
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
+                      <Smartphone className="h-5 w-5" />
+                    </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">
+                      <h3 className="font-bold text-slate-950 dark:text-white">
                         {session.device_name || 'Unknown Device'}
                       </h3>
                       {session.ip_address && (
-                        <p className="text-sm text-gray-500">IP: {session.ip_address}</p>
+                        <p className="text-xs font-mono text-slate-500 dark:text-slate-500 mt-0.5">IP: {session.ip_address}</p>
                       )}
-                      <div className="flex gap-4 mt-2 text-xs text-gray-600">
-                        <span>Created: {formatDate(session.created_at)}</span>
-                        <span>Last accessed: {formatDate(session.last_accessed_at)}</span>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                          Created: {formatDate(session.created_at)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
+                          Accessed: {formatDate(session.last_accessed_at)}
+                        </span>
                       </div>
                       {isExpired(session.expires_at) && (
-                        <p className="text-xs text-red-600 mt-1">Expired</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-600 mt-2 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded inline-block">Expired</p>
                       )}
                       {session.expires_at && !isExpired(session.expires_at) && (
-                        <p className="text-xs text-yellow-600 mt-1">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mt-2 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded inline-block">
                           Expires: {formatDate(session.expires_at)}
                         </p>
                       )}
@@ -171,7 +179,7 @@ export function SessionsManagement() {
                 <button
                   onClick={() => handleRevokeSession(session.id)}
                   disabled={revoking === session.id}
-                  className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all disabled:opacity-50"
                   title="Revoke this session"
                 >
                   {revoking === session.id ? (
@@ -187,11 +195,14 @@ export function SessionsManagement() {
       )}
 
       {/* Info Box */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Tip:</strong> Each time you log in, a new session is created. Revoke sessions to
-          log out from specific devices. Sessions automatically expire after 7 days.
-        </p>
+      <div className="bg-sky-50 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-900/30 rounded-3xl p-5">
+        <div className="flex gap-3">
+          <div className="h-5 w-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">!</div>
+          <p className="text-sm text-sky-800 dark:text-sky-300 leading-relaxed">
+            <strong className="font-bold">Tip:</strong> Each time you log in, a new session is created. Revoke sessions to
+            log out from specific devices. Sessions automatically expire after 7 days of inactivity.
+          </p>
+        </div>
       </div>
     </div>
   );

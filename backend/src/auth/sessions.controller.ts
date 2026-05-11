@@ -7,6 +7,7 @@ import {
   Param,
   UseGuards,
   Req,
+  Logger,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -27,6 +28,8 @@ import {
 @Controller('sessions')
 @ApiBearerAuth()
 export class SessionsController {
+  private readonly logger = new Logger(SessionsController.name);
+
   constructor(private readonly sessionsService: SessionsService) {}
 
   /**
@@ -52,7 +55,12 @@ export class SessionsController {
   async getSessions(
     @GetUser('id') userId: string,
   ): Promise<SessionResponseDto[]> {
-    return this.sessionsService.getUserSessions(userId);
+    try {
+      return await this.sessionsService.getUserSessions(userId);
+    } catch (error) {
+      this.logger.error(`Error getting sessions for user ${userId}:`, error);
+      throw error;
+    }
   }
 
   /**
