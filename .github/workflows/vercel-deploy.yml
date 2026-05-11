@@ -34,7 +34,7 @@ jobs:
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
-        
+
       - name: Debug Secrets
         run: |
           if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
@@ -42,11 +42,20 @@ jobs:
           else
             echo "VERCEL_ORG_ID is provided."
           fi
-          
+
           if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
             echo "::error::VERCEL_PROJECT_ID is empty!"
           else
             echo "VERCEL_PROJECT_ID is provided."
+          fi
+
+      - name: Clean local Vercel config
+        run: |
+          if [ -d "frontend/.vercel" ]; then
+            echo "Removing existing frontend/.vercel to avoid stale project link"
+            rm -rf frontend/.vercel
+          else
+            echo "No frontend/.vercel directory present"
           fi
 
       - name: Pull Vercel environment
