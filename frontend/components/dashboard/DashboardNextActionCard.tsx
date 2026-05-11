@@ -10,16 +10,18 @@ export function DashboardNextActionCard({
   guide,
 }: DashboardNextActionCardProps) {
   return (
-    <Card>
+    <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <Target className="h-4 w-4 text-rose-500" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-rose-500 to-pink-500 text-white shadow-sm">
+            <Target className="h-3.5 w-3.5" />
+          </div>
           Next Action
         </CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="rounded-xl bg-rose-50 p-4 text-sm text-rose-700">
+        <div className="rounded-xl bg-rose-500/10 dark:bg-rose-500/15 border border-rose-500/20 p-4 text-sm text-rose-700 dark:text-rose-300">
           {guide.nextAction}
         </div>
 
@@ -31,7 +33,7 @@ export function DashboardNextActionCard({
             {guide.focusTopics.map((topic) => (
               <span
                 key={topic}
-                className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"
+                className="rounded-full bg-accent/60 border border-border/40 px-3 py-1 text-xs font-medium"
               >
                 {topic}
               </span>
@@ -39,9 +41,9 @@ export function DashboardNextActionCard({
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-medium text-slate-900">{guide.planName}</p>
-          <p className="mt-1 text-sm text-slate-600">{guide.planSummary}</p>
+        <div className="rounded-xl border border-border/40 bg-accent/20 p-4">
+          <p className="text-sm font-medium">{guide.planName}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{guide.planSummary}</p>
         </div>
       </CardContent>
     </Card>

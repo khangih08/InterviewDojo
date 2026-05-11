@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { userSessionsApi } from '@/lib/api/sessions';
 import { UserSession } from '@/lib/api/types';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { Loader2, LogOut, Smartphone, Trash2 } from 'lucide-react';
+import { Loader2, LogOut, Monitor, Smartphone, Trash2 } from 'lucide-react';
 
 export function SessionsManagement() {
   const [sessions, setSessions] = useState<UserSession[]>([]);
@@ -92,118 +92,135 @@ export function SessionsManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+          <span className="text-sm text-muted-foreground">Loading sessions...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-950 dark:text-white">Active Sessions</h2>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Manage your active sessions across devices
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {sessions.length > 1 && (
-            <button
-              onClick={handleRevokeAllOther}
-              disabled={revoking === 'all-other'}
-              className="px-4 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
-            >
-              {revoking === 'all-other' && <Loader2 className="h-4 w-4 animate-spin" />}
-              Logout Other Devices
-            </button>
-          )}
-          <button
-            onClick={handleRevokeAll}
-            disabled={revoking === 'all'}
-            className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center gap-2 text-sm font-medium"
-          >
-            {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
-            Logout All Devices
-          </button>
-        </div>
-      </div>
+    <section className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 backdrop-blur-sm px-6 py-6 shadow-sm">
+      <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl" />
 
-      {/* Sessions List */}
-      {sessions.length === 0 ? (
-        <div className="bg-slate-50 dark:bg-slate-900/50 rounded-3xl p-12 text-center border border-slate-100 dark:border-slate-800">
-          <Smartphone className="h-12 w-12 text-slate-300 dark:text-slate-700 mx-auto mb-4" />
-          <p className="text-slate-600 dark:text-slate-400 font-medium">No active sessions found</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {sessions.map((session) => (
-            <div
-              key={session.id}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 hover:shadow-lg hover:shadow-slate-200/50 dark:hover:shadow-none transition-all group"
+      <div className="relative space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-500/20">
+              <Monitor className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">
+                Security
+              </p>
+              <h2 className="mt-1 text-xl font-bold">Active Sessions</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage your active sessions across devices
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {sessions.length > 1 && (
+              <button
+                onClick={handleRevokeAllOther}
+                disabled={revoking === 'all-other'}
+                className="px-4 py-2.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 rounded-xl hover:bg-amber-500/20 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 text-sm font-medium"
+              >
+                {revoking === 'all-other' && <Loader2 className="h-4 w-4 animate-spin" />}
+                <LogOut className="h-4 w-4" />
+                Logout Other Devices
+              </button>
+            )}
+            <button
+              onClick={handleRevokeAll}
+              disabled={revoking === 'all'}
+              className="px-4 py-2.5 bg-destructive/10 text-destructive border border-destructive/20 rounded-xl hover:bg-destructive/20 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 text-sm font-medium"
             >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors">
-                      <Smartphone className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-950 dark:text-white">
-                        {session.device_name || 'Unknown Device'}
-                      </h3>
-                      {session.ip_address && (
-                        <p className="text-xs font-mono text-slate-500 dark:text-slate-500 mt-0.5">IP: {session.ip_address}</p>
-                      )}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] font-medium uppercase tracking-wider text-slate-500 dark:text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                          Created: {formatDate(session.created_at)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <span className="h-1 w-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-                          Accessed: {formatDate(session.last_accessed_at)}
-                        </span>
+              {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
+              <LogOut className="h-4 w-4" />
+              Logout All Devices
+            </button>
+          </div>
+        </div>
+
+        {/* Sessions List */}
+        {sessions.length === 0 ? (
+          <div className="rounded-2xl bg-accent/30 border border-border/30 p-12 text-center">
+            <Smartphone className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground font-medium">No active sessions found</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {sessions.map((session) => (
+              <div
+                key={session.id}
+                className="group rounded-2xl border border-border/40 bg-card p-5 transition-all duration-200 hover:border-primary/20 hover:shadow-md"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-xl bg-accent/50 flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors duration-200">
+                        <Smartphone className="h-5 w-5" />
                       </div>
-                      {isExpired(session.expires_at) && (
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-600 mt-2 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded inline-block">Expired</p>
-                      )}
-                      {session.expires_at && !isExpired(session.expires_at) && (
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 mt-2 bg-amber-50 dark:bg-amber-900/20 px-2 py-0.5 rounded inline-block">
-                          Expires: {formatDate(session.expires_at)}
-                        </p>
-                      )}
+                      <div>
+                        <h3 className="font-bold">
+                          {session.device_name || 'Unknown Device'}
+                        </h3>
+                        {session.ip_address && (
+                          <p className="text-xs font-mono text-muted-foreground mt-0.5">IP: {session.ip_address}</p>
+                        )}
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-1 w-1 rounded-full bg-primary/40" />
+                            Created: {formatDate(session.created_at)}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <span className="h-1 w-1 rounded-full bg-primary/40" />
+                            Accessed: {formatDate(session.last_accessed_at)}
+                          </span>
+                        </div>
+                        {isExpired(session.expires_at) && (
+                          <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-destructive bg-destructive/10 border border-destructive/20 px-2.5 py-0.5 rounded-full">Expired</span>
+                        )}
+                        {session.expires_at && !isExpired(session.expires_at) && (
+                          <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
+                            Expires: {formatDate(session.expires_at)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  <button
+                    onClick={() => handleRevokeSession(session.id)}
+                    disabled={revoking === session.id}
+                    className="p-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-200 disabled:opacity-50"
+                    title="Revoke this session"
+                  >
+                    {revoking === session.id ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-5 w-5" />
+                    )}
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleRevokeSession(session.id)}
-                  disabled={revoking === session.id}
-                  className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all disabled:opacity-50"
-                  title="Revoke this session"
-                >
-                  {revoking === session.id ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-5 w-5" />
-                  )}
-                </button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* Info Box */}
-      <div className="bg-sky-50 dark:bg-sky-900/10 border border-sky-100 dark:border-sky-900/30 rounded-3xl p-5">
-        <div className="flex gap-3">
-          <div className="h-5 w-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">!</div>
-          <p className="text-sm text-sky-800 dark:text-sky-300 leading-relaxed">
-            <strong className="font-bold">Tip:</strong> Each time you log in, a new session is created. Revoke sessions to
-            log out from specific devices. Sessions automatically expire after 7 days of inactivity.
-          </p>
+        {/* Info Box */}
+        <div className="rounded-2xl bg-primary/5 border border-primary/15 p-5">
+          <div className="flex gap-3">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[10px] font-bold mt-0.5">!</div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              <strong className="font-bold text-foreground">Tip:</strong> Each time you log in, a new session is created. Revoke sessions to
+              log out from specific devices. Sessions automatically expire after 7 days of inactivity.
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

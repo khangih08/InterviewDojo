@@ -105,39 +105,43 @@ type DashboardHeroProps = {
 export function DashboardHero({
   name,
   guide,
-  totalSessions,
-  avgScore,
 }: DashboardHeroProps) {
   return (
-    <section className="overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-700 p-6 text-white shadow-lg sm:p-8">
-      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-violet-200">
-        <LayoutDashboard className="h-4 w-4" />
-        Dashboard
-      </div>
+    <section className="relative overflow-hidden rounded-3xl glow-gradient p-6 text-white shadow-xl shadow-primary/20 sm:p-8">
+      {/* Decorative orbs */}
+      <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-white/5 blur-2xl" />
+      <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
 
-      <div className="mt-4 grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-end">
-        <div>
-          <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
-            Welcome back, {name}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-violet-100/90 sm:text-base">
-            Your current track is {guide.planName} ({guide.planLength}). Keep
-            momentum by practicing focused sessions and reviewing feedback after
-            each round.
-          </p>
+      <div className="relative">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/60">
+          <LayoutDashboard className="h-4 w-4" />
+          Dashboard
+        </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button
-              asChild
-              className="bg-white text-violet-700 hover:bg-violet-50"
-            >
-              <Link href="/questions" className="flex items-center gap-2">
-                Practice now <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
+        <div className="mt-4 grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-end">
+          <div>
+            <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
+              Welcome back, {name}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+              Your current track is {guide.planName} ({guide.planLength}). Keep
+              momentum by practicing focused sessions and reviewing feedback after
+              each round.
+            </p>
 
-            <div className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-violet-50">
-              {guide.mockType}
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button
+                asChild
+                className="bg-white text-primary hover:bg-white/90 shadow-lg shadow-black/10 transition-all duration-300 hover:scale-[1.02]"
+              >
+                <Link href="/questions" className="flex items-center gap-2">
+                  Practice now <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+
+              <div className="rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-2 text-sm text-white/80">
+                {guide.mockType}
+              </div>
             </div>
           </div>
         </div>
