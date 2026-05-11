@@ -49,14 +49,21 @@ jobs:
             echo "VERCEL_PROJECT_ID is provided."
           fi
 
-      - name: Clean local Vercel config
+      - name: Debug and remove any local .vercel directories
         run: |
-          if [ -d "frontend/.vercel" ]; then
-            echo "Removing existing frontend/.vercel to avoid stale project link"
-            rm -rf frontend/.vercel
-          else
-            echo "No frontend/.vercel directory present"
-          fi
+          echo "Searching for .vercel directories (show up to 5 results)"
+          find . -type d -name '.vercel' -print | head -n 5 || true
+
+          echo "Listing contents of workspace root and frontend for context"
+          ls -la . | head -n 50 || true
+          ls -la frontend || true
+
+          echo "Removing any .vercel directories found under workspace"
+          find . -type d -name '.vercel' -print -exec sh -c 'echo "Removing: $1"; rm -rf "$1"' _ {} \; || true
+
+          echo "Verify no .vercel directories remain"
+          find . -type d -name '.vercel' -print || true
+          ls -la frontend || true
 
       - name: Pull Vercel environment
         run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend
