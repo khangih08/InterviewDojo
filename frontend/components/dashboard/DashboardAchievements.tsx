@@ -8,7 +8,8 @@ type Achievement = {
   label: string;
   description: string;
   unlocked: boolean;
-  color: string;
+  gradient: string;
+  unlockedGradient: string;
 };
 
 type DashboardAchievementsProps = {
@@ -29,7 +30,8 @@ export function DashboardAchievements({
       label: "First Step",
       description: "Complete 1 interview",
       unlocked: totalSessions >= 1,
-      color: completedSessions >= 1 ? "text-blue-500" : "text-gray-300",
+      gradient: "from-blue-500 to-cyan-500",
+      unlockedGradient: "from-blue-500/10 to-cyan-500/10",
     },
     {
       id: "momentum",
@@ -37,7 +39,8 @@ export function DashboardAchievements({
       label: "Gaining Momentum",
       description: "Complete 5 interviews",
       unlocked: totalSessions >= 5,
-      color: completedSessions >= 5 ? "text-orange-500" : "text-gray-300",
+      gradient: "from-orange-500 to-red-500",
+      unlockedGradient: "from-orange-500/10 to-red-500/10",
     },
     {
       id: "consistent",
@@ -45,7 +48,8 @@ export function DashboardAchievements({
       label: "Consistency",
       description: "Maintain 80%+ average",
       unlocked: avgScore >= 80,
-      color: avgScore >= 80 ? "text-amber-500" : "text-gray-300",
+      gradient: "from-amber-500 to-yellow-500",
+      unlockedGradient: "from-amber-500/10 to-yellow-500/10",
     },
     {
       id: "excellence",
@@ -53,21 +57,24 @@ export function DashboardAchievements({
       label: "Excellence",
       description: "Achieve 95%+ score",
       unlocked: avgScore >= 95,
-      color: avgScore >= 95 ? "text-purple-500" : "text-gray-300",
+      gradient: "from-violet-500 to-purple-500",
+      unlockedGradient: "from-violet-500/10 to-purple-500/10",
     },
   ];
 
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <Card>
+    <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-sm">
           <span className="flex items-center gap-2">
-            <Trophy className="h-4 w-4 text-amber-500" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 text-white shadow-sm">
+              <Trophy className="h-3.5 w-3.5" />
+            </div>
             Achievements
           </span>
-          <Badge variant="outline">
+          <Badge variant="outline" className="text-xs">
             {unlockedCount}/{achievements.length}
           </Badge>
         </CardTitle>
@@ -80,25 +87,31 @@ export function DashboardAchievements({
             return (
               <div
                 key={achievement.id}
-                className={`flex items-center gap-3 rounded-lg p-3 transition-all ${
+                className={`flex items-center gap-3 rounded-xl p-3 transition-all duration-300 ${
                   achievement.unlocked
-                    ? "bg-gradient-to-r from-yellow-50 to-amber-50 border border-amber-100"
-                    : "bg-gray-50 border border-gray-100 opacity-60"
+                    ? `bg-gradient-to-r ${achievement.unlockedGradient} border border-amber-500/20 dark:border-amber-500/15`
+                    : "bg-accent/30 border border-border/30 opacity-50"
                 }`}
               >
-                <Icon
-                  className={`h-5 w-5 flex-shrink-0 ${achievement.color}`}
-                />
+                <div
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                    achievement.unlocked
+                      ? `bg-gradient-to-br ${achievement.gradient} text-white shadow-sm`
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" />
+                </div>
                 <div className="flex-grow">
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium">
                     {achievement.label}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {achievement.description}
                   </p>
                 </div>
                 {achievement.unlocked && (
-                  <span className="text-xs font-bold text-amber-600">✓</span>
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">✓</span>
                 )}
               </div>
             );
@@ -106,8 +119,8 @@ export function DashboardAchievements({
         </div>
 
         {unlockedCount === achievements.length && (
-          <div className="mt-4 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 p-3 text-center">
-            <p className="text-sm font-semibold text-purple-900">
+          <div className="mt-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-pink-500/10 border border-violet-500/20 p-3 text-center">
+            <p className="text-sm font-semibold glow-gradient-text">
               🎉 All Achievements Unlocked!
             </p>
           </div>

@@ -41,18 +41,17 @@ const socialLinks = [
 
 export default function Footer() {
   return (
-    <footer className="border-t bg-background">
-      {/* Main footer content */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+    <footer className="border-t border-border/50 bg-card/50 backdrop-blur-sm">
+      <div className="container mx-auto px-4 py-14">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
           {/* Brand column */}
           <div className="col-span-2 md:col-span-3 lg:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-600 text-sm font-black shadow-lg shadow-violet-900/30 text-white">
+            <Link href="/" className="flex items-center gap-2.5 mb-5 group">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl glow-gradient text-sm font-black text-white shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
                 ID
               </span>
               <span className="text-lg font-bold tracking-tight">
-                InterviewDojo
+                Interview<span className="glow-gradient-text">Dojo</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-xs">
@@ -60,14 +59,13 @@ export default function Footer() {
               your dream job with confidence.
             </p>
 
-            {/* Social links */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {socialLinks.map(({ icon: Icon, href, label }) => (
                 <Link
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="flex h-8 w-8 items-center justify-center rounded-md border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
                 >
                   <Icon className="h-4 w-4" />
                 </Link>
@@ -78,15 +76,13 @@ export default function Footer() {
           {/* Link columns */}
           {Object.entries(footerLinks).map(([category, links]) => (
             <div key={category}>
-              <h3 className="text-sm font-semibold text-foreground mb-4">
-                {category}
-              </h3>
-              <ul className="space-y-3">
+              <h3 className="text-sm font-semibold mb-4">{category}</h3>
+              <ul className="space-y-2.5">
                 {links.map(({ label, href }) => (
                   <li key={label}>
                     <Link
                       href={href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
                     >
                       {label}
                     </Link>
@@ -99,17 +95,15 @@ export default function Footer() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t">
+      <div className="border-t border-border/50">
         <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
-          <p>
-            © {new Date().getFullYear()} InterviewDojo. All rights reserved.
-          </p>
+          <p>© {new Date().getFullYear()} InterviewDojo. All rights reserved.</p>
           <div className="flex items-center gap-5">
             {legalLinks.map(({ label, href }) => (
               <Link
                 key={label}
                 href={href}
-                className="hover:text-foreground transition-colors"
+                className="hover:text-primary transition-colors duration-200"
               >
                 {label}
               </Link>

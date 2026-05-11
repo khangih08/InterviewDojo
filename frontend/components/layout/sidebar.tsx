@@ -47,39 +47,39 @@ const toneClasses: Record<
   {
     activeWrap: string;
     idleWrap: string;
-    activeBorder: string;
+    activeBg: string;
     hoverBorder: string;
   }
 > = {
   blue: {
-    activeWrap: "bg-blue-500 text-white",
-    idleWrap: "bg-blue-50 text-blue-600 group-hover:bg-blue-100",
-    activeBorder: "border-blue-300",
-    hoverBorder: "hover:border-blue-300",
+    activeWrap: "bg-blue-500 text-white shadow-md shadow-blue-500/25",
+    idleWrap: "bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500/15",
+    activeBg: "bg-blue-500/8 border-blue-500/30 dark:bg-blue-500/10",
+    hoverBorder: "hover:border-blue-500/25",
   },
   purple: {
-    activeWrap: "bg-purple-500 text-white",
-    idleWrap: "bg-purple-50 text-purple-600 group-hover:bg-purple-100",
-    activeBorder: "border-purple-300",
-    hoverBorder: "hover:border-purple-300",
+    activeWrap: "bg-purple-500 text-white shadow-md shadow-purple-500/25",
+    idleWrap: "bg-purple-500/10 text-purple-600 dark:text-purple-400 group-hover:bg-purple-500/15",
+    activeBg: "bg-purple-500/8 border-purple-500/30 dark:bg-purple-500/10",
+    hoverBorder: "hover:border-purple-500/25",
   },
   amber: {
-    activeWrap: "bg-amber-500 text-white",
-    idleWrap: "bg-amber-50 text-amber-600 group-hover:bg-amber-100",
-    activeBorder: "border-amber-300",
-    hoverBorder: "hover:border-amber-300",
+    activeWrap: "bg-amber-500 text-white shadow-md shadow-amber-500/25",
+    idleWrap: "bg-amber-500/10 text-amber-600 dark:text-amber-400 group-hover:bg-amber-500/15",
+    activeBg: "bg-amber-500/8 border-amber-500/30 dark:bg-amber-500/10",
+    hoverBorder: "hover:border-amber-500/25",
   },
   emerald: {
-    activeWrap: "bg-emerald-500 text-white",
-    idleWrap: "bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100",
-    activeBorder: "border-emerald-300",
-    hoverBorder: "hover:border-emerald-300",
+    activeWrap: "bg-emerald-500 text-white shadow-md shadow-emerald-500/25",
+    idleWrap: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/15",
+    activeBg: "bg-emerald-500/8 border-emerald-500/30 dark:bg-emerald-500/10",
+    hoverBorder: "hover:border-emerald-500/25",
   },
   rose: {
-    activeWrap: "bg-rose-500 text-white",
-    idleWrap: "bg-rose-50 text-rose-600 group-hover:bg-rose-100",
-    activeBorder: "border-rose-300",
-    hoverBorder: "hover:border-rose-300",
+    activeWrap: "bg-rose-500 text-white shadow-md shadow-rose-500/25",
+    idleWrap: "bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover:bg-rose-500/15",
+    activeBg: "bg-rose-500/8 border-rose-500/30 dark:bg-rose-500/10",
+    hoverBorder: "hover:border-rose-500/25",
   },
 };
 
@@ -134,19 +134,19 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-6 md:flex">
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/60 bg-card/50 backdrop-blur-sm px-4 py-6 md:flex">
       <div className="px-2">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-xl font-black text-white shadow-lg shadow-violet-900/50">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl glow-gradient text-xl font-black text-white shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
             ID
           </span>
-          <span className="text-xl font-bold tracking-tight text-slate-950">
-            InterviewDojo
+          <span className="text-xl font-bold tracking-tight">
+            Interview<span className="glow-gradient-text">Dojo</span>
           </span>
         </Link>
       </div>
 
-      <nav className="mt-8 flex-1 space-y-2 overflow-y-auto pr-1">
+      <nav className="mt-8 flex-1 space-y-1.5 overflow-y-auto pr-1">
         {visibleNavItems.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
@@ -157,15 +157,15 @@ export function Sidebar() {
               key={item.href}
               href={item.href}
               className={[
-                "group flex items-center gap-3 rounded-md border px-3 py-2 text-sm transition",
+                "group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition-all duration-200",
                 active
-                  ? `${palette.activeBorder} bg-slate-100 text-slate-950`
-                  : `border-slate-300 text-slate-600 hover:bg-slate-100 hover:text-slate-950 ${palette.hoverBorder}`,
+                  ? `${palette.activeBg} font-medium`
+                  : `border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/50 ${palette.hoverBorder}`,
               ].join(" ")}
             >
               <span
                 className={[
-                  "inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                  "inline-flex h-8 w-8 items-center justify-center rounded-lg transition-all duration-200",
                   active ? palette.activeWrap : palette.idleWrap,
                 ].join(" ")}
               >
@@ -178,28 +178,28 @@ export function Sidebar() {
       </nav>
 
       <div
-        className="relative mt-6 border-t border-slate-200 pt-4"
+        className="relative mt-6 border-t border-border/60 pt-4"
         ref={accountMenuRef}
       >
         <button
           type="button"
           onClick={() => setAccountMenuOpen((value) => !value)}
-          className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-left transition hover:border-violet-200 hover:bg-white"
+          className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-accent/30 px-3 py-3 text-left transition-all duration-200 hover:border-primary/25 hover:bg-accent/50"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-600 text-xs font-bold uppercase text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl glow-gradient text-xs font-bold uppercase text-white shadow-md shadow-primary/20">
             {mounted ? initials : "C"}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-slate-950">
+            <p className="truncate text-sm font-semibold">
               {mounted ? user?.full_name || "Candidate" : "Candidate"}
             </p>
-            <p className="truncate text-xs text-slate-500">
+            <p className="truncate text-xs text-muted-foreground">
               {mounted ? user?.email || "Signed in" : "Signed in"}
             </p>
           </div>
           <ChevronUp
             className={[
-              "h-4 w-4 text-slate-500 transition-transform",
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
               accountMenuOpen ? "rotate-180" : "rotate-0",
             ].join(" ")}
           />
@@ -208,15 +208,15 @@ export function Sidebar() {
         {accountMenuOpen && (
           <div
             role="menu"
-            className="absolute bottom-[calc(100%+0.75rem)] left-0 z-20 w-full rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10"
+            className="absolute bottom-[calc(100%+0.75rem)] left-0 z-20 w-full rounded-2xl border border-border/60 bg-card p-2 shadow-xl shadow-black/10 dark:shadow-black/30 animate-fade-in-up"
           >
             <Link
               href="/profile"
               onClick={() => setAccountMenuOpen(false)}
               role="menuitem"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-100"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-all duration-200 hover:bg-accent/60 hover:text-foreground"
             >
-              <UserRound className="h-4 w-4 text-violet-600" />
+              <UserRound className="h-4 w-4 text-primary" />
               <span>Profile</span>
             </Link>
 
@@ -224,13 +224,13 @@ export function Sidebar() {
               href="/settings"
               onClick={() => setAccountMenuOpen(false)}
               role="menuitem"
-              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-700 transition hover:bg-slate-100"
+              className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-all duration-200 hover:bg-accent/60 hover:text-foreground"
             >
-              <Settings className="h-4 w-4 text-slate-600" />
+              <Settings className="h-4 w-4 text-muted-foreground" />
               <span>Settings</span>
             </Link>
 
-            <div className="my-2 h-px bg-slate-200" />
+            <div className="my-2 h-px bg-border/50" />
 
             <button
               type="button"
@@ -240,7 +240,7 @@ export function Sidebar() {
                 window.location.href = "/login";
               }}
               role="menuitem"
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-rose-700 transition hover:bg-rose-50"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-destructive transition-all duration-200 hover:bg-destructive/10"
             >
               <LogOut className="h-4 w-4" />
               <span>Logout</span>

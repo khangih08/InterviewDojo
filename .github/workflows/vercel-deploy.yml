@@ -31,32 +31,40 @@ jobs:
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
 
-      - name: Debug Secrets
+      - name: Validate secrets
         run: |
-          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
-            echo "::error::VERCEL_ORG_ID is empty!"
+          has_error=false
+          if [ -z "${VERCEL_ORG_ID}" ]; then
+            echo "::error::VERCEL_ORG_ID is empty! Add it to your fork's repository secrets."
+            has_error=true
           else
-            echo "VERCEL_ORG_ID is provided."
+            echo "✅ VERCEL_ORG_ID is set"
           fi
 
-          if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
-            echo "::error::VERCEL_PROJECT_ID is empty!"
+          if [ -z "${VERCEL_PROJECT_ID}" ]; then
+            echo "::error::VERCEL_PROJECT_ID is empty! Add it to your fork's repository secrets."
+            has_error=true
           else
-            echo "VERCEL_PROJECT_ID is provided."
+            echo "✅ VERCEL_PROJECT_ID is set"
           fi
 
-      # Xóa bất kỳ .vercel directory nào có sẵn trong repo (nếu bị commit nhầm)
+          if [ "$has_error" = true ]; then
+            echo ""
+            echo "::error::Missing secrets. Go to your fork → Settings → Secrets and variables → Actions → Add the missing secrets."
+            exit 1
+          fi
+
+      # Remove any .vercel directory that was accidentally committed
       - name: Clean local Vercel config
         run: find . -type d -name '.vercel' -exec rm -rf {} + 2>/dev/null || true
 
-      # Tạo project.json để Vercel CLI biết deploy vào project nào
-      # Phải làm TRƯỚC khi chạy bất kỳ lệnh vercel nào
+      # Create project.json so Vercel CLI knows which project to deploy to
       - name: Link Vercel project
         run: |
           mkdir -p frontend/.vercel
           printf '{"projectId":"%s","orgId":"%s"}\n' \
-            "${{ secrets.VERCEL_PROJECT_ID }}" \
-            "${{ secrets.VERCEL_ORG_ID }}" \
+            "${VERCEL_PROJECT_ID}" \
+            "${VERCEL_ORG_ID}" \
             > frontend/.vercel/project.json
           echo "✅ Created frontend/.vercel/project.json"
           cat frontend/.vercel/project.json
@@ -67,6 +75,7 @@ jobs:
           set -euo pipefail
           rm -f /tmp/vercel_deploy.log
 
+          echo "🚀 Deploying to Vercel (production)..."
           set +e
           vercel deploy --prod \
             --token="${{ secrets.VERCEL_TOKEN }}" \
@@ -77,7 +86,12 @@ jobs:
           set -e
 
           if [ "$deploy_status" -ne 0 ]; then
-            echo "::error::Vercel deploy failed. Full log follows."
+            echo ""
+            echo "::error::Vercel deploy failed (exit code: $deploy_status)"
+            echo "::error::Common fixes for forked repos:"
+            echo "::error::  1. Verify VERCEL_TOKEN is valid (not expired)"
+            echo "::error::  2. Verify VERCEL_ORG_ID and VERCEL_PROJECT_ID match your Vercel account"
+            echo "::error::  3. Check if the Vercel project is linked to the correct Git repo"
             cat /tmp/vercel_deploy.log
             exit "$deploy_status"
           fi
@@ -91,7 +105,9 @@ jobs:
           fi
 
           echo "deployment_url=${DEPLOYMENT_URL}" >> "$GITHUB_OUTPUT"
-          echo "::notice::Vercel deployment URL: ${DEPLOYMENT_URL}"
+          echo ""
+          echo "✅ Deployment successful!"
+          echo "::notice::🔗 Vercel deployment URL: ${DEPLOYMENT_URL}"
 
       - name: Show Vercel deployment logs
         if: always()
