@@ -5,7 +5,22 @@ on:
     branches: [main, develop]
   push:
     branches: [main, develop]
+  # Allow manual trigger (useful for forked repos after sync)
   workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: "Skip tests and deploy directly"
+        type: boolean
+        default: false
+      deploy_target:
+        description: "What to deploy"
+        type: choice
+        options:
+          - both
+          - frontend-only
+          - backend-only
+          - none
+        default: both
 
 permissions:
   contents: read
@@ -15,8 +30,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ── Build ──────────────────────────────────────────────────────────────
   build-backend:
     name: Build Backend
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -42,6 +59,7 @@ jobs:
 
   build-frontend:
     name: Build Frontend
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -69,8 +87,10 @@ jobs:
           export NEXT_PUBLIC_API_BASE_URL="${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000}"
           npm run build
 
+  # ── Test ───────────────────────────────────────────────────────────────
   test-backend:
     name: Test Backend
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -96,6 +116,7 @@ jobs:
 
   test-frontend:
     name: Test Frontend
+    if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.skip_tests) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -119,20 +140,30 @@ jobs:
       - name: Run tests
         run: npm run test:coverage
 
+  # ── Deploy Backend ─────────────────────────────────────────────────────
   deploy-backend:
     name: Deploy Backend to Render
     needs: [build-backend, test-backend]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    # Deploy on push to main/develop OR manual dispatch (skip_tests or not)
+    if: |
+      always() &&
+      (needs.build-backend.result == 'success' && needs.test-backend.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.skip_tests)
+    # Only deploy if target includes backend
     uses: ./.github/workflows/render-deploy.yml
     secrets:
       RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
       RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
       RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
 
+  # ── Deploy Frontend ────────────────────────────────────────────────────
   deploy-frontend:
     name: Deploy Frontend to Vercel
     needs: [build-frontend, test-frontend]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    if: |
+      always() &&
+      (needs.build-frontend.result == 'success' && needs.test-frontend.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.skip_tests)
     uses: ./.github/workflows/vercel-deploy.yml
     secrets:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

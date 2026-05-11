@@ -1,4 +1,3 @@
-import { Separator } from "@/components/ui/separator";
 import LandingNavbar from "@/components/landing/LandingNavbar";
 import HeroSection from "@/components/landing/HeroSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
@@ -15,17 +14,11 @@ export default function LandingPage() {
       <LandingNavbar />
       <main className="flex-1">
         <HeroSection />
-        <Separator />
         <FeaturesSection />
-        <Separator />
         <HowItWorksSection />
-        <Separator />
         <TestimonialsSection />
-        <Separator />
         <ComparisonSection />
-        <Separator />
         <PricingSection />
-        <Separator />
         <FaqSection />
       </main>
       <Footer />
