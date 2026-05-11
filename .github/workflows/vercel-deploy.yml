@@ -65,6 +65,10 @@ jobs:
           find . -type d -name '.vercel' -print || true
           ls -la frontend || true
 
+      - name: Link Vercel project
+        run: |
+          vercel link --yes --project="${{ secrets.VERCEL_PROJECT_ID }}" --token="${{ secrets.VERCEL_TOKEN }}" --cwd frontend
+
       - name: Deploy to Vercel
         id: deploy
         run: |
