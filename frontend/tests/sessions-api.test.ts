@@ -56,7 +56,7 @@ describe("sessions api", () => {
     mockGet.mockResolvedValue({ data: [{ id: "s-1" }] });
 
     await expect(sessionsApi.getAllSessions()).resolves.toEqual([{ id: "s-1" }]);
-    expect(mockGet).toHaveBeenCalledWith("/sessions");
+    expect(mockGet).toHaveBeenCalledWith("/interviews");
   });
 
   it("gets a session by id", async () => {
@@ -65,7 +65,7 @@ describe("sessions api", () => {
     await expect(sessionsApi.getSessionById("s-2")).resolves.toEqual({
       id: "s-2",
     });
-    expect(mockGet).toHaveBeenCalledWith("/sessions/s-2");
+    expect(mockGet).toHaveBeenCalledWith("/interviews/s-2");
   });
 
   it("gets all user auth sessions", async () => {

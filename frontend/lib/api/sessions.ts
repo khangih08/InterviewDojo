@@ -44,17 +44,17 @@ export const sessionsApi = {
   // GET /sessions - get interview sessions
   getAllSessions: async (): Promise<Session[]> => {
     try {
-      const response = await http.get<Session[]>("/sessions");
+      const response = await http.get<Session[]>("/interviews");
       return response.data;
     } catch (error) {
       throw new Error(toApiError(error).message);
     }
   },
 
-  // GET /sessions/:id - get interview session by ID
+  // GET /interviews/:id - get interview session by ID
   getSessionById: async (id: string): Promise<Session> => {
     try {
-      const response = await http.get<Session>(`/sessions/${id}`);
+      const response = await http.get<Session>(`/interviews/${id}`);
       return response.data;
     } catch (error) {
       throw new Error(toApiError(error).message);
