@@ -57,7 +57,7 @@ export function DashboardRecentCard({
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 text-white shadow-sm">
               <Clock className="h-3.5 w-3.5" />
             </div>
-            Recent Sessions
+            Recent Practice Sessions
           </CardTitle>
           <Link
             href="/history"
@@ -129,7 +129,7 @@ export function DashboardRecentCard({
         ) : (
           <div className="flex h-32 flex-col items-center justify-center text-muted-foreground">
             <Clock className="mb-2 h-6 w-6 opacity-30" />
-            <p className="text-sm">No sessions yet</p>
+            <p className="text-sm">No practice sessions yet</p>
           </div>
         )}
       </CardContent>

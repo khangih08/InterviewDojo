@@ -13,7 +13,7 @@ describe("DashboardNextActionCard", () => {
           focusTopics: ["Caching", "Queues", "Indexes"],
           planName: "Backend Sprint",
           planSummary: "Focus on architecture and data modeling",
-        }}
+        } as any}
       />,
     );
 

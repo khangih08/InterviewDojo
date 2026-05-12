@@ -94,7 +94,7 @@ export function SessionsManagement() {
       <div className="flex items-center justify-center py-12">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
-          <span className="text-sm text-muted-foreground">Loading sessions...</span>
+          <span className="text-sm text-muted-foreground">Loading devices...</span>
         </div>
       </div>
     );
@@ -115,9 +115,9 @@ export function SessionsManagement() {
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">
                 Security
               </p>
-              <h2 className="mt-1 text-xl font-bold">Active Sessions</h2>
+              <h2 className="mt-1 text-xl font-bold">Active Devices</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                Manage your active sessions across devices
+                Manage your active devices
               </p>
             </div>
           </div>
@@ -149,7 +149,7 @@ export function SessionsManagement() {
         {sessions.length === 0 ? (
           <div className="rounded-2xl bg-accent/30 border border-border/30 p-12 text-center">
             <Smartphone className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-            <p className="text-muted-foreground font-medium">No active sessions found</p>
+            <p className="text-muted-foreground font-medium">No active devices found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
@@ -196,7 +196,7 @@ export function SessionsManagement() {
                     onClick={() => handleRevokeSession(session.id)}
                     disabled={revoking === session.id}
                     className="p-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all duration-200 disabled:opacity-50"
-                    title="Revoke this session"
+                    title="Log out this device"
                   >
                     {revoking === session.id ? (
                       <Loader2 className="h-5 w-5 animate-spin" />
@@ -215,8 +215,8 @@ export function SessionsManagement() {
           <div className="flex gap-3">
             <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[10px] font-bold mt-0.5">!</div>
             <p className="text-sm text-muted-foreground leading-relaxed">
-              <strong className="font-bold text-foreground">Tip:</strong> Each time you log in, a new session is created. Revoke sessions to
-              log out from specific devices. Sessions automatically expire after 7 days of inactivity.
+              <strong className="font-bold text-foreground">Tip:</strong> Each time you log in, a new device is registered. Log out from specific
+              devices if you don't recognize them. Devices automatically expire after 7 days of inactivity.
             </p>
           </div>
         </div>

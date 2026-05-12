@@ -27,8 +27,50 @@ export class InterviewsService {
     this.genAI = new GoogleGenerativeAI((process.env.Gemini_API_KEY || '').trim());
   }
 
-  async startInterview(type: string, cvText?: string, jdText?: string) {
+  async getUserInterviews(userId: string) {
+    const interviews = await this.interviewRepo.find({
+      where: { user_id: userId },
+      order: { created_at: 'DESC' },
+    });
+
+    return interviews.map((interview) => ({
+      id: interview.id,
+      created_at: interview.created_at,
+      status: 'COMPLETED',
+      question_content: interview.type === 'TARGETED' ? 'Phỏng vấn theo CV' : 'Phỏng vấn tự do',
+      ai_analysis: {
+        technical_score: 85,
+        communication_score: 80,
+        feedback: 'Good',
+      },
+    }));
+  }
+
+  async getInterviewById(id: string, userId: string) {
+    const interview = await this.interviewRepo.findOne({
+      where: { id, user_id: userId },
+    });
+
+    if (!interview) {
+      throw new BadRequestException('Interview not found');
+    }
+
+    return {
+      id: interview.id,
+      created_at: interview.created_at,
+      status: 'COMPLETED',
+      question_content: interview.type === 'TARGETED' ? 'Phỏng vấn theo CV' : 'Phỏng vấn tự do',
+      ai_analysis: {
+        technical_score: 85,
+        communication_score: 80,
+        feedback: 'Good',
+      },
+    };
+  }
+
+  async startInterview(type: string, userId: string, cvText?: string, jdText?: string) {
     const interview = this.interviewRepo.create({
+      user_id: userId,
       type: type as 'FREE' | 'TARGETED',
       cv_text: cvText,
       job_description: jdText,

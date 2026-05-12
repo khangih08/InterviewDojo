@@ -33,10 +33,11 @@ describe('InterviewsController', () => {
     interviewsService.startInterview.mockResolvedValue({ success: true });
 
     await expect(
-      controller.startInterview({ type: 'FREE' }),
+      controller.startInterview({ type: 'FREE' }, 'u-1'),
     ).resolves.toEqual({ success: true });
     expect(interviewsService.startInterview).toHaveBeenCalledWith(
       'FREE',
+      'u-1',
       '',
       undefined,
     );
@@ -44,7 +45,7 @@ describe('InterviewsController', () => {
 
   it('throws when TARGETED interview is missing CV file', async () => {
     await expect(
-      controller.startInterview({ type: 'TARGETED' }),
+      controller.startInterview({ type: 'TARGETED' }, 'u-1'),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -54,12 +55,14 @@ describe('InterviewsController', () => {
 
     await controller.startInterview(
       { type: 'TARGETED', jobDescription: 'jd' },
+      'u-1',
       { buffer: Buffer.from('pdf') } as Express.Multer.File,
     );
 
     expect(mockExtractPdf).toHaveBeenCalled();
     expect(interviewsService.startInterview).toHaveBeenCalledWith(
       'TARGETED',
+      'u-1',
       'cv content',
       'jd',
     );
@@ -72,12 +75,14 @@ describe('InterviewsController', () => {
 
     await controller.startInterview(
       { type: 'TARGETED' },
+      'u-1',
       { path: 'tmp/cv.pdf' } as Express.Multer.File,
     );
 
     expect(fs.readFileSync).toHaveBeenCalledWith('tmp/cv.pdf');
     expect(interviewsService.startInterview).toHaveBeenCalledWith(
       'TARGETED',
+      'u-1',
       'cv from path',
       undefined,
     );
@@ -89,6 +94,7 @@ describe('InterviewsController', () => {
     await expect(
       controller.startInterview(
         { type: 'TARGETED' },
+        'u-1',
         { buffer: Buffer.from('pdf') } as Express.Multer.File,
       ),
     ).rejects.toThrow(BadRequestException);

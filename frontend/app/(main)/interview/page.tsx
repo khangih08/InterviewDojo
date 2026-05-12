@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Mic, Square, Loader2, User, Bot, Zap, FileText, CheckCircle2 } from "lucide-react";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
-
+import { http } from "@/lib/api/http";
 interface Message {
   role: "user" | "assistant" | "system";
   content: string;
@@ -19,7 +17,7 @@ function Glass({
 }) {
   return (
     <div
-      className={`rounded-2xl border border-white/[0.08] bg-white/[0.04] shadow-xl backdrop-blur-md ${className}`}
+      className={`rounded-2xl border border-slate-200 dark:border-white/[0.08] glass shadow-xl ${className}`}
     >
       {children}
     </div>
@@ -53,12 +51,8 @@ export default function InterviewAgentPage() {
   const handleStartFree = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/interviews/start`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "FREE" }),
-      });
-      const data = await res.json();
+      const res = await http.post("/interviews/start", { type: "FREE" });
+      const data = res.data;
 
       if (data.success) {
         setInterviewId(data.interviewId);
@@ -85,11 +79,10 @@ export default function InterviewAgentPage() {
       formData.append("cvFile", cvFile);
       formData.append("jobDescription", jdText);
 
-      const res = await fetch(`${API_BASE_URL}/interviews/start`, {
-        method: "POST",
-        body: formData,
+      const res = await http.post("/interviews/start", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
-      const data = await res.json();
+      const data = res.data;
 
       if (data.success) {
         setInterviewId(data.interviewId);
@@ -158,11 +151,10 @@ export default function InterviewAgentPage() {
     formData.append("interviewId", interviewId);
 
     try {
-      const uploadRes = await fetch(`${API_BASE_URL}/interviews/upload-audio`, {
-        method: "POST",
-        body: formData,
+      const uploadRes = await http.post("/interviews/upload-audio", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
       });
-      const data = await uploadRes.json();
+      const data = uploadRes.data;
 
       if (!data.success) throw new Error(data.message || "Lỗi xử lý âm thanh từ Server");
 
@@ -189,7 +181,7 @@ export default function InterviewAgentPage() {
   };
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-[#080c18] px-4 py-8 flex flex-col">
+    <div className="relative isolate min-h-screen overflow-hidden bg-slate-50 dark:bg-[#080c18] transition-colors px-4 py-8 flex flex-col">
       {/* Background Effects */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
         <div className="absolute -left-40 -top-40 h-[500px] w-[500px] rounded-full bg-indigo-600/20 blur-[120px]" />
@@ -201,10 +193,10 @@ export default function InterviewAgentPage() {
 
         {/* Header */}
         <div className="space-y-1 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-white">
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             AI Interview Agent
           </h2>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             {step === "SELECT" ? "Chọn chế độ phỏng vấn để bắt đầu" : "Trò chuyện trực tiếp bằng giọng nói với nhà tuyển dụng AI"}
           </p>
         </div>
@@ -214,12 +206,12 @@ export default function InterviewAgentPage() {
           <div className="grid md:grid-cols-2 gap-6 mt-8">
             {/* Option 1: Free mode */}
             <Glass className="p-6 flex flex-col items-center text-center space-y-6 hover:border-indigo-500/50 transition-all">
-              <div className="p-4 bg-indigo-500/20 rounded-full text-indigo-400">
+              <div className="p-4 bg-indigo-100 dark:bg-indigo-500/20 rounded-full text-indigo-600 dark:text-indigo-400">
                 <Zap size={36} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">Luyện tập tự do</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Luyện tập tự do</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
                   Trò chuyện trực tiếp với AI để rèn luyện kỹ năng phản xạ và giao tiếp cơ bản mà không cần chuẩn bị trước.
                 </p>
               </div>
@@ -234,33 +226,33 @@ export default function InterviewAgentPage() {
 
             {/* Option 2: Targeted mode */}
             <Glass className="p-6 flex flex-col items-center text-center space-y-4 hover:border-teal-500/50 transition-all">
-              <div className="p-4 bg-teal-500/20 rounded-full text-teal-400">
+              <div className="p-4 bg-teal-100 dark:bg-teal-500/20 rounded-full text-teal-600 dark:text-teal-400">
                 <FileText size={36} />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-white mb-2">Phỏng vấn sát thực tế</h3>
-                <p className="text-slate-400 text-sm leading-relaxed mb-4">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Phỏng vấn sát thực tế</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-4">
                   Tải CV và nhập JD để AI phân tích và đưa ra các câu hỏi xoáy sâu vào chuyên môn của bạn.
                 </p>
               </div>
 
               <div className="w-full space-y-3 text-left">
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300 ml-1">Upload CV (PDF)</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 ml-1">Upload CV (PDF)</label>
                   <input
                     type="file"
                     accept=".pdf"
                     onChange={(e) => setCvFile(e.target.files?.[0] || null)}
-                    className="w-full text-sm text-slate-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-teal-500/20 file:text-teal-300 hover:file:bg-teal-500/30 cursor-pointer bg-black/20 rounded-xl border border-white/5"
+                    className="w-full text-sm text-slate-700 dark:text-slate-300 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-teal-100 dark:file:bg-teal-500/20 file:text-teal-700 dark:file:text-teal-300 hover:file:bg-teal-200 dark:hover:file:bg-teal-500/30 cursor-pointer bg-white dark:bg-black/20 rounded-xl border border-slate-200 dark:border-white/5"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-300 ml-1">Mô tả công việc (JD)</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 ml-1">Mô tả công việc (JD)</label>
                   <textarea
                     placeholder="Dán nội dung JD vào đây để AI đóng vai chuẩn xác nhất..."
                     value={jdText}
                     onChange={(e) => setJdText(e.target.value)}
-                    className="w-full h-24 p-3 bg-black/20 border border-white/5 rounded-xl text-sm focus:outline-none focus:border-teal-500/50 text-white placeholder-slate-500 scrollbar-thin"
+                    className="w-full h-24 p-3 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/5 rounded-xl text-sm focus:outline-none focus:border-teal-500/50 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 scrollbar-thin"
                   />
                 </div>
               </div>
@@ -287,7 +279,7 @@ export default function InterviewAgentPage() {
                     setMessages([]); // Dọn dẹp tin nhắn cũ khi thoát ra
                   }
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-sm font-semibold rounded-lg transition-colors border border-rose-500/20"
+                className="flex items-center gap-2 px-4 py-2 bg-rose-50 dark:bg-rose-500/10 hover:bg-rose-100 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-semibold rounded-lg transition-colors border border-rose-200 dark:border-rose-500/20"
               >
                 <CheckCircle2 size={18} />
                 Kết thúc phiên
@@ -301,15 +293,15 @@ export default function InterviewAgentPage() {
                   className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
                 >
                   <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ${
-                    msg.role === "user" ? "bg-indigo-500/20 ring-indigo-500/50 text-indigo-300" : "bg-teal-500/20 ring-teal-500/50 text-teal-300"
+                    msg.role === "user" ? "bg-indigo-100 dark:bg-indigo-500/20 ring-indigo-300 dark:ring-indigo-500/50 text-indigo-600 dark:text-indigo-300" : "bg-teal-100 dark:bg-teal-500/20 ring-teal-300 dark:ring-teal-500/50 text-teal-600 dark:text-teal-300"
                   }`}>
                     {msg.role === "user" ? <User size={20} /> : <Bot size={20} />}
                   </div>
 
                   <div className={`max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-indigo-600/20 text-indigo-100 rounded-tr-sm border border-indigo-500/20"
-                      : "bg-white/5 text-slate-200 rounded-tl-sm border border-white/10"
+                      ? "bg-indigo-50 dark:bg-indigo-600/20 text-indigo-900 dark:text-indigo-100 rounded-tr-sm border border-indigo-200 dark:border-indigo-500/20"
+                      : "bg-white dark:bg-white/5 text-slate-800 dark:text-slate-200 rounded-tl-sm border border-slate-200 dark:border-white/10"
                   }`}>
                     <p className="whitespace-pre-wrap">{msg.content}</p>
                   </div>
@@ -318,10 +310,10 @@ export default function InterviewAgentPage() {
 
               {isLoading && (
                 <div className="flex gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-500/20 ring-1 ring-teal-500/50 text-teal-300">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-500/20 ring-1 ring-teal-300 dark:ring-teal-500/50 text-teal-600 dark:text-teal-300">
                     <Bot size={20} />
                   </div>
-                  <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white/5 border border-white/10 p-4 text-slate-400 text-sm">
+                  <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4 text-slate-500 dark:text-slate-400 text-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     AI đang lắng nghe & phản hồi...
                   </div>

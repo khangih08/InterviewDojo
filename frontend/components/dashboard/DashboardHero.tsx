@@ -125,7 +125,7 @@ export function DashboardHero({
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
               Your current track is {guide.planName} ({guide.planLength}). Keep
-              momentum by practicing focused sessions and reviewing feedback after
+              momentum by completing focused practice sessions and reviewing feedback after
               each round.
             </p>
 

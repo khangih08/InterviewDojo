@@ -29,31 +29,31 @@ function FlashCardItem({ question }: { question: FlashCardQuestion }) {
         className={cn("flashcard-inner h-full min-h-70", isFlipped && "is-flipped")}
         onClick={() => setIsFlipped(!isFlipped)}
       >
-        <Card className="flashcard-front h-full border-2 border-slate-200 shadow-sm hover:border-blue-400 transition-all bg-white flex flex-col cursor-pointer">
+        <Card className="flashcard-front h-full border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 transition-all bg-white dark:bg-slate-900 flex flex-col cursor-pointer">
           <CardContent className="p-6 flex flex-col justify-between flex-1">
             <div>
               <div className="flex justify-between items-center mb-4">
-                <Badge variant="outline" className="text-slate-500">
+                <Badge variant="outline" className="text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
                   Câu hỏi ôn tập
                 </Badge>
-                <span className="text-slate-400 text-[10px] uppercase tracking-wider font-bold">Mặt trước</span>
+                <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-wider font-bold">Mặt trước</span>
               </div>
-              <h3 className="text-lg font-bold text-slate-800 leading-snug">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-snug">
                 {question.content}
               </h3>
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-              <Badge className="bg-blue-50 text-blue-600 border-blue-100">
+            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
+              <Badge className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50">
                 {question.categoryName || "IT General"}
               </Badge>
-              <RotateCw size={14} className="text-blue-400" />
+              <RotateCw size={14} className="text-blue-400 dark:text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="flashcard-back h-full border-2 border-blue-500 shadow-xl bg-blue-50 overflow-hidden flex flex-col cursor-pointer">
+        <Card className="flashcard-back h-full border-2 border-blue-500 shadow-xl bg-blue-50 dark:bg-blue-900/20 overflow-hidden flex flex-col cursor-pointer">
           <CardContent className="p-6 flex flex-col h-full">
-            <div className="flex items-center justify-between mb-3 text-blue-700 font-bold border-b border-blue-200 pb-2">
+            <div className="flex items-center justify-between mb-3 text-blue-700 dark:text-blue-400 font-bold border-b border-blue-200 dark:border-blue-800/50 pb-2">
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={18} />
                 <span className="text-sm">ĐÁP ÁN CHI TIẾT</span>
@@ -61,12 +61,12 @@ function FlashCardItem({ question }: { question: FlashCardQuestion }) {
             </div>
             {/* FIX TẠI ĐÂY: Sử dụng dangerouslySetInnerHTML để hiển thị <b> và xuống dòng */}
             <div
-              className="flex-1 overflow-y-auto pr-2 text-slate-700 text-sm leading-relaxed whitespace-pre-line"
+              className="flex-1 overflow-y-auto pr-2 text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-line"
               dangerouslySetInnerHTML={{
                 __html: question.sampleAnswer || "Chưa có đáp án mẫu."
               }}
             />
-            <p className="mt-2 text-[10px] text-blue-400 text-center italic">Click để quay lại</p>
+            <p className="mt-2 text-[10px] text-blue-400 dark:text-blue-500/70 text-center italic">Click để quay lại</p>
           </CardContent>
         </Card>
       </div>
@@ -181,15 +181,15 @@ function QuestionsPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] pb-20">
+    <div className="min-h-screen bg-[#fcfcfd] dark:bg-slate-950 pb-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
-            <h1 className="text-3xl font-bold text-slate-900">Flashcards Ôn Tập</h1>
-            <p className="text-slate-500 mt-2">Lọc theo danh mục hoặc tìm theo từ khóa để bắt đầu ôn luyện.</p>
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">Flashcards Ôn Tập</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">Lọc theo danh mục hoặc tìm theo từ khóa để bắt đầu ôn luyện.</p>
         </div>
 
         <div className="mb-8 mx-auto max-w-2xl">
-          <label htmlFor="question-search" className="mb-2 block text-sm font-medium text-slate-700">
+          <label htmlFor="question-search" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
             Tìm kiếm câu hỏi
           </label>
           <input
@@ -203,22 +203,22 @@ function QuestionsPageContent() {
               setSearchText(event.currentTarget.value);
             }}
             placeholder="Nhập từ khóa để lọc câu hỏi..."
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 shadow-sm outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30"
           />
         </div>
 
         <div className="flex flex-col gap-8 lg:flex-row">
           <aside className="w-full lg:w-64">
-            <Card className="border-none shadow-sm sticky top-24">
+            <Card className="border-none shadow-sm sticky top-24 bg-white dark:bg-slate-900">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
                   <Filter size={16} /> DANH MỤC
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button
                   variant={currentCategoryId === "" ? "default" : "ghost"}
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-sm dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800"
                   onClick={() => handleCategoryChange("")}
                 >
                   Tất cả
@@ -227,7 +227,7 @@ function QuestionsPageContent() {
                   <Button
                     key={cat.id}
                     variant={currentCategoryId === cat.id ? "default" : "ghost"}
-                    className="w-full justify-start text-sm overflow-hidden text-ellipsis"
+                    className="w-full justify-start text-sm overflow-hidden text-ellipsis dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800"
                     onClick={() => handleCategoryChange(cat.id)}
                   >
                     {cat.name}
@@ -240,10 +240,10 @@ function QuestionsPageContent() {
           <div className="flex-1">
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-                {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-slate-100 rounded-xl" />)}
+                {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-xl" />)}
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-dashed text-slate-400">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500">
                 Không có câu hỏi nào trong mục này.
               </div>
             ) : (
@@ -258,7 +258,7 @@ function QuestionsPageContent() {
                       type="button"
                       onClick={handleLoadMore}
                       disabled={loadingMore}
-                      className="bg-blue-600 text-white px-10 rounded-full"
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-10 rounded-full dark:bg-blue-600 dark:hover:bg-blue-700"
                     >
                       {loadingMore ? "Đang tải..." : "Xem thêm"}
                     </Button>

@@ -17,9 +17,9 @@ export function DashboardStatsCard({
 }: DashboardStatsCardProps) {
   const stats = [
     {
-      label: "Total Sessions",
+      label: "Total Practice Sessions",
       value: totalSessions,
-      note: totalSessions === 1 ? "first session logged" : "sessions completed",
+      note: totalSessions === 1 ? "first practice session logged" : "practice sessions completed",
       icon: Zap,
       gradient: "from-cyan-500 to-blue-500",
       bgColor: "bg-cyan-500/10 dark:bg-cyan-500/15",
@@ -30,7 +30,7 @@ export function DashboardStatsCard({
       note:
         latestScoreDelta === 0
           ? "steady from last attempt"
-          : `${latestScoreDelta > 0 ? "+" : ""}${latestScoreDelta} vs last session`,
+          : `${latestScoreDelta > 0 ? "+" : ""}${latestScoreDelta} vs last practice session`,
       icon: TrendingUp,
       gradient: "from-violet-500 to-indigo-500",
       bgColor: "bg-violet-500/10 dark:bg-violet-500/15",
