@@ -14,7 +14,7 @@ describe("DashboardStatsCard", () => {
       />,
     );
 
-    expect(screen.getByText("Total Sessions")).toBeInTheDocument();
+    expect(screen.getByText("Total Practice Sessions")).toBeInTheDocument();
     expect(screen.getByText("Average Score")).toBeInTheDocument();
     expect(screen.getByText("Best Score")).toBeInTheDocument();
 

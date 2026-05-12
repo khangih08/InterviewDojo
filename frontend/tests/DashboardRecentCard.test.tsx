@@ -25,7 +25,7 @@ describe("DashboardRecentCard", () => {
   it("shows empty state when there are no sessions", () => {
     render(<DashboardRecentCard sessions={[]} loading={false} />);
 
-    expect(screen.getByText("No sessions yet")).toBeInTheDocument();
+    expect(screen.getByText("No practice sessions yet")).toBeInTheDocument();
   });
 
   it("renders session question content", () => {

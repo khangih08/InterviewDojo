@@ -87,7 +87,7 @@ describe('InterviewsService', () => {
     });
 
     it('creates a FREE interview and returns first message', async () => {
-      const result = await service.startInterview('FREE');
+      const result = await service.startInterview('FREE', 'u-1');
 
       expect(result.success).toBe(true);
       expect(result.interviewId).toBe('i-1');
@@ -108,6 +108,7 @@ describe('InterviewsService', () => {
 
       const result = await service.startInterview(
         'TARGETED',
+        'u-1',
         'cv content',
         'jd content',
       );
@@ -117,7 +118,7 @@ describe('InterviewsService', () => {
     });
 
     it('saves exactly two messages: system and assistant greeting', async () => {
-      await service.startInterview('FREE');
+      await service.startInterview('FREE', 'u-1');
 
       const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
       expect(savedMessages).toHaveLength(2);
@@ -126,7 +127,7 @@ describe('InterviewsService', () => {
     });
 
     it('FREE system prompt includes one-question-at-a-time rule', async () => {
-      await service.startInterview('FREE');
+      await service.startInterview('FREE', 'u-1');
 
       const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
       expect(savedMessages[0].content).toContain('1 CÂU DUY NHẤT');
@@ -142,7 +143,7 @@ describe('InterviewsService', () => {
         type: 'TARGETED',
       });
 
-      await service.startInterview('TARGETED', 'my-cv', 'my-jd');
+      await service.startInterview('TARGETED', 'u-1', 'my-cv', 'my-jd');
 
       const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
       expect(savedMessages[0].content).toContain('my-cv');

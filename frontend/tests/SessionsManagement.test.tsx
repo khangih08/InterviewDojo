@@ -70,7 +70,7 @@ describe("SessionsManagement", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByText("No active sessions found"),
+        screen.getByText("No active devices found"),
       ).toBeInTheDocument();
     });
   });
@@ -125,7 +125,7 @@ describe("SessionsManagement", () => {
     render(<SessionsManagement />);
     await waitFor(() => screen.getByText("Chrome on Windows"));
 
-    await userEvent.click(screen.getByTitle("Revoke this session"));
+    await userEvent.click(screen.getByTitle("Log out this device"));
 
     await waitFor(() => {
       expect(userSessionsApi.revokeSession).toHaveBeenCalledWith("s-1");
@@ -158,7 +158,7 @@ describe("SessionsManagement", () => {
     render(<SessionsManagement />);
     await waitFor(() => screen.getByText("Chrome on Windows"));
 
-    await userEvent.click(screen.getByTitle("Revoke this session"));
+    await userEvent.click(screen.getByTitle("Log out this device"));
 
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith("Failed to revoke session");
@@ -291,9 +291,9 @@ describe("SessionsManagement", () => {
     render(<SessionsManagement />);
 
     await waitFor(() => {
-      expect(screen.getByText("Active Sessions")).toBeInTheDocument();
+      expect(screen.getByText("Active Devices")).toBeInTheDocument();
       expect(
-        screen.getByText(/Manage your active sessions/),
+        screen.getByText(/Manage your active devices/),
       ).toBeInTheDocument();
     });
   });

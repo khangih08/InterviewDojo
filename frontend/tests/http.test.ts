@@ -68,12 +68,12 @@ function createMockInstance() {
 async function loadHttpModuleWith(mockInstance: MockInstance) {
   vi.resetModules();
   mockAxiosCreate.mockReturnValue(mockInstance.instance);
-  const module = await import("@/lib/api/http");
+  const httpModule = await import("@/lib/api/http");
   const requestHandler = mockInstance.requestUse.mock.calls[0]?.[0];
   const responseErrorHandler = mockInstance.responseUse.mock.calls[0]?.[1];
 
   return {
-    ...module,
+    ...httpModule,
     requestHandler,
     responseErrorHandler,
   };

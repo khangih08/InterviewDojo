@@ -1,6 +1,8 @@
-import { Controller, Post, Body, UploadedFile, UseInterceptors, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body, UploadedFile, UseInterceptors, BadRequestException, Get, UseGuards, Param } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { InterviewsService } from './interviews.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { GetUser } from '../common/decorator/get-user.decorator';
 import * as fs from 'fs';
 
 const extractPdf = require('pdf-extraction');
@@ -9,10 +11,24 @@ const extractPdf = require('pdf-extraction');
 export class InterviewsController {
   constructor(private readonly interviewsService: InterviewsService) {}
 
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async getUserInterviews(@GetUser('id') userId: string) {
+    return this.interviewsService.getUserInterviews(userId);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard)
+  async getInterviewById(@Param('id') id: string, @GetUser('id') userId: string) {
+    return this.interviewsService.getInterviewById(id, userId);
+  }
+
   @Post('start')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('cvFile'))
   async startInterview(
     @Body() body: { type: string; jobDescription?: string },
+    @GetUser('id') userId: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     let cvText = '';
@@ -47,7 +63,7 @@ export class InterviewsController {
       }
     }
 
-    return this.interviewsService.startInterview(body.type, cvText, body.jobDescription);
+    return this.interviewsService.startInterview(body.type, userId, cvText, body.jobDescription);
   }
 
   @Post('upload-audio')
