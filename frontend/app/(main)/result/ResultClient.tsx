@@ -15,9 +15,13 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { shouldUseMocks } from "@/lib/api/mock";
 import { sessionsApi } from "@/lib/api/sessions";
 import type { Session } from "@/lib/api/types";
 import { clampScore, getScoreTone } from "@/lib/session-insights";
+import { demoInterviewSessionId } from "@/lib/mocks/sessions";
 
 type AnalysisMetric = {
   label: string;
@@ -165,7 +169,7 @@ function Glass({
 }) {
   return (
     <div
-      className={`rounded-[1.75rem] border border-white/10 bg-white/[0.05] shadow-2xl backdrop-blur-xl ${className}`}
+      className={`rounded-[1.75rem] border border-white/10 bg-white/5 shadow-2xl backdrop-blur-xl ${className}`}
     >
       {children}
     </div>
@@ -213,7 +217,7 @@ function ScoreCard({
 
   return (
     <Glass className="relative overflow-hidden p-6">
-      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500" />
+      <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-cyan-400 via-blue-500 to-indigo-500" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">
@@ -311,7 +315,7 @@ function MetricBar({ metric }: { metric: AnalysisMetric }) {
       </div>
       <div className="mt-3 h-2 rounded-full bg-white/10">
         <div
-          className="h-2 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 transition-[width] duration-700"
+          className="h-2 rounded-full bg-linear-to-r from-cyan-400 via-blue-500 to-indigo-500 transition-[width] duration-700"
           style={{ width: `${clampScore(metric.score)}%` }}
         />
       </div>
@@ -344,7 +348,8 @@ export default function InterviewResultPageContent() {
         typeof window !== "undefined"
           ? window.sessionStorage.getItem("interview:lastResult")
           : null;
-      const sessionId = sessionIdFromUrl ?? storedSessionId;
+      const sessionId =
+        sessionIdFromUrl ?? storedSessionId ?? (shouldUseMocks() ? demoInterviewSessionId : null);
 
       if (!sessionId) {
         setLoading(false);
@@ -437,10 +442,19 @@ export default function InterviewResultPageContent() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#050816]">
-        <div className="space-y-4 text-center">
-          <div className="mx-auto h-14 w-14 rounded-full border-4 border-white/10 border-t-cyan-400 animate-spin" />
-          <p className="text-sm text-slate-400">Loading your results...</p>
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_30%),linear-gradient(180deg,#050816,#09111f)] px-4 py-8">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center justify-center">
+          <div className="w-full rounded-[1.75rem] border border-white/10 bg-white/5 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+            <div className="space-y-4">
+              <Skeleton className="h-5 w-24 bg-white/10" />
+              <Skeleton className="h-10 w-2/3 bg-white/10" />
+              <div className="grid gap-4 lg:grid-cols-2">
+                <Skeleton className="h-40 rounded-[1.5rem] bg-white/10" />
+                <Skeleton className="h-40 rounded-[1.5rem] bg-white/10" />
+              </div>
+              <p className="text-sm text-slate-400">Loading your results...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -448,30 +462,21 @@ export default function InterviewResultPageContent() {
 
   if (!displayResult) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#050816] px-4 py-8">
-        <Glass className="max-w-md space-y-6 p-10 text-center">
-          <AlertCircle className="mx-auto h-12 w-12 text-amber-400" />
-          <div className="space-y-2">
-            <h2 className="text-xl font-semibold text-white">
-              Analysis unavailable
-            </h2>
-            <p className="text-sm text-slate-400">
-              {errorMessage ??
-                "Complete an interview session to view your results."}
-            </p>
-          </div>
-          <Button onClick={() => router.push("/interview")} className="w-full">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Interview
-          </Button>
-        </Glass>
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_30%),linear-gradient(180deg,#050816,#09111f)] px-4 py-8">
+        <EmptyState
+          icon={<AlertCircle className="h-12 w-12 text-amber-400" />}
+          title="Analysis unavailable"
+          description={errorMessage ?? "Complete an interview session to view your results."}
+          action={{ label: "Back to Interview", onClick: () => router.push("/interview") }}
+          className="max-w-md border-white/10 bg-white/5 text-white"
+        />
       </div>
     );
   }
 
   if (!isDone) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.12),_transparent_30%),linear-gradient(180deg,_#050816,_#09111f)] px-4 py-8">
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(34,211,238,0.12),transparent_30%),linear-gradient(180deg,#050816,#09111f)] px-4 py-8">
         <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center justify-center">
           <Glass className="w-full overflow-hidden p-8 sm:p-10">
             <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
@@ -521,14 +526,14 @@ export default function InterviewResultPageContent() {
                         className="h-2 flex-1 overflow-hidden rounded-full bg-white/10"
                       >
                         <div
-                          className="h-full animate-pulse rounded-full bg-gradient-to-r from-cyan-400 to-indigo-500"
+                          className="h-full animate-pulse rounded-full bg-linear-to-r from-cyan-400 to-indigo-500"
                           style={{ width: `${70 + item * 10}%` }}
                         />
                       </div>
                     ))}
                   </div>
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                         Session
                       </p>
@@ -536,7 +541,7 @@ export default function InterviewResultPageContent() {
                         {displayResult.sessionId}
                       </p>
                     </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="rounded-2xl border border-white/10 bg-white/3 p-4">
                       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
                         Current stage
                       </p>
@@ -555,7 +560,7 @@ export default function InterviewResultPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(99,102,241,0.16),_transparent_30%),linear-gradient(180deg,_#050816,_#0a1220_42%,_#08101d)] px-4 py-8">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(56,189,248,0.14),transparent_28%),radial-gradient(circle_at_top_right,rgba(99,102,241,0.16),transparent_30%),linear-gradient(180deg,#050816,#0a1220_42%,#08101d)] px-4 py-8">
       <div className="mx-auto max-w-6xl space-y-8">
         <section className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-4">
@@ -581,7 +586,7 @@ export default function InterviewResultPageContent() {
             </div>
           </div>
 
-          <Glass className="p-5 lg:min-w-[280px]">
+          <Glass className="p-5 lg:min-w-70">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
               Overall score
             </p>
@@ -638,7 +643,7 @@ export default function InterviewResultPageContent() {
             </div>
 
             <div
-              className={`overflow-hidden transition-[max-height,opacity] duration-300 ${transcriptOpen ? "max-h-[480px] opacity-100" : "max-h-24 opacity-90"}`}
+              className={`overflow-hidden transition-[max-height,opacity] duration-300 ${transcriptOpen ? "max-h-120 opacity-100" : "max-h-24 opacity-90"}`}
             >
               <div className="mt-4 rounded-[1.5rem] border border-white/10 bg-black/25 p-5">
                 <p className="text-sm leading-7 text-slate-300">

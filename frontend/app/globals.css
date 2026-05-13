@@ -121,11 +121,21 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top, oklch(0.97 0.02 260 / 0.8), transparent 28%),
+      radial-gradient(circle at right, oklch(0.9 0.04 275 / 0.35), transparent 24%),
+      linear-gradient(180deg, oklch(0.995 0.002 260), oklch(0.985 0.002 260));
+    background-attachment: fixed;
   }
   html {
     @apply font-sans;
     scroll-behavior: smooth;
+  }
+
+  ::selection {
+    background: oklch(0.65 0.2 270 / 0.25);
+    color: oklch(0.18 0.01 260);
   }
 }
 
@@ -156,11 +166,35 @@
     height: 100%;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    will-change: transform;
   }
 
+  .flashcard-front {
+    z-index: 2;
+    visibility: visible;
+    opacity: 1;
+    transition: visibility 0.3s, opacity 0.3s;
+  }
+
+  .flashcard-inner.is-flipped .flashcard-front {
+    z-index: 0;
+    pointer-events: none;
+    visibility: hidden;
+    opacity: 0;
+  }
 
   .flashcard-back {
     transform: rotateY(180deg);
+    z-index: 0;
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0.3s, opacity 0.3s;
+  }
+
+  .flashcard-inner.is-flipped .flashcard-back {
+    z-index: 2;
+    visibility: visible;
+    opacity: 1;
   }
 }
 
@@ -240,4 +274,15 @@
 
 .dark .glass {
   background: oklch(0.18 0.015 260 / 60%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

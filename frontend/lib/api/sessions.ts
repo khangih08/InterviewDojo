@@ -1,4 +1,10 @@
 import { http, toApiError } from "@/lib/api/http";
+import { shouldUseMocks } from "@/lib/api/mock";
+import {
+  demoInterviewSessionId,
+  getDemoInterviewSessionById,
+  getDemoInterviewSessions,
+} from "@/lib/mocks/sessions";
 import type {
   CreateSessionRequest,
   CreateSessionResponse,
@@ -43,6 +49,10 @@ export async function completeSession(
 export const sessionsApi = {
   // GET /sessions - get interview sessions
   getAllSessions: async (): Promise<Session[]> => {
+    if (shouldUseMocks()) {
+      return getDemoInterviewSessions();
+    }
+
     try {
       const response = await http.get<Session[]>("/interviews");
       return response.data;
@@ -53,6 +63,10 @@ export const sessionsApi = {
 
   // GET /interviews/:id - get interview session by ID
   getSessionById: async (id: string): Promise<Session> => {
+    if (shouldUseMocks()) {
+      return getDemoInterviewSessionById(id) ?? getDemoInterviewSessionById(demoInterviewSessionId);
+    }
+
     try {
       const response = await http.get<Session>(`/interviews/${id}`);
       return response.data;
