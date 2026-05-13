@@ -7,7 +7,9 @@ import { CameraOff, Upload } from "lucide-react";
 import CircularTimer from "@/components/interview/CircularTimer";
 import RecordingStatus from "@/components/interview/RecordingStatus";
 import { Button } from "@/components/ui/button";
+import { shouldUseMocks } from "@/lib/api/mock";
 import { useRecorder } from "@/hooks/useRecorder";
+import { buildDemoInterviewResult } from "@/lib/mocks/interview";
 
 interface QuestionData {
   id: string;
@@ -206,6 +208,40 @@ export default function RecorderPanel({ question }: Props) {
       setSubmitError("");
       setUiStatus("uploading");
       setUploadProgress(10);
+
+      if (shouldUseMocks()) {
+        const demoResult = buildDemoInterviewResult({
+          id: question.id,
+          content: question.content,
+          sampleAnswer: question.sampleAnswer,
+        });
+
+        progressTimer = window.setInterval(() => {
+          setUploadProgress((current) => (current >= 92 ? current : current + 8));
+        }, 160);
+
+        await new Promise((resolve) => window.setTimeout(resolve, 650));
+
+        const payload: StoredInterviewResult = {
+          sessionId: demoResult.sessionId,
+          status: "processing",
+          transcript: demoResult.transcript,
+          feedback: demoResult.feedback,
+          questionId: question.id,
+          createdAt: new Date().toISOString(),
+          technicalScore: demoResult.technicalScore,
+          communicationScore: demoResult.communicationScore,
+          metrics: demoResult.metrics,
+        };
+
+        sessionStorage.setItem("interview:lastSessionId", demoResult.sessionId);
+        sessionStorage.setItem("interview:lastResult", JSON.stringify(payload));
+
+        setUploadProgress(100);
+        setUiStatus("done");
+        router.push(`/result?sessionId=${encodeURIComponent(demoResult.sessionId)}`);
+        return;
+      }
 
       progressTimer = window.setInterval(() => {
         setUploadProgress((current) => (current >= 92 ? current : current + 6));

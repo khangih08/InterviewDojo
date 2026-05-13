@@ -1,19 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/auth-context';
 import { userSessionsApi } from '@/lib/api/sessions';
 import { UserSession } from '@/lib/api/types';
 import { toastError, toastSuccess } from '@/lib/toast';
 import { Loader2, LogOut, Monitor, Smartphone, Trash2 } from 'lucide-react';
 
 export function SessionsManagement() {
+  const { hydrated, isAuthenticated } = useAuth();
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
 
   useEffect(() => {
-    loadSessions();
-  }, []);
+    if (hydrated && isAuthenticated) {
+      loadSessions();
+    } else if (hydrated && !isAuthenticated) {
+      setLoading(false);
+    }
+  }, [hydrated, isAuthenticated]);
 
   const loadSessions = async () => {
     try {

@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const name = getFirstName(user?.full_name, user?.email);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in-up">
       <DashboardHero
         name={name}
         guide={guide}

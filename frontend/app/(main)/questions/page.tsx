@@ -7,6 +7,8 @@ import { Filter, RotateCw, CheckCircle2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getQuestionFilters, getQuestions } from "@/lib/api/questions";
 import type { Category, Question } from "@/lib/api/types";
 import { toastError } from "@/lib/toast";
@@ -181,11 +183,11 @@ function QuestionsPageContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fcfcfd] dark:bg-slate-950 pb-20 transition-colors">
+    <div className="min-h-screen pb-20 transition-colors">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-10 text-center">
+        <div className="mb-10 text-center animate-fade-in-up">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">Flashcards Ôn Tập</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-2">Lọc theo danh mục hoặc tìm theo từ khóa để bắt đầu ôn luyện.</p>
+            <p className="mt-2 text-slate-500 dark:text-slate-400">Lọc theo danh mục hoặc tìm theo từ khóa để bắt đầu ôn luyện.</p>
         </div>
 
         <div className="mb-8 mx-auto max-w-2xl">
@@ -239,13 +241,28 @@ function QuestionsPageContent() {
 
           <div className="flex-1">
             {loading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
-                {[1, 2, 3, 4].map(i => <div key={i} className="h-64 bg-slate-100 dark:bg-slate-800 rounded-xl" />)}
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div key={index} className="rounded-2xl border border-border/40 bg-card p-4">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="mt-4 h-40 w-full rounded-2xl" />
+                    <Skeleton className="mt-4 h-4 w-40" />
+                  </div>
+                ))}
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-slate-400 dark:text-slate-500">
-                Không có câu hỏi nào trong mục này.
-              </div>
+              <EmptyState
+                icon={<Filter size={24} />}
+                title="Không có câu hỏi nào trong mục này"
+                description="Thử xóa bộ lọc hoặc đổi từ khóa để xem thêm câu hỏi mẫu."
+                action={{
+                  label: "Xóa bộ lọc",
+                  onClick: () => {
+                    setSearchText("");
+                    router.replace(pathname, { scroll: false });
+                  },
+                }}
+              />
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">

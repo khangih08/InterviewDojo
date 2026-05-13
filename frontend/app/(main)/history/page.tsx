@@ -12,6 +12,8 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import { sessionsApi } from "@/lib/api/sessions";
 import type { Session } from "@/lib/api/types";
 import {
@@ -83,8 +85,8 @@ export default function HistoryPage() {
   }, [categoryFilter, dateFilter, query, sessions]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
-      <section className="overflow-hidden rounded-[2rem] bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_35%),linear-gradient(135deg,_#0f172a,_#111827_55%,_#164e63)] p-6 text-white shadow-xl sm:p-8">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <section className="overflow-hidden rounded-[2rem] bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.18),transparent_35%),linear-gradient(135deg,#0f172a,#111827_55%,#164e63)] p-6 text-white shadow-xl sm:p-8">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.28em] text-cyan-200">
           <CalendarDays className="h-4 w-4" />
           Session History
@@ -175,8 +177,20 @@ export default function HistoryPage() {
 
       <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
         {loading ? (
-          <div className="flex h-52 items-center justify-center text-sm text-slate-400">
-            Loading history...
+          <div className="space-y-4">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="rounded-[1.5rem] border border-slate-100 bg-slate-50/70 p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-3">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-4 w-72 max-w-full" />
+                    <Skeleton className="h-4 w-56" />
+                  </div>
+                  <Skeleton className="h-14 w-24 rounded-2xl" />
+                </div>
+              </div>
+            ))}
+            <p className="text-center text-sm text-slate-400">Loading history...</p>
           </div>
         ) : filteredSessions.length > 0 ? (
           <div className="space-y-5">
@@ -188,11 +202,11 @@ export default function HistoryPage() {
               return (
                 <div key={session.id} className="relative pl-8">
                   {index < filteredSessions.length - 1 && (
-                    <div className="absolute left-[13px] top-9 h-[calc(100%+0.75rem)] w-px bg-slate-200" />
+                    <div className="absolute left-3.25 top-9 h-[calc(100%+0.75rem)] w-px bg-slate-200" />
                   )}
                   <div className="absolute left-0 top-5 h-7 w-7 rounded-full border border-slate-200 bg-white shadow-sm" />
 
-                  <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50/60 p-5 transition hover:border-slate-200 hover:bg-white hover:shadow-md">
+                  <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50/60 p-5 transition duration-300 hover:-translate-y-0.5 hover:border-slate-200 hover:bg-white hover:shadow-md">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
@@ -243,15 +257,20 @@ export default function HistoryPage() {
             })}
           </div>
         ) : (
-          <div className="flex h-52 flex-col items-center justify-center text-center text-slate-400">
-            <Clock className="mb-3 h-10 w-10 opacity-25" />
-            <p className="text-base font-medium text-slate-500">
-              No sessions match the current filters
-            </p>
-            <p className="mt-1 text-sm">
-              Try a wider date range or switch to another category.
-            </p>
-          </div>
+          <EmptyState
+            icon={<Clock className="h-10 w-10 opacity-25" />}
+            title="No sessions match the current filters"
+            description="Try a wider date range or switch to another category."
+            action={{
+              label: "Reset filters",
+              onClick: () => {
+                setQuery("");
+                setDateFilter("all");
+                setCategoryFilter("all");
+              },
+            }}
+            className="border-slate-200"
+          />
         )}
       </section>
     </div>
