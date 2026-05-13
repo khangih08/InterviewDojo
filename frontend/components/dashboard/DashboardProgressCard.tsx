@@ -14,6 +14,8 @@ import {
   YAxis,
 } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
 import type {
   CategoryPoint,
   ChartPoint,
@@ -41,7 +43,7 @@ export function DashboardProgressCard({
     <Card className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-sm">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-orange-500 to-red-500 text-white shadow-sm">
             <Flame className="h-3.5 w-3.5" />
           </div>
           Progress Snapshot
@@ -50,19 +52,39 @@ export function DashboardProgressCard({
 
       <CardContent className="grid gap-6 lg:grid-cols-[1.25fr_0.9fr]">
         {loading ? (
-          <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground lg:col-span-2">
-            <div className="flex flex-col items-center gap-3">
-              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary/20 border-t-primary" />
+          <div className="grid gap-4 lg:col-span-2 lg:grid-cols-[1.25fr_0.9fr]">
+            <div className="space-y-4 rounded-2xl border border-border/40 bg-accent/10 p-4">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-60 w-full rounded-2xl" />
+            </div>
+            <div className="grid gap-4">
+              <div className="rounded-2xl border border-border/40 bg-card p-4">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="mt-4 h-28 w-full rounded-full" />
+              </div>
+              <div className="rounded-2xl border border-border/40 bg-card p-4">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="mt-4 h-28 w-full rounded-2xl" />
+              </div>
+            </div>
+            <div className="lg:col-span-2 text-center text-sm text-muted-foreground">
               <span>Loading...</span>
             </div>
           </div>
         ) : errorMessage ? (
-          <div className="flex h-[280px] items-center justify-center text-center text-sm text-destructive lg:col-span-2">
-            {errorMessage}
+          <div className="lg:col-span-2">
+            <EmptyState
+              title="Unable to load progress"
+              description={errorMessage}
+              action={{
+                label: "Try again",
+                onClick: () => window.location.reload(),
+              }}
+            />
           </div>
         ) : (
           <>
-            <div className="h-[280px] rounded-2xl border border-border/40 bg-accent/20 p-4">
+            <div className="h-70 rounded-2xl border border-border/40 bg-accent/20 p-4">
               <div className="mb-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Score Trend
@@ -102,7 +124,7 @@ export function DashboardProgressCard({
             </div>
 
             <div className="grid gap-4">
-              <div className="h-[160px] rounded-2xl border border-border/40 bg-card p-4">
+              <div className="h-40 rounded-2xl border border-border/40 bg-card p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     Practice Mix
@@ -144,7 +166,7 @@ export function DashboardProgressCard({
                 )}
               </div>
 
-              <div className="h-[160px] rounded-2xl border border-border/40 bg-card p-4">
+              <div className="h-40 rounded-2xl border border-border/40 bg-card p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     Status Flow
