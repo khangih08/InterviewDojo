@@ -16,6 +16,19 @@ vi.mock("@/lib/toast", () => ({
   toastSuccess: vi.fn(),
 }));
 
+vi.mock("@/contexts/auth-context", async () => {
+  const actual = await vi.importActual("@/contexts/auth-context");
+  return {
+    ...actual,
+    useAuth: vi.fn(() => ({
+      hydrated: true,
+      isAuthenticated: true,
+      user: null,
+      loading: false,
+    })),
+  };
+});
+
 import { userSessionsApi } from "@/lib/api/sessions";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { SessionsManagement } from "@/components/dashboard/SessionsManagement";
