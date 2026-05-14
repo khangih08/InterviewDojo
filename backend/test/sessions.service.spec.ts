@@ -122,6 +122,38 @@ describe('SessionsService', () => {
       );
     });
 
+    it.each([
+      // Windows variants
+      ['Firefox on Windows',  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Gecko/20100101 Firefox/120.0',  'Firefox on Windows'],
+      ['Safari on Windows',   'Mozilla/5.0 (Windows NT 10.0) AppleWebKit/537.36 Safari/537.36',           'Safari on Windows'],
+      ['Windows Device',      'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',                                 'Windows Device'],
+      // macOS variants
+      ['Chrome on macOS',     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Chrome/120',               'Chrome on macOS'],
+      ['Safari on macOS',     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15',          'Safari on macOS'],
+      ['macOS Device',        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)',                           'macOS Device'],
+      // Linux (must come before Android because Android UAs include "Linux")
+      ['Linux Device',        'Mozilla/5.0 (X11; Linux x86_64) Gecko/20100101',                           'Linux Device'],
+      // iPhone — real UAs contain "Mac OS X" so Mac fires first; use a synthetic UA.
+      ['iPhone',              'iPhone; CPU iPhone OS 17_0',                                                 'iPhone'],
+      // iPad — real UAs contain "Mac OS X" so the Mac branch fires first; use a minimal
+      // synthetic UA that has "iPad" but not "Mac" to reach the iPad branch directly.
+      ['iPad',                'iPad; CPU OS 17_0',                                                         'iPad'],
+      // Android — real UAs contain "Linux" so Linux branch fires first; use a synthetic
+      // UA with "Android" but not "Linux" to reach the Android branch.
+      ['Android Device',      'Android 14; Pixel 8',                                                      'Android Device'],
+      // Fallback
+      ['Unknown Device',      'CustomBotAgent/1.0',                                                       'Unknown Device'],
+    ])('parses device name: %s', async (_label, ua, expectedDevice) => {
+      sessionsRepo.create.mockReturnValue({ ...baseSession, device_name: expectedDevice });
+      sessionsRepo.save.mockResolvedValue({ ...baseSession, device_name: expectedDevice });
+
+      await service.createSession('u-1', 'rt', ua, undefined);
+
+      expect(sessionsRepo.create).toHaveBeenCalledWith(
+        expect.objectContaining({ device_name: expectedDevice }),
+      );
+    });
+
     it('sets expiry date 7 days in the future', async () => {
       sessionsRepo.create.mockReturnValue(baseSession);
       sessionsRepo.save.mockResolvedValue(baseSession);
@@ -312,6 +344,55 @@ describe('SessionsService', () => {
         's-1',
         expect.objectContaining({ last_accessed_at: expect.any(Date) }),
       );
+    });
+  });
+
+  describe('deleteOldInactiveSessions', () => {
+    it('deletes inactive sessions older than the given days and returns count', async () => {
+      sessionsRepo.delete.mockResolvedValue({ affected: 5 });
+      const result = await service.deleteOldInactiveSessions(30);
+
+      expect(sessionsRepo.delete).toHaveBeenCalledWith(
+        expect.objectContaining({ is_active: false }),
+      );
+      expect(result).toBe(5);
+    });
+
+    it('uses 30 days as the default when no argument is provided', async () => {
+      sessionsRepo.delete.mockResolvedValue({ affected: 2 });
+      await service.deleteOldInactiveSessions();
+
+      expect(sessionsRepo.delete).toHaveBeenCalled();
+    });
+
+    it('returns 0 when affected is undefined', async () => {
+      sessionsRepo.delete.mockResolvedValue({ affected: undefined });
+      const result = await service.deleteOldInactiveSessions(30);
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('revokeAllSessions returns 0 when affected is undefined', () => {
+    it('returns 0 when update result has no affected count', async () => {
+      sessionsRepo.update.mockResolvedValue({ affected: undefined });
+      const result = await service.revokeAllSessions('u-1');
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('cleanupExpiredSessions returns 0 when affected is undefined', () => {
+    it('returns 0 when query builder result has no affected count', async () => {
+      qbMock.execute.mockResolvedValue({ affected: undefined });
+      const result = await service.cleanupExpiredSessions();
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('revokeAllOtherSessions returns 0 when affected is undefined', () => {
+    it('returns 0 when query builder result has no affected count', async () => {
+      qbMock.execute.mockResolvedValue({ affected: undefined });
+      const result = await service.revokeAllOtherSessions('u-1');
+      expect(result).toBe(0);
     });
   });
 });

@@ -117,11 +117,79 @@ describe("sessions api", () => {
     expect(mockDelete).toHaveBeenCalledWith("/sessions");
   });
 
-  it("throws normalized errors", async () => {
+  it("throws normalized errors on createSession failure", async () => {
     mockPost.mockRejectedValue(new Error("request failed"));
 
     await expect(createSession({ question_id: "q-1" })).rejects.toThrow(
       "request failed",
+    );
+  });
+
+  it("throws normalized error on completeSession failure", async () => {
+    mockPost.mockRejectedValue(new Error("upload failed"));
+
+    await expect(
+      completeSession({
+        session_id: "s-1",
+        recording_url: "https://example.com/v.webm",
+        duration_seconds: 60,
+        size_bytes: 512,
+        mime_type: "video/webm",
+      }),
+    ).rejects.toThrow("upload failed");
+  });
+
+  it("throws normalized error on sessionsApi.getAllSessions failure", async () => {
+    mockGet.mockRejectedValue(new Error("server error"));
+
+    await expect(sessionsApi.getAllSessions()).rejects.toThrow("server error");
+  });
+
+  it("throws normalized error on sessionsApi.getSessionById failure", async () => {
+    mockGet.mockRejectedValue(new Error("not found"));
+
+    await expect(sessionsApi.getSessionById("bad-id")).rejects.toThrow(
+      "not found",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.getAllSessions failure", async () => {
+    mockGet.mockRejectedValue(new Error("unauthorized"));
+
+    await expect(userSessionsApi.getAllSessions()).rejects.toThrow(
+      "unauthorized",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.getSessionById failure", async () => {
+    mockGet.mockRejectedValue(new Error("session not found"));
+
+    await expect(userSessionsApi.getSessionById("u-s-99")).rejects.toThrow(
+      "session not found",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.revokeSession failure", async () => {
+    mockDelete.mockRejectedValue(new Error("revoke failed"));
+
+    await expect(userSessionsApi.revokeSession("u-s-1")).rejects.toThrow(
+      "revoke failed",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.revokeAllOtherSessions failure", async () => {
+    mockDelete.mockRejectedValue(new Error("revoke all failed"));
+
+    await expect(userSessionsApi.revokeAllOtherSessions()).rejects.toThrow(
+      "revoke all failed",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.revokeAllSessions failure", async () => {
+    mockDelete.mockRejectedValue(new Error("revoke all failed"));
+
+    await expect(userSessionsApi.revokeAllSessions()).rejects.toThrow(
+      "revoke all failed",
     );
   });
 });

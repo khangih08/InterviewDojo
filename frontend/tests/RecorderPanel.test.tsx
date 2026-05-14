@@ -245,4 +245,182 @@ describe("RecorderPanel", () => {
       expect(push).toHaveBeenCalledWith(expect.stringContaining("/result?sessionId="));
     });
   });
+
+  it("shows error when question is null during upload", async () => {
+    useRecorderMock.mockReturnValue({
+      status: "stopped",
+      error: "",
+      recordedVideo: {
+        url: "blob:video",
+        sizeBytes: 512,
+        mimeType: "video/webm",
+        blob: new Blob(["video"]),
+      },
+      previewVideoRef: { current: null },
+      elapsedSec: 10,
+      remainingSec: 110,
+      maxDurationSec: 120,
+      recordingProgressPercent: 8,
+      volumeLevel: 0,
+      setupDevices,
+      startRecording,
+      stopRecording,
+      resetRecording,
+      stopDevices,
+    });
+
+    render(<RecorderPanel question={null} />);
+    fireEvent.click(screen.getByText(/Nộp câu trả lời/i));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Lỗi: Không tìm thấy dữ liệu câu hỏi/i),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("cancels upload when user declines the confirm dialog", async () => {
+    vi.stubGlobal("confirm", vi.fn(() => false));
+
+    useRecorderMock.mockReturnValue({
+      status: "stopped",
+      error: "",
+      recordedVideo: {
+        url: "blob:video",
+        sizeBytes: 512,
+        mimeType: "video/webm",
+        blob: new Blob(["video"]),
+      },
+      previewVideoRef: { current: null },
+      elapsedSec: 10,
+      remainingSec: 110,
+      maxDurationSec: 120,
+      recordingProgressPercent: 8,
+      volumeLevel: 0,
+      setupDevices,
+      startRecording,
+      stopRecording,
+      resetRecording,
+      stopDevices,
+    });
+
+    render(<RecorderPanel question={question} />);
+    fireEvent.click(screen.getByText(/Nộp câu trả lời/i));
+
+    // fetch should never be called if the user cancelled
+    await new Promise((r) => setTimeout(r, 50));
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("shows error when server returns a non-ok response", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: false,
+      status: 500,
+      text: async () => "Internal Server Error",
+    } as Response);
+
+    useRecorderMock.mockReturnValue({
+      status: "stopped",
+      error: "",
+      recordedVideo: {
+        url: "blob:video",
+        sizeBytes: 512,
+        mimeType: "video/webm",
+        blob: new Blob(["video"]),
+      },
+      previewVideoRef: { current: null },
+      elapsedSec: 10,
+      remainingSec: 110,
+      maxDurationSec: 120,
+      recordingProgressPercent: 8,
+      volumeLevel: 0,
+      setupDevices,
+      startRecording,
+      stopRecording,
+      resetRecording,
+      stopDevices,
+    });
+
+    render(<RecorderPanel question={question} />);
+    fireEvent.click(screen.getByText(/Nộp câu trả lời/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Upload fail/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows error when backend returns success:false", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: false }),
+    } as Response);
+
+    useRecorderMock.mockReturnValue({
+      status: "stopped",
+      error: "",
+      recordedVideo: {
+        url: "blob:video",
+        sizeBytes: 512,
+        mimeType: "video/webm",
+        blob: new Blob(["video"]),
+      },
+      previewVideoRef: { current: null },
+      elapsedSec: 10,
+      remainingSec: 110,
+      maxDurationSec: 120,
+      recordingProgressPercent: 8,
+      volumeLevel: 0,
+      setupDevices,
+      startRecording,
+      stopRecording,
+      resetRecording,
+      stopDevices,
+    });
+
+    render(<RecorderPanel question={question} />);
+    fireEvent.click(screen.getByText(/Nộp câu trả lời/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Upload fail/i)).toBeInTheDocument();
+    });
+  });
+
+  it("shows error state when device setup fails", async () => {
+    setupDevices.mockResolvedValue(false);
+
+    render(<RecorderPanel question={question} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: /Sẵn sàng \(Bật Camera\)/i }),
+    );
+
+    await waitFor(() => {
+      expect(setupDevices).toHaveBeenCalled();
+    });
+  });
+
+  it("shows error state when startRecording returns false", () => {
+    startRecording.mockReturnValue(false);
+
+    useRecorderMock.mockReturnValue({
+      status: "ready",
+      error: "",
+      recordedVideo: null,
+      previewVideoRef: { current: null },
+      elapsedSec: 0,
+      remainingSec: 120,
+      maxDurationSec: 120,
+      recordingProgressPercent: 0,
+      volumeLevel: 0,
+      setupDevices,
+      startRecording,
+      stopRecording,
+      resetRecording,
+      stopDevices,
+    });
+
+    render(<RecorderPanel question={question} />);
+    fireEvent.click(screen.getByText(/Bắt đầu ghi hình/i));
+
+    expect(startRecording).toHaveBeenCalled();
+  });
 });

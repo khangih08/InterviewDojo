@@ -89,7 +89,18 @@ import { useRecorder } from "@/hooks/useRecorder";
 describe("useRecorder", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // vi.restoreAllMocks() in afterEach wipes return values on plain vi.fn() mocks,
+    // so we re-setup everything that tests depend on having a specific return value.
     mockGetUserMedia.mockResolvedValue(mockMediaStream);
+    mockCreateObjectURL.mockReturnValue("blob:mock-url");
+    mockMediaStream.getTracks.mockReturnValue([
+      { stop: vi.fn(), kind: "video" },
+      { stop: vi.fn(), kind: "audio" },
+    ]);
+    mockMediaStream.getAudioTracks.mockReturnValue([{ stop: vi.fn() }]);
+    MockMediaRecorder.isTypeSupported.mockReturnValue(true);
+
     Object.defineProperty(navigator, "mediaDevices", {
       writable: true,
       configurable: true,
@@ -225,5 +236,121 @@ describe("useRecorder", () => {
     expect(result.current.elapsedSec).toBeGreaterThanOrEqual(0);
 
     vi.useRealTimers();
+  });
+
+  it("uses empty mimeType when no format is supported by MediaRecorder", async () => {
+    MockMediaRecorder.isTypeSupported = vi.fn().mockReturnValue(false);
+
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => {
+      await result.current.setupDevices();
+    });
+
+    // Should still record — mimeType falls back to "" (falsy), so MediaRecorder
+    // is created without an explicit mimeType option
+    act(() => {
+      result.current.startRecording();
+    });
+
+    expect(result.current.status).toBe("recording");
+
+    MockMediaRecorder.isTypeSupported = vi.fn().mockReturnValue(true);
+  });
+
+  it("sets error status when startRecording is called without a stream", () => {
+    const { result } = renderHook(() => useRecorder());
+    // Never call setupDevices — streamRef.current is null
+
+    act(() => {
+      result.current.startRecording();
+    });
+
+    expect(result.current.status).toBe("error");
+    expect(result.current.error).toBeTruthy();
+  });
+
+  it("stopRecording does nothing when no recorder is active (null ref)", async () => {
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => {
+      await result.current.setupDevices();
+    });
+
+    // recorderRef.current is null (never started recording)
+    act(() => {
+      result.current.stopRecording();
+    });
+
+    expect(result.current.status).toBe("ready");
+  });
+
+  it("stopRecording returns early when recorder is already inactive", async () => {
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => { await result.current.setupDevices(); });
+    act(() => { result.current.startRecording(); });
+    await act(async () => { result.current.stopRecording(); });
+
+    expect(result.current.status).toBe("stopped");
+
+    // Calling stop again on the same (now inactive) recorder hits the early-return guard
+    await act(async () => { result.current.stopRecording(); });
+
+    expect(result.current.status).toBe("stopped"); // unchanged
+  });
+
+  it("revokes the object URL when resetting after a completed recording", async () => {
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => { await result.current.setupDevices(); });
+    act(() => { result.current.startRecording(); });
+    await act(async () => { result.current.stopRecording(); });
+
+    expect(result.current.recordedVideo?.url).toBe("blob:mock-url");
+
+    await act(async () => { result.current.resetRecording(); });
+
+    expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+    expect(result.current.recordedVideo).toBeNull();
+  });
+
+  it("sets status to idle when resetRecording is called without an active stream", () => {
+    const { result } = renderHook(() => useRecorder());
+    // No setupDevices call — streamRef.current is null
+
+    act(() => { result.current.resetRecording(); });
+
+    expect(result.current.status).toBe("idle");
+  });
+
+  it("stopDevices cleans up stream and returns status to idle", async () => {
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => { await result.current.setupDevices(); });
+    expect(result.current.status).toBe("ready");
+
+    act(() => { result.current.stopDevices(); });
+
+    expect(result.current.status).toBe("idle");
+    const tracks = mockMediaStream.getTracks();
+    tracks.forEach((t: { stop: ReturnType<typeof vi.fn> }) => {
+      expect(t.stop).toHaveBeenCalled();
+    });
+  });
+
+  it("stopDevices revokes the recorded video URL if one exists", async () => {
+    const { result } = renderHook(() => useRecorder());
+
+    await act(async () => { await result.current.setupDevices(); });
+    act(() => { result.current.startRecording(); });
+    await act(async () => { result.current.stopRecording(); });
+
+    expect(result.current.recordedVideo?.url).toBe("blob:mock-url");
+
+    act(() => { result.current.stopDevices(); });
+
+    expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:mock-url");
+    expect(result.current.status).toBe("idle");
   });
 });
