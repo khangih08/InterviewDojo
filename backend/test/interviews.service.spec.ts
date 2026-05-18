@@ -151,6 +151,17 @@ describe('InterviewsService', () => {
       expect(savedMessages[0].content).toContain('my-cv');
       expect(savedMessages[0].content).toContain('my-jd');
     });
+
+    it('TARGETED prompt uses fallback text when cvText and jdText are undefined', async () => {
+      interviewRepo.create.mockReturnValue({ ...savedInterview, type: 'TARGETED' });
+      interviewRepo.save.mockResolvedValue({ ...savedInterview, type: 'TARGETED' });
+
+      await service.startInterview('TARGETED', 'u-1', undefined, undefined);
+
+      const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
+      expect(savedMessages[0].content).toContain('Không có thông tin JD cụ thể');
+      expect(savedMessages[0].content).toContain('Không đọc được CV');
+    });
   });
 
   describe('processAudio', () => {
@@ -311,6 +322,25 @@ describe('InterviewsService', () => {
 
       const result = await service.processAudio('i-1', noExtFile);
       expect(result.success).toBe(true);
+    });
+
+    it('defaults to webm when originalname ends with a dot (empty extension)', async () => {
+      const dotFile = {
+        ...mockFile,
+        originalname: 'audio.',
+      } as Express.Multer.File;
+
+      const result = await service.processAudio('i-1', dotFile);
+      expect(result.success).toBe(true);
+    });
+
+    it('returns empty string as aiResponse when choices content is null', async () => {
+      mockChat.mockResolvedValue({
+        choices: [{ message: { content: null } }],
+      });
+
+      const result = await service.processAudio('i-1', mockFile);
+      expect(result.aiResponse).toBe('');
     });
 
     it('throws when audio file size is zero', async () => {

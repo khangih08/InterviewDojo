@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGet, mockPost, mockDelete } = vi.hoisted(() => ({
+const { mockGet, mockPost, mockDelete, mockShouldUseMocks } = vi.hoisted(() => ({
   mockGet: vi.fn(),
   mockPost: vi.fn(),
   mockDelete: vi.fn(),
+  mockShouldUseMocks: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("@/lib/api/http", () => ({
@@ -15,6 +16,18 @@ vi.mock("@/lib/api/http", () => ({
   toApiError: vi.fn((error: unknown) => ({
     message: error instanceof Error ? error.message : "unknown",
   })),
+}));
+
+vi.mock("@/lib/api/mock", () => ({
+  shouldUseMocks: mockShouldUseMocks,
+}));
+
+vi.mock("@/lib/mocks/sessions", () => ({
+  demoInterviewSessionId: "demo-123",
+  getDemoInterviewSessions: vi.fn().mockReturnValue([{ id: "demo-s-1" }]),
+  getDemoInterviewSessionById: vi.fn((id: string) =>
+    id === "demo-123" ? { id: "demo-123" } : null,
+  ),
 }));
 
 import {
@@ -115,6 +128,32 @@ describe("sessions api", () => {
       revoked_count: 3,
     });
     expect(mockDelete).toHaveBeenCalledWith("/sessions");
+  });
+
+  it("returns mock sessions when shouldUseMocks returns true", async () => {
+    mockShouldUseMocks.mockReturnValueOnce(true);
+
+    const result = await sessionsApi.getAllSessions();
+
+    expect(result).toEqual([{ id: "demo-s-1" }]);
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it("returns mock session by id when shouldUseMocks returns true", async () => {
+    mockShouldUseMocks.mockReturnValueOnce(true);
+
+    const result = await sessionsApi.getSessionById("demo-123");
+
+    expect(result).toEqual({ id: "demo-123" });
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it("falls back to demo session when mock session id not found", async () => {
+    mockShouldUseMocks.mockReturnValueOnce(true);
+
+    const result = await sessionsApi.getSessionById("unknown-id");
+
+    expect(result).toEqual({ id: "demo-123" });
   });
 
   it("throws normalized errors on createSession failure", async () => {

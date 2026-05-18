@@ -28,6 +28,7 @@ const mockAnalysis = {
 describe("getAnalysis", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS;
     mockToApiError.mockImplementation((err: unknown) => ({
       message: err instanceof Error ? err.message : "API error",
     }));
@@ -63,6 +64,21 @@ describe("getAnalysis", () => {
     mockGet.mockRejectedValue(new Error("Session not found"));
 
     await expect(getAnalysis("bad-id")).rejects.toThrow("Session not found");
+  });
+
+  it("returns mock data when USE_MOCK env is enabled", async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS = "true";
+
+    const { getAnalysis: getAnalysisMock } = await import("@/lib/api/analysis");
+    const result = await getAnalysisMock("any-id");
+
+    expect(result.sessionId).toBe("mock-session-123");
+    expect(result.status).toBe("done");
+    expect(mockGet).not.toHaveBeenCalled();
+
+    delete process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS;
+    vi.resetModules();
   });
 
   it("returns all optional fields when present in the response", async () => {
