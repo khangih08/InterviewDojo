@@ -1,7 +1,8 @@
 import { Shield } from "lucide-react";
 
-import { SessionsManagement } from "@/components/dashboard/SessionsManagement";
-import { ThemeSettings } from "@/components/dashboard/ThemeSettings";
+import { SessionsManagement } from "@/components/settings/SessionsManagement";
+import { ThemeSettings } from "@/components/settings/ThemeSettings";
+import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 
 export const metadata = {
   title: "Settings",
@@ -35,6 +36,8 @@ export default function SettingsPage() {
       </section>
 
       <ThemeSettings />
+
+      <SubscriptionSettings />
 
       <SessionsManagement />
     </div>

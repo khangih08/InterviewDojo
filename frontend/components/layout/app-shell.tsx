@@ -14,7 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-h-screen">
         <Sidebar />
-        <main className="relative flex-1 px-4 py-6 pb-28 sm:px-6 md:ml-64 md:px-8 md:py-8 md:pb-8 lg:px-10">
+        <main className="relative flex-1 px-4 py-6 pb-28 sm:px-6 md:ml-72 md:px-8 md:py-8 md:pb-8 lg:px-10">
           {demoMode ? (
             <div className="mx-auto mb-6 max-w-6xl rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 shadow-sm backdrop-blur-sm dark:text-amber-100">
               Demo mode is active. The app is using fixed sample data so the dashboard,

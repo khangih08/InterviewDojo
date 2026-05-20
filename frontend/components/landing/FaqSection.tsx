@@ -41,10 +41,10 @@ export default function FaqSection() {
       <div className="container mx-auto px-4 space-y-16">
         <div className="text-center space-y-4">
           <Badge variant="outline" className="border-primary/30 text-primary">FAQ</Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Frequently asked <span className="glow-gradient-text">questions</span>
           </h2>
-          <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
+          <p className="text-muted-foreground max-w-md mx-auto text-lg leading-relaxed">
             Everything you need to know before you enter the Dojo.
           </p>
         </div>

@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthProvider } from "@/contexts/auth-context";
+import { SubscriptionProvider } from "@/contexts/subscription-context";
 
 export default function MainLayout({
   children,
@@ -8,7 +9,9 @@ export default function MainLayout({
 }) {
   return (
     <AuthProvider>
-      <AppShell>{children}</AppShell>
+      <SubscriptionProvider>
+        <AppShell>{children}</AppShell>
+      </SubscriptionProvider>
     </AuthProvider>
   );
 }

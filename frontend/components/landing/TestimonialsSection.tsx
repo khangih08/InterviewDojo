@@ -20,7 +20,7 @@ export default function TestimonialsSection() {
           <Badge variant="outline" className="border-primary/30 text-primary">
             Testimonials
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Loved by candidates{" "}
             <span className="glow-gradient-text">worldwide</span>
           </h2>
@@ -33,7 +33,7 @@ export default function TestimonialsSection() {
               className="group relative rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1"
             >
               <Quote className="h-8 w-8 text-primary/15 mb-4" />
-              <p className="flex-1 text-sm text-muted-foreground leading-relaxed">
+              <p className="flex-1 text-base text-muted-foreground leading-relaxed">
                 &ldquo;{t.quote}&rdquo;
               </p>
               <div className="mt-6 flex items-center gap-3 pt-4 border-t border-border/50">
