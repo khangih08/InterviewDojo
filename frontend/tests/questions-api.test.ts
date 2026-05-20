@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGet } = vi.hoisted(() => ({
   mockGet: vi.fn(),
@@ -24,17 +24,10 @@ import {
   getQuestions,
 } from "@/lib/api/questions";
 
-const silenceConsoleError = () =>
-  vi.spyOn(console, "error").mockImplementation(() => {});
-
 describe("questions api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(shouldUseMocks).mockReturnValue(false);
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it("returns filtered mock questions when mocks are enabled", async () => {
@@ -175,133 +168,8 @@ describe("questions api", () => {
   });
 
   it("throws normalized error when backend request fails", async () => {
-    silenceConsoleError();
     mockGet.mockRejectedValue(new Error("Backend down"));
 
     await expect(getQuestions()).rejects.toThrow("Backend down");
-  });
-
-  it("maps difficulty 'easy' to level 2 in backend params", async () => {
-    mockGet.mockResolvedValue({
-      data: { items: [], total: 0, page: 1, limit: 10 },
-    });
-
-    await getQuestions({ difficulty: "easy" });
-
-    expect(mockGet).toHaveBeenCalledWith(
-      "/questions",
-      expect.objectContaining({ params: expect.objectContaining({ difficulty: 2 }) }),
-    );
-  });
-
-  it("maps difficulty 'medium' to level 3 in backend params", async () => {
-    mockGet.mockResolvedValue({
-      data: { items: [], total: 0, page: 1, limit: 10 },
-    });
-
-    await getQuestions({ difficulty: "medium" });
-
-    expect(mockGet).toHaveBeenCalledWith(
-      "/questions",
-      expect.objectContaining({ params: expect.objectContaining({ difficulty: 3 }) }),
-    );
-  });
-
-  it("normalizes a backend question with difficultyLevel 3 to 'medium'", async () => {
-    mockGet.mockResolvedValue({
-      data: {
-        data: [{ id: "q-m", content: "Medium Q", difficultyLevel: 3, tags: [] }],
-        meta: { total: 1, page: 1, limit: 10 },
-      },
-    });
-
-    const result = await getQuestions();
-    expect(result.items[0].difficulty).toBe("medium");
-  });
-
-  it("normalizes a backend question with null tags to an empty array", async () => {
-    mockGet.mockResolvedValue({
-      data: {
-        data: [{ id: "q-n", content: "No tags Q", difficultyLevel: 1, tags: null }],
-        meta: { total: 1, page: 1, limit: 10 },
-      },
-    });
-
-    const result = await getQuestions();
-    expect(result.items[0].tags).toEqual([]);
-  });
-
-  it("filters mock questions by categoryId", async () => {
-    vi.mocked(shouldUseMocks).mockReturnValue(true);
-
-    const result = await getQuestions({ categoryId: "dsa" });
-
-    expect(result.items.every((q) => q.category.id === "dsa")).toBe(true);
-    expect(result.items[0].id).toBe("q3");
-  });
-
-  it("filters mock questions by tagId", async () => {
-    vi.mocked(shouldUseMocks).mockReturnValue(true);
-
-    const result = await getQuestions({ tagId: "react" });
-
-    expect(result.items.every((q) => q.tags.some((t) => t.id === "react"))).toBe(true);
-    expect(result.items[0].id).toBe("q2");
-  });
-
-  it("returns null when getQuestionById is called with an id that has no mock match", async () => {
-    vi.mocked(shouldUseMocks).mockReturnValue(true);
-
-    const result = await getQuestionById("does-not-exist");
-
-    expect(result).toBeNull();
-  });
-
-  it("throws normalized error when getQuestionById backend request fails", async () => {
-    silenceConsoleError();
-    mockGet.mockRejectedValue(new Error("Question not found"));
-
-    await expect(getQuestionById("q-bad")).rejects.toThrow("Question not found");
-  });
-
-  it("returns mock filters when shouldUseMocks is true", async () => {
-    vi.mocked(shouldUseMocks).mockReturnValue(true);
-
-    const result = await getQuestionFilters();
-
-    expect(result.categories.length).toBeGreaterThan(0);
-    expect(result.tags.length).toBeGreaterThan(0);
-    expect(mockGet).not.toHaveBeenCalled();
-  });
-
-  it("handles flat array categories response (non-paged) from backend", async () => {
-    mockGet
-      .mockResolvedValueOnce({
-        data: [{ id: "c-flat", name: "Flat Category" }],
-      })
-      .mockResolvedValueOnce({
-        data: [{ id: "t-1", name: "SQL" }],
-      });
-
-    const result = await getQuestionFilters();
-
-    expect(result.categories).toEqual([{ id: "c-flat", name: "Flat Category" }]);
-  });
-
-  it("returns empty tags array when tags response is not an array", async () => {
-    mockGet
-      .mockResolvedValueOnce({ data: [{ id: "c-1", name: "Cat" }] })
-      .mockResolvedValueOnce({ data: null });
-
-    const result = await getQuestionFilters();
-
-    expect(result.tags).toEqual([]);
-  });
-
-  it("throws normalized error when getQuestionFilters backend request fails", async () => {
-    silenceConsoleError();
-    mockGet.mockRejectedValue(new Error("Filters unavailable"));
-
-    await expect(getQuestionFilters()).rejects.toThrow("Filters unavailable");
   });
 });

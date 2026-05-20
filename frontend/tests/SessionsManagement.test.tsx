@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/api/sessions", () => ({
   userSessionsApi: {
@@ -51,16 +51,9 @@ const mockSession2 = {
   ip_address: "192.168.1.2",
 };
 
-const silenceConsoleError = () =>
-  vi.spyOn(console, "error").mockImplementation(() => {});
-
 describe("SessionsManagement", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
   });
 
   it("shows loading spinner while fetching sessions", () => {
@@ -157,7 +150,6 @@ describe("SessionsManagement", () => {
   });
 
   it("shows error toast when loading sessions fails", async () => {
-    silenceConsoleError();
     (userSessionsApi.getAllSessions as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error("Network error"),
     );
@@ -169,7 +161,6 @@ describe("SessionsManagement", () => {
   });
 
   it("shows error toast when revoking a session fails", async () => {
-    silenceConsoleError();
     (userSessionsApi.getAllSessions as ReturnType<typeof vi.fn>).mockResolvedValue(
       [mockSession],
     );
@@ -236,7 +227,6 @@ describe("SessionsManagement", () => {
   });
 
   it("shows error toast when revoking all other sessions fails", async () => {
-    silenceConsoleError();
     (userSessionsApi.getAllSessions as ReturnType<typeof vi.fn>).mockResolvedValue(
       [mockSession, mockSession2],
     );
@@ -289,7 +279,6 @@ describe("SessionsManagement", () => {
   });
 
   it("shows error toast when revoking all sessions fails", async () => {
-    silenceConsoleError();
     (userSessionsApi.getAllSessions as ReturnType<typeof vi.fn>).mockResolvedValue(
       [mockSession],
     );

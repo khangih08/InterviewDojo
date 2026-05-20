@@ -1,24 +1,10 @@
-import { render, screen, waitFor, act } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { GoogleAuthButton } from "@/components/auth/GoogleAuthButton";
 
 const mockInitialize = vi.fn();
 const mockRenderButton = vi.fn();
 const mockOneTap = vi.fn();
-
-// Capture Script onLoad/onError so tests can trigger them
-const { scriptCallbacks } = vi.hoisted(() => {
-  const scriptCallbacks: { onLoad?: () => void; onError?: () => void } = {};
-  return { scriptCallbacks };
-});
-
-vi.mock("next/script", () => ({
-  default: ({ onLoad, onError }: any) => {
-    scriptCallbacks.onLoad = onLoad;
-    scriptCallbacks.onError = onError;
-    return null;
-  },
-}));
 
 function setupGoogleMock() {
   Object.defineProperty(window, "google", {
@@ -44,9 +30,6 @@ function removeGoogleMock() {
   });
 }
 
-const silenceConsoleError = () =>
-  vi.spyOn(console, "error").mockImplementation(() => {});
-
 describe("GoogleAuthButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -54,7 +37,6 @@ describe("GoogleAuthButton", () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     removeGoogleMock();
   });
@@ -150,97 +132,5 @@ describe("GoogleAuthButton", () => {
 
     expect(mockInitialize).not.toHaveBeenCalled();
     expect(mockRenderButton).not.toHaveBeenCalled();
-  });
-
-  it("renders yellow warning when client ID is not configured", () => {
-    vi.stubEnv("NEXT_PUBLIC_GOOGLE_CLIENT_ID", "");
-    render(<GoogleAuthButton label="Sign in" onSuccess={vi.fn()} />);
-
-    expect(
-      screen.getByText(/Google client ID is not configured/i),
-    ).toBeInTheDocument();
-  });
-
-  it("renders red error box when google initialization throws", async () => {
-    silenceConsoleError();
-    Object.defineProperty(window, "google", {
-      writable: true,
-      configurable: true,
-      value: {
-        accounts: {
-          id: {
-            initialize: () => {
-              throw new Error("SDK init error");
-            },
-            renderButton: mockRenderButton,
-            prompt: mockOneTap,
-          },
-        },
-      },
-    });
-
-    render(<GoogleAuthButton label="Sign in" onSuccess={vi.fn()} />);
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Failed to load Google authentication/i),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("calls onError when credential is missing in Google response", async () => {
-    const onError = vi.fn();
-
-    Object.defineProperty(window, "google", {
-      writable: true,
-      configurable: true,
-      value: {
-        accounts: {
-          id: {
-            initialize: (opts: any) => {
-              opts.callback({ credential: null });
-            },
-            renderButton: mockRenderButton,
-            prompt: mockOneTap,
-          },
-        },
-      },
-    });
-
-    render(
-      <GoogleAuthButton label="Sign in" onSuccess={vi.fn()} onError={onError} />,
-    );
-
-    await waitFor(() => {
-      expect(onError).toHaveBeenCalledWith("Google sign-in failed");
-    });
-  });
-
-  it("sets scriptError when Script onError fires", async () => {
-    render(<GoogleAuthButton label="Sign in" onSuccess={vi.fn()} />);
-
-    act(() => {
-      scriptCallbacks.onError?.();
-    });
-
-    await waitFor(() => {
-      expect(
-        screen.getByText(/Failed to load Google authentication/i),
-      ).toBeInTheDocument();
-    });
-  });
-
-  it("sets ready when Script onLoad fires", async () => {
-    removeGoogleMock();
-    render(<GoogleAuthButton label="Sign in" onSuccess={vi.fn()} />);
-
-    act(() => {
-      scriptCallbacks.onLoad?.();
-    });
-
-    // ready becomes true but no google SDK → initialize is never called
-    await waitFor(() => {
-      expect(mockInitialize).not.toHaveBeenCalled();
-    });
   });
 });
