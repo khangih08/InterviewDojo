@@ -146,9 +146,9 @@ jobs:
     needs: [build-backend, test-backend]
     # Deploy on push to main/develop OR manual dispatch (skip_tests or not)
     if: |
-      always() &&
-      (needs.build-backend.result == 'success' && needs.test-backend.result == 'success') ||
-      (github.event_name == 'workflow_dispatch' && inputs.skip_tests)
+      (github.event_name == 'push' && needs.build-backend.result == 'success' && needs.test-backend.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && needs.build-backend.result == 'success' && needs.test-backend.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.skip_tests == true)
     # Only deploy if target includes backend
     uses: ./.github/workflows/render-deploy.yml
     secrets:
@@ -161,9 +161,9 @@ jobs:
     name: Deploy Frontend to Vercel
     needs: [build-frontend, test-frontend]
     if: |
-      always() &&
-      (needs.build-frontend.result == 'success' && needs.test-frontend.result == 'success') ||
-      (github.event_name == 'workflow_dispatch' && inputs.skip_tests)
+      (github.event_name == 'push' && needs.build-frontend.result == 'success' && needs.test-frontend.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && needs.build-frontend.result == 'success' && needs.test-frontend.result == 'success') ||
+      (github.event_name == 'workflow_dispatch' && inputs.skip_tests == true)
     uses: ./.github/workflows/vercel-deploy.yml
     secrets:
       VERCEL_DEPLOY_HOOK_URL: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
