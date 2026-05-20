@@ -1,9 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { mockGet, mockPost, mockDelete } = vi.hoisted(() => ({
+const { mockGet, mockPost, mockDelete, mockShouldUseMocks } = vi.hoisted(() => ({
   mockGet: vi.fn(),
   mockPost: vi.fn(),
   mockDelete: vi.fn(),
+  mockShouldUseMocks: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock("@/lib/api/http", () => ({
@@ -15,6 +16,18 @@ vi.mock("@/lib/api/http", () => ({
   toApiError: vi.fn((error: unknown) => ({
     message: error instanceof Error ? error.message : "unknown",
   })),
+}));
+
+vi.mock("@/lib/api/mock", () => ({
+  shouldUseMocks: mockShouldUseMocks,
+}));
+
+vi.mock("@/lib/mocks/sessions", () => ({
+  demoInterviewSessionId: "demo-123",
+  getDemoInterviewSessions: vi.fn().mockReturnValue([{ id: "demo-s-1" }]),
+  getDemoInterviewSessionById: vi.fn((id: string) =>
+    id === "demo-123" ? { id: "demo-123" } : null,
+  ),
 }));
 
 import {
@@ -117,11 +130,105 @@ describe("sessions api", () => {
     expect(mockDelete).toHaveBeenCalledWith("/sessions");
   });
 
-  it("throws normalized errors", async () => {
+  it("returns mock sessions when shouldUseMocks returns true", async () => {
+    mockShouldUseMocks.mockReturnValueOnce(true);
+
+    const result = await sessionsApi.getAllSessions();
+
+    expect(result).toEqual([{ id: "demo-s-1" }]);
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it("returns mock session by id when shouldUseMocks returns true", async () => {
+    mockShouldUseMocks.mockReturnValueOnce(true);
+
+    const result = await sessionsApi.getSessionById("demo-123");
+
+    expect(result).toEqual({ id: "demo-123" });
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it("falls back to demo session when mock session id not found", async () => {
+    mockShouldUseMocks.mockReturnValueOnce(true);
+
+    const result = await sessionsApi.getSessionById("unknown-id");
+
+    expect(result).toEqual({ id: "demo-123" });
+  });
+
+  it("throws normalized errors on createSession failure", async () => {
     mockPost.mockRejectedValue(new Error("request failed"));
 
     await expect(createSession({ question_id: "q-1" })).rejects.toThrow(
       "request failed",
+    );
+  });
+
+  it("throws normalized error on completeSession failure", async () => {
+    mockPost.mockRejectedValue(new Error("upload failed"));
+
+    await expect(
+      completeSession({
+        session_id: "s-1",
+        recording_url: "https://example.com/v.webm",
+        duration_seconds: 60,
+        size_bytes: 512,
+        mime_type: "video/webm",
+      }),
+    ).rejects.toThrow("upload failed");
+  });
+
+  it("throws normalized error on sessionsApi.getAllSessions failure", async () => {
+    mockGet.mockRejectedValue(new Error("server error"));
+
+    await expect(sessionsApi.getAllSessions()).rejects.toThrow("server error");
+  });
+
+  it("throws normalized error on sessionsApi.getSessionById failure", async () => {
+    mockGet.mockRejectedValue(new Error("not found"));
+
+    await expect(sessionsApi.getSessionById("bad-id")).rejects.toThrow(
+      "not found",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.getAllSessions failure", async () => {
+    mockGet.mockRejectedValue(new Error("unauthorized"));
+
+    await expect(userSessionsApi.getAllSessions()).rejects.toThrow(
+      "unauthorized",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.getSessionById failure", async () => {
+    mockGet.mockRejectedValue(new Error("session not found"));
+
+    await expect(userSessionsApi.getSessionById("u-s-99")).rejects.toThrow(
+      "session not found",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.revokeSession failure", async () => {
+    mockDelete.mockRejectedValue(new Error("revoke failed"));
+
+    await expect(userSessionsApi.revokeSession("u-s-1")).rejects.toThrow(
+      "revoke failed",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.revokeAllOtherSessions failure", async () => {
+    mockDelete.mockRejectedValue(new Error("revoke all failed"));
+
+    await expect(userSessionsApi.revokeAllOtherSessions()).rejects.toThrow(
+      "revoke all failed",
+    );
+  });
+
+  it("throws normalized error on userSessionsApi.revokeAllSessions failure", async () => {
+    mockDelete.mockRejectedValue(new Error("revoke all failed"));
+
+    await expect(userSessionsApi.revokeAllSessions()).rejects.toThrow(
+      "revoke all failed",
     );
   });
 });

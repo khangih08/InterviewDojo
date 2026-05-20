@@ -231,4 +231,67 @@ describe('AuthController', () => {
       );
     });
   });
+
+  describe('getClientInfo IP extraction', () => {
+    it('uses the first IP from x-forwarded-for when present', async () => {
+      mockAuthService.register.mockResolvedValue(authResponse);
+
+      const req = {
+        get: jest.fn().mockImplementation((header: string) => {
+          if (header === 'user-agent') return 'Chrome';
+          if (header === 'x-forwarded-for') return '10.0.0.1, 10.0.0.2';
+          return undefined;
+        }),
+        ip: '127.0.0.1',
+        socket: { remoteAddress: '127.0.0.1' },
+      } as any;
+
+      await controller.register({} as any, req);
+
+      expect(mockAuthService.register).toHaveBeenCalledWith(
+        expect.anything(),
+        'Chrome',
+        '10.0.0.1',
+      );
+    });
+
+    it('falls back to req.ip when x-forwarded-for is absent', async () => {
+      mockAuthService.register.mockResolvedValue(authResponse);
+
+      const req = {
+        get: jest.fn().mockImplementation((header: string) => {
+          if (header === 'user-agent') return 'Chrome';
+          return undefined;
+        }),
+        ip: '192.168.1.1',
+        socket: { remoteAddress: '10.0.0.99' },
+      } as any;
+
+      await controller.register({} as any, req);
+
+      expect(mockAuthService.register).toHaveBeenCalledWith(
+        expect.anything(),
+        'Chrome',
+        '192.168.1.1',
+      );
+    });
+
+    it('falls back to socket.remoteAddress when both x-forwarded-for and req.ip are absent', async () => {
+      mockAuthService.register.mockResolvedValue(authResponse);
+
+      const req = {
+        get: jest.fn().mockReturnValue(undefined),
+        ip: undefined,
+        socket: { remoteAddress: '10.0.0.5' },
+      } as any;
+
+      await controller.register({} as any, req);
+
+      expect(mockAuthService.register).toHaveBeenCalledWith(
+        expect.anything(),
+        undefined,
+        '10.0.0.5',
+      );
+    });
+  });
 });

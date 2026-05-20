@@ -10,7 +10,9 @@ export default defineConfig({
   reporter: "html",
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
-    trace: "on-first-retry",
+    trace: "on",
+    screenshot: "on",
+    video: "on",
   },
   webServer: {
     command: "npm run dev",

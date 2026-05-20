@@ -25,16 +25,13 @@ export async function getAnalysis(
   sessionId: string,
 ): Promise<AnalysisResponse> {
   if (USE_MOCK) {
-    console.log("ℹ️  Using MOCK data for sessionId:", sessionId);
     return MOCK_ANALYSIS;
   }
 
   const url = "/analysis/" + encodeURIComponent(sessionId);
-  console.log("🚀 getAnalysis:", { sessionId, url });
 
   try {
     const response = await http.get<AnalysisResponse>(url);
-    console.log("✅ Response:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ API error:", error);
