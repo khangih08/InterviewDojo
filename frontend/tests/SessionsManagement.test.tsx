@@ -31,7 +31,7 @@ vi.mock("@/contexts/auth-context", async () => {
 
 import { userSessionsApi } from "@/lib/api/sessions";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { SessionsManagement } from "@/components/dashboard/SessionsManagement";
+import { SessionsManagement } from "@/components/settings/SessionsManagement";
 
 const mockSession = {
   id: "s-1",

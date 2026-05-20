@@ -18,7 +18,7 @@ export default function HowItWorksSection() {
           <Badge variant="outline" className="border-primary/30 text-primary">
             How it works
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Four steps to{" "}
             <span className="glow-gradient-text">interview mastery</span>
           </h2>
@@ -40,7 +40,7 @@ export default function HowItWorksSection() {
                   </span>
                 </div>
                 <h3 className="font-semibold text-lg">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed max-w-[220px] mx-auto">
+                <p className="text-base text-muted-foreground leading-relaxed max-w-[220px] mx-auto">
                   {s.description}
                 </p>
               </div>

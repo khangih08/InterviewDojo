@@ -14,10 +14,10 @@ export default function PricingSection() {
       <div className="container mx-auto px-4 space-y-16">
         <div className="text-center space-y-4">
           <Badge variant="outline" className="border-primary/30 text-primary">Pricing</Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Simple, <span className="glow-gradient-text">transparent</span> pricing
           </h2>
-          <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">
+          <p className="text-muted-foreground max-w-sm mx-auto text-lg leading-relaxed">
             Start free. Upgrade when you&apos;re ready to go all-in.
           </p>
         </div>

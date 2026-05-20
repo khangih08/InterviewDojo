@@ -137,6 +137,13 @@
     background: oklch(0.65 0.2 270 / 0.25);
     color: oklch(0.18 0.01 260);
   }
+
+  .dark .landing-theme {
+    background-image: radial-gradient(circle at top, rgba(56, 189, 248, 0.08), transparent 28%),
+                      radial-gradient(circle at bottom right, rgba(99, 102, 241, 0.10), transparent 30%),
+                      linear-gradient(180deg, #050816, #09111f);
+    background-color: #050816;
+  }
 }
 
 @layer components {

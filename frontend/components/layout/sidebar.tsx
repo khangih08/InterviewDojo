@@ -134,7 +134,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 shrink-0 flex-col border-r border-border/60 bg-card/50 backdrop-blur-sm px-4 py-6 md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 shrink-0 flex-col border-r border-border/60 bg-card/50 backdrop-blur-sm px-4 py-6 md:flex">
       <div className="px-2">
         <Link href="/dashboard" className="flex items-center gap-3 group">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl glow-gradient text-xl font-black text-white shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
