@@ -138,6 +138,7 @@ describe('RedisService', () => {
 
     it('does not throw when Redis client was never initialized', async () => {
       await setupService(undefined);
+      jest.spyOn((service as any).logger, 'error').mockImplementation();
       service.onModuleInit();
 
       expect(() => service.onModuleDestroy()).not.toThrow();

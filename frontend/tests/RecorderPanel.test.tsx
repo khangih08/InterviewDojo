@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const push = vi.fn();
 const setupDevices = vi.fn();
@@ -34,6 +34,9 @@ const question = {
   tags: ["sql"],
   createdAt: "2026-04-22T00:00:00.000Z",
 };
+
+const silenceConsoleError = () =>
+  vi.spyOn(console, "error").mockImplementation(() => {});
 
 import RecorderPanel from "@/components/interview/RecorderPanel";
 
@@ -74,6 +77,10 @@ describe("RecorderPanel", () => {
         clear: () => storage.clear(),
       },
     });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders the enable devices action in idle state", () => {
@@ -313,6 +320,7 @@ describe("RecorderPanel", () => {
   });
 
   it("shows error when server returns a non-ok response", async () => {
+    silenceConsoleError();
     vi.mocked(fetch).mockResolvedValue({
       ok: false,
       status: 500,
@@ -350,6 +358,7 @@ describe("RecorderPanel", () => {
   });
 
   it("shows error when backend returns success:false", async () => {
+    silenceConsoleError();
     vi.mocked(fetch).mockResolvedValue({
       ok: true,
       json: async () => ({ success: false }),

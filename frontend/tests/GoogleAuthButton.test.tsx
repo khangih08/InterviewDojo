@@ -44,6 +44,9 @@ function removeGoogleMock() {
   });
 }
 
+const silenceConsoleError = () =>
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
 describe("GoogleAuthButton", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -51,6 +54,7 @@ describe("GoogleAuthButton", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.unstubAllEnvs();
     removeGoogleMock();
   });
@@ -158,6 +162,7 @@ describe("GoogleAuthButton", () => {
   });
 
   it("renders red error box when google initialization throws", async () => {
+    silenceConsoleError();
     Object.defineProperty(window, "google", {
       writable: true,
       configurable: true,

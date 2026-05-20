@@ -84,6 +84,9 @@ const mockMediaStream = {
   getAudioTracks: vi.fn().mockReturnValue([{ stop: vi.fn() }]),
 };
 
+const silenceConsoleError = () =>
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
 import { useRecorder } from "@/hooks/useRecorder";
 
 describe("useRecorder", () => {
@@ -165,6 +168,7 @@ describe("useRecorder", () => {
   });
 
   it("sets error status when getUserMedia fails", async () => {
+    silenceConsoleError();
     mockGetUserMedia.mockRejectedValue(new Error("Permission denied"));
 
     const { result } = renderHook(() => useRecorder());
@@ -178,6 +182,7 @@ describe("useRecorder", () => {
   });
 
   it("sets error when mediaDevices is not available", async () => {
+    silenceConsoleError();
     Object.defineProperty(navigator, "mediaDevices", {
       writable: true,
       configurable: true,
@@ -259,6 +264,7 @@ describe("useRecorder", () => {
   });
 
   it("sets error status when startRecording is called without a stream", () => {
+    silenceConsoleError();
     const { result } = renderHook(() => useRecorder());
     // Never call setupDevices — streamRef.current is null
 

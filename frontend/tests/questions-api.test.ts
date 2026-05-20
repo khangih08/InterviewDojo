@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { mockGet } = vi.hoisted(() => ({
   mockGet: vi.fn(),
@@ -24,10 +24,17 @@ import {
   getQuestions,
 } from "@/lib/api/questions";
 
+const silenceConsoleError = () =>
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
 describe("questions api", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(shouldUseMocks).mockReturnValue(false);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("returns filtered mock questions when mocks are enabled", async () => {
@@ -168,6 +175,7 @@ describe("questions api", () => {
   });
 
   it("throws normalized error when backend request fails", async () => {
+    silenceConsoleError();
     mockGet.mockRejectedValue(new Error("Backend down"));
 
     await expect(getQuestions()).rejects.toThrow("Backend down");
@@ -250,6 +258,7 @@ describe("questions api", () => {
   });
 
   it("throws normalized error when getQuestionById backend request fails", async () => {
+    silenceConsoleError();
     mockGet.mockRejectedValue(new Error("Question not found"));
 
     await expect(getQuestionById("q-bad")).rejects.toThrow("Question not found");
@@ -290,6 +299,7 @@ describe("questions api", () => {
   });
 
   it("throws normalized error when getQuestionFilters backend request fails", async () => {
+    silenceConsoleError();
     mockGet.mockRejectedValue(new Error("Filters unavailable"));
 
     await expect(getQuestionFilters()).rejects.toThrow("Filters unavailable");
