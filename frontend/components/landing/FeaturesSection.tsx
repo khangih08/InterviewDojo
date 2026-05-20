@@ -49,11 +49,11 @@ export default function FeaturesSection() {
           <Badge variant="outline" className="border-primary/30 text-primary">
             Features
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             Everything you need to{" "}
             <span className="glow-gradient-text">ace it</span>
           </h2>
-          <p className="text-muted-foreground max-w-lg mx-auto text-base leading-relaxed">
+          <p className="text-muted-foreground max-w-lg mx-auto text-lg leading-relaxed">
             From coding rounds to culture-fit questions, we&apos;ve got every stage of
             the interview covered.
           </p>
@@ -73,8 +73,8 @@ export default function FeaturesSection() {
                 >
                   {meta?.icon}
                 </div>
-                <h3 className="mt-4 text-base font-semibold">{f.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
+                <p className="mt-2 text-base text-muted-foreground leading-relaxed">
                   {f.description}
                 </p>
               </div>

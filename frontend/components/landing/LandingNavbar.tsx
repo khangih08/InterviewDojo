@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
+import { useTheme } from "next-themes";
+import { Menu, X, Sun, Moon } from "lucide-react";
 
 const navLinks = [
   { href: "#features", label: "Features" },
@@ -16,8 +17,11 @@ const navLinks = [
 export default function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const handler = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handler, { passive: true });
     return () => window.removeEventListener("scroll", handler);
@@ -47,7 +51,7 @@ export default function LandingNavbar() {
             <Link
               key={href}
               href={href}
-              className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all duration-200"
+              className="px-3 py-2 rounded-lg text-base font-semibold text-muted-foreground hover:text-foreground hover:bg-accent/60 transition-all duration-200"
             >
               {label}
             </Link>
@@ -55,10 +59,21 @@ export default function LandingNavbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <Button variant="ghost" size="sm" asChild className="font-medium">
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="mr-2"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </Button>
+          )}
+          <Button variant="ghost" asChild className="font-semibold text-base">
             <Link href="/login">Log in</Link>
           </Button>
-          <Button size="sm" asChild className="glow-gradient border-0 text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300">
+          <Button asChild className="glow-gradient border-0 text-white shadow-md shadow-primary/25 hover:shadow-lg hover:shadow-primary/30 transition-all duration-300 font-semibold text-base">
             <Link href="/register">Sign up</Link>
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { BrainCircuit, ChartBar, Check, Code2, Swords, X } from "lucide-react";
+import { Check, Swords, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { comparisonRows, type CellValue } from "@/lib/landing";
 
@@ -18,37 +18,16 @@ function Cell({ value }: { value: CellValue }) {
   return <span className="text-sm font-medium text-muted-foreground">{value}</span>;
 }
 
-const highlights = [
-  {
-    icon: <Code2 className="h-6 w-6" />,
-    title: "Full-stack prep",
-    desc: "Coding, system design, and behavioural in one place.",
-    gradient: "from-blue-500 to-cyan-500",
-  },
-  {
-    icon: <BrainCircuit className="h-6 w-6" />,
-    title: "Instant AI scoring",
-    desc: "Detailed score within seconds of answering.",
-    gradient: "from-violet-500 to-indigo-600",
-  },
-  {
-    icon: <ChartBar className="h-6 w-6" />,
-    title: "Measurable growth",
-    desc: "Track every session to see your improvement.",
-    gradient: "from-emerald-500 to-teal-500",
-  },
-];
-
 export default function ComparisonSection() {
   return (
     <section id="compare" className="relative py-24 sm:py-32 bg-muted/30">
       <div className="container mx-auto px-4 space-y-16">
         <div className="text-center space-y-4">
           <Badge variant="outline" className="border-primary/30 text-primary">Why InterviewDojo</Badge>
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
             The difference <span className="glow-gradient-text">InterviewDojo</span> makes
           </h2>
-          <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">
+          <p className="text-muted-foreground max-w-md mx-auto text-lg leading-relaxed">
             See how we stack up against generic tools — and why engineers choose the Dojo.
           </p>
         </div>
@@ -78,17 +57,6 @@ export default function ComparisonSection() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto">
-          {highlights.map((c) => (
-            <div key={c.title} className="group rounded-2xl border border-border/60 bg-card/80 backdrop-blur-sm p-5 space-y-3 transition-all duration-300 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1">
-              <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${c.gradient} text-white shadow-md transition-transform duration-300 group-hover:scale-110`}>
-                {c.icon}
-              </div>
-              <h3 className="font-semibold text-sm">{c.title}</h3>
-              <p className="text-xs text-muted-foreground leading-relaxed">{c.desc}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </section>
   );

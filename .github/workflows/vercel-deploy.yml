@@ -3,119 +3,16 @@ name: Vercel Deploy Reusable
 on:
   workflow_call:
     secrets:
-      VERCEL_TOKEN:
-        required: true
-      VERCEL_ORG_ID:
-        required: true
-      VERCEL_PROJECT_ID:
+      VERCEL_DEPLOY_HOOK_URL:
         required: true
 
 jobs:
   deploy-and-wait:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    timeout-minutes: 5
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install Vercel CLI
-        run: npm install -g vercel@latest
-
-      - name: Validate secrets
-        run: |
-          has_error=false
-          if [ -z "${VERCEL_ORG_ID}" ]; then
-            echo "::error::VERCEL_ORG_ID is empty! Add it to your fork's repository secrets."
-            has_error=true
-          else
-            echo "✅ VERCEL_ORG_ID is set"
-          fi
-
-          if [ -z "${VERCEL_PROJECT_ID}" ]; then
-            echo "::error::VERCEL_PROJECT_ID is empty! Add it to your fork's repository secrets."
-            has_error=true
-          else
-            echo "✅ VERCEL_PROJECT_ID is set"
-          fi
-
-          if [ "$has_error" = true ]; then
-            echo ""
-            echo "::error::Missing secrets. Go to your fork → Settings → Secrets and variables → Actions → Add the missing secrets."
-            exit 1
-          fi
-
-      # Remove any .vercel directory that was accidentally committed
-      - name: Clean local Vercel config
-        run: find . -type d -name '.vercel' -exec rm -rf {} + 2>/dev/null || true
-
-      # Create project.json so Vercel CLI knows which project to deploy to
-      - name: Link Vercel project
-        run: |
-          mkdir -p frontend/.vercel
-          printf '{"projectId":"%s","orgId":"%s"}\n' \
-            "${VERCEL_PROJECT_ID}" \
-            "${VERCEL_ORG_ID}" \
-            > frontend/.vercel/project.json
-          echo "✅ Created frontend/.vercel/project.json"
-          cat frontend/.vercel/project.json
-
-      - name: Deploy to Vercel
-        id: deploy
+      - name: Trigger Vercel deploy hook
         run: |
           set -euo pipefail
-          rm -f /tmp/vercel_deploy.log
-
-          echo "🚀 Deploying to Vercel (production)..."
-          set +e
-          vercel deploy --prod \
-            --token="${{ secrets.VERCEL_TOKEN }}" \
-            --cwd frontend \
-            --yes \
-            2>&1 | tee /tmp/vercel_deploy.log
-          deploy_status=${PIPESTATUS[0]}
-          set -e
-
-          if [ "$deploy_status" -ne 0 ]; then
-            echo ""
-            echo "::error::Vercel deploy failed (exit code: $deploy_status)"
-            echo "::error::Common fixes for forked repos:"
-            echo "::error::  1. Verify VERCEL_TOKEN is valid (not expired)"
-            echo "::error::  2. Verify VERCEL_ORG_ID and VERCEL_PROJECT_ID match your Vercel account"
-            echo "::error::  3. Check if the Vercel project is linked to the correct Git repo"
-            cat /tmp/vercel_deploy.log
-            exit "$deploy_status"
-          fi
-
-          DEPLOYMENT_URL="$(grep -Eo 'https://[^ ]+\.vercel\.app' /tmp/vercel_deploy.log | tail -n 1 | tr -d '\r')"
-
-          if [ -z "${DEPLOYMENT_URL}" ]; then
-            echo "::error::Could not detect deployment URL from Vercel CLI output."
-            cat /tmp/vercel_deploy.log
-            exit 1
-          fi
-
-          echo "deployment_url=${DEPLOYMENT_URL}" >> "$GITHUB_OUTPUT"
-          echo ""
-          echo "✅ Deployment successful!"
-          echo "::notice::🔗 Vercel deployment URL: ${DEPLOYMENT_URL}"
-
-      - name: Show Vercel deployment logs
-        if: always()
-        run: |
-          if [ -n "${{ steps.deploy.outputs.deployment_url }}" ]; then
-            vercel inspect "${{ steps.deploy.outputs.deployment_url }}" \
-              --logs \
-              --token="${{ secrets.VERCEL_TOKEN }}" || true
-          else
-            echo "No deployment URL found. Check previous Vercel step output for errors."
-          fi
+          curl --fail --silent --show-error -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
+          echo "Vercel deploy hook triggered."
