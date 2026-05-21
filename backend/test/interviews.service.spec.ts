@@ -23,13 +23,14 @@ jest.mock('fs', () => {
 });
 
 import OpenAI from 'openai';
+import * as fs from 'fs';
 import { InterviewsService } from '../src/interviews/interviews.service';
 import { Interview } from '../src/entities/interview.entity';
 import { Message } from '../src/entities/message.entity';
 
 describe('InterviewsService', () => {
   let service: InterviewsService;
-  let interviewRepo: { findOne: jest.Mock; create: jest.Mock; save: jest.Mock };
+  let interviewRepo: { findOne: jest.Mock; find: jest.Mock; create: jest.Mock; save: jest.Mock };
   let messageRepo: { find: jest.Mock; save: jest.Mock };
   let mockTranscribe: jest.Mock;
   let mockChat: jest.Mock;
@@ -54,6 +55,7 @@ describe('InterviewsService', () => {
 
     interviewRepo = {
       findOne: jest.fn(),
+      find: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
@@ -148,6 +150,17 @@ describe('InterviewsService', () => {
       const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
       expect(savedMessages[0].content).toContain('my-cv');
       expect(savedMessages[0].content).toContain('my-jd');
+    });
+
+    it('TARGETED prompt uses fallback text when cvText and jdText are undefined', async () => {
+      interviewRepo.create.mockReturnValue({ ...savedInterview, type: 'TARGETED' });
+      interviewRepo.save.mockResolvedValue({ ...savedInterview, type: 'TARGETED' });
+
+      await service.startInterview('TARGETED', 'u-1', undefined, undefined);
+
+      const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
+      expect(savedMessages[0].content).toContain('Không có thông tin JD cụ thể');
+      expect(savedMessages[0].content).toContain('Không đọc được CV');
     });
   });
 
@@ -245,6 +258,187 @@ describe('InterviewsService', () => {
     it('throws BadRequestException when AI service fails', async () => {
       mockChat.mockRejectedValue(new Error('Groq API error'));
       await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('throws BadRequestException when GROQ_API_KEY is missing', async () => {
+      (service as any).groqApiKey = '';
+      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('throws with invalid-key message when GROQ returns 401', async () => {
+      const err: any = new Error('Unauthorized');
+      err.status = 401;
+      mockTranscribe.mockRejectedValue(err);
+
+      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('throws with generic fallback message when error has no message', async () => {
+      mockTranscribe.mockRejectedValue({ status: 500, message: '' });
+
+      const caught: any = await service
+        .processAudio('i-1', mockFile)
+        .catch((e) => e);
+      expect(caught).toBeInstanceOf(BadRequestException);
+      expect(caught.message).toContain('AI');
+    });
+
+    it('uses copyFileSync when buffer is empty but file.path is set', async () => {
+      const fileWithPath = {
+        originalname: 'audio.webm',
+        buffer: Buffer.from(''),
+        path: '/tmp/upload.webm',
+      } as unknown as Express.Multer.File;
+
+      const result = await service.processAudio('i-1', fileWithPath);
+
+      expect(fs.copyFileSync).toHaveBeenCalled();
+      expect(result.success).toBe(true);
+    });
+
+    it('throws when file has neither buffer nor path', async () => {
+      const badFile = {
+        originalname: 'audio.webm',
+        buffer: Buffer.from(''),
+        path: undefined,
+      } as unknown as Express.Multer.File;
+
+      await expect(service.processAudio('i-1', badFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('defaults to webm when originalname has no extension', async () => {
+      const noExtFile = {
+        ...mockFile,
+        originalname: 'audiofile',
+      } as Express.Multer.File;
+
+      const result = await service.processAudio('i-1', noExtFile);
+      expect(result.success).toBe(true);
+    });
+
+    it('defaults to webm when originalname ends with a dot (empty extension)', async () => {
+      const dotFile = {
+        ...mockFile,
+        originalname: 'audio.',
+      } as Express.Multer.File;
+
+      const result = await service.processAudio('i-1', dotFile);
+      expect(result.success).toBe(true);
+    });
+
+    it('returns empty string as aiResponse when choices content is null', async () => {
+      mockChat.mockResolvedValue({
+        choices: [{ message: { content: null } }],
+      });
+
+      const result = await service.processAudio('i-1', mockFile);
+      expect(result.aiResponse).toBe('');
+    });
+
+    it('throws when audio file size is zero', async () => {
+      (fs.statSync as jest.Mock).mockReturnValueOnce({ size: 0 });
+
+      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
+
+    it('unlinks temp audio file in finally when it exists', async () => {
+      // mockReturnValueOnce avoids leaking into subsequent tests
+      (fs.existsSync as jest.Mock).mockReturnValueOnce(true);
+
+      await service.processAudio('i-1', mockFile);
+
+      expect(fs.unlinkSync).toHaveBeenCalled();
+    });
+
+    it('also unlinks file.path in finally when it differs from temp path', async () => {
+      // Two existsSync calls: one for audioFilePath, one for file.path
+      (fs.existsSync as jest.Mock)
+        .mockReturnValueOnce(true)
+        .mockReturnValueOnce(true);
+
+      const fileWithPath = {
+        originalname: 'audio.webm',
+        buffer: Buffer.from('audio-data'),
+        path: '/tmp/original.webm',
+      } as unknown as Express.Multer.File;
+
+      await service.processAudio('i-1', fileWithPath);
+
+      const calls = (fs.unlinkSync as jest.Mock).mock.calls.length;
+      expect(calls).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  describe('getUserInterviews', () => {
+    it('returns mapped interviews with FREE label', async () => {
+      interviewRepo.find.mockResolvedValue([
+        { id: 'i-1', created_at: new Date(), type: 'FREE' },
+      ]);
+
+      const result = await service.getUserInterviews('u-1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].status).toBe('COMPLETED');
+      expect(result[0].question_content).toBe('Phỏng vấn tự do');
+    });
+
+    it('returns TARGETED label for targeted interviews', async () => {
+      interviewRepo.find.mockResolvedValue([
+        { id: 'i-2', created_at: new Date(), type: 'TARGETED' },
+      ]);
+
+      const result = await service.getUserInterviews('u-1');
+
+      expect(result[0].question_content).toBe('Phỏng vấn theo CV');
+    });
+
+    it('returns empty array when user has no interviews', async () => {
+      interviewRepo.find.mockResolvedValue([]);
+      const result = await service.getUserInterviews('u-1');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getInterviewById', () => {
+    it('returns interview data with FREE label when found', async () => {
+      interviewRepo.findOne.mockResolvedValue({
+        id: 'i-1',
+        created_at: new Date(),
+        type: 'FREE',
+      });
+
+      const result = await service.getInterviewById('i-1', 'u-1');
+
+      expect(result.status).toBe('COMPLETED');
+      expect(result.question_content).toBe('Phỏng vấn tự do');
+    });
+
+    it('returns TARGETED label for targeted interview', async () => {
+      interviewRepo.findOne.mockResolvedValue({
+        id: 'i-1',
+        created_at: new Date(),
+        type: 'TARGETED',
+      });
+
+      const result = await service.getInterviewById('i-1', 'u-1');
+
+      expect(result.question_content).toBe('Phỏng vấn theo CV');
+    });
+
+    it('throws BadRequestException when interview not found', async () => {
+      interviewRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.getInterviewById('missing', 'u-1')).rejects.toThrow(
         BadRequestException,
       );
     });

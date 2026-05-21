@@ -60,6 +60,26 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
+  describe('findAll', () => {
+    it('returns list of all users', async () => {
+      userRepository.find.mockResolvedValue([user]);
+
+      const result = await service.findAll();
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('u-1');
+      expect(userRepository.find).toHaveBeenCalled();
+    });
+
+    it('returns empty array when no users exist', async () => {
+      userRepository.find.mockResolvedValue([]);
+
+      const result = await service.findAll();
+
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('findOneById', () => {
     it('returns user when found', async () => {
       userRepository.findOne.mockResolvedValue(user);
@@ -88,6 +108,32 @@ describe('UsersService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
+    it('skips email uniqueness check when email is same as existing', async () => {
+      const updatedUser = { ...user };
+      userRepository.findOne
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce(updatedUser);
+      userRepository.update.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        service.update('u-1', { email: 'test@example.com' }),
+      ).resolves.toBeDefined();
+      expect(userRepository.findOne).toHaveBeenCalledTimes(2);
+    });
+
+    it('allows update when new email is different and not taken', async () => {
+      const updatedUser = { ...user, email: 'new@example.com' };
+      userRepository.findOne
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce(updatedUser);
+      userRepository.update.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        service.update('u-1', { email: 'new@example.com' }),
+      ).resolves.toBeDefined();
+    });
+
     it('throws when new email is already taken', async () => {
       userRepository.findOne.mockResolvedValueOnce(user).mockResolvedValueOnce({
         ...user,
@@ -114,9 +160,31 @@ describe('UsersService', () => {
         full_name: 'Updated User',
       });
     });
+
+    it('throws when user not found after update', async () => {
+      userRepository.findOne
+        .mockResolvedValueOnce(user)
+        .mockResolvedValueOnce(null);
+      userRepository.update.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        service.update('u-1', { full_name: 'Updated User' }),
+      ).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('changePassword', () => {
+    it('throws when user not found', async () => {
+      userRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.changePassword('missing', {
+          currentPassword: 'any',
+          newPassword: 'NewPass#123',
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
     it('throws when current password is invalid', async () => {
       userRepository.findOne.mockResolvedValue(user);
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
