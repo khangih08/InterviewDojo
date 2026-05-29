@@ -40,7 +40,7 @@ export function DashboardProgressCard({
   statusData,
 }: DashboardProgressCardProps) {
   return (
-    <Card className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm">
+    <Card className="surface-panel overflow-hidden rounded-xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-sm">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-orange-500 to-red-500 text-white shadow-sm">
@@ -84,7 +84,7 @@ export function DashboardProgressCard({
           </div>
         ) : (
           <>
-            <div className="h-70 rounded-2xl border border-border/40 bg-accent/20 p-4">
+            <div className="h-70 rounded-xl border border-border/40 bg-accent/20 p-4">
               <div className="mb-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                   Score Trend
@@ -124,7 +124,7 @@ export function DashboardProgressCard({
             </div>
 
             <div className="grid gap-4">
-              <div className="h-40 rounded-2xl border border-border/40 bg-card p-4">
+              <div className="h-40 rounded-xl border border-border/40 bg-card p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     Practice Mix
@@ -166,7 +166,7 @@ export function DashboardProgressCard({
                 )}
               </div>
 
-              <div className="h-40 rounded-2xl border border-border/40 bg-card p-4">
+              <div className="h-40 rounded-xl border border-border/40 bg-card p-4">
                 <div className="mb-3 flex items-center justify-between">
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                     Status Flow

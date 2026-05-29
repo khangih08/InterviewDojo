@@ -32,10 +32,10 @@ npm run dev
 4. Show the dashboard
 5. Open the question bank
 6. Open an interview session
-7. Optionally show Swagger at `http://localhost:3001/api/docs` to explain backend endpoints
+7. Optionally show Swagger at `http://localhost:8000/api/docs` to explain backend endpoints
 
 ## Fast troubleshooting
 
-- Register/login shows network error: backend is not reachable on `http://localhost:3001`
+- Register/login shows network error: backend is not reachable on `http://localhost:8000`
 - Database error: check `docker compose ps` and DB container logs
 - Blank or stale frontend behavior: restart the frontend dev server after `.env` changes

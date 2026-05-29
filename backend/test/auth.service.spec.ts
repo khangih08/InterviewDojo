@@ -178,6 +178,46 @@ describe('AuthService', () => {
     });
   });
 
+  describe('updateRefreshToken', () => {
+    it('hashes the refresh token before persisting it', async () => {
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-refresh-token');
+      userRepo.update.mockResolvedValue({ affected: 1 });
+
+      await service.updateRefreshToken('u-1', 'raw-refresh-token');
+
+      expect(bcrypt.hash).toHaveBeenCalledWith('raw-refresh-token', 12);
+      expect(userRepo.update).toHaveBeenCalledWith('u-1', {
+        refreshToken: 'hashed-refresh-token',
+      });
+    });
+  });
+
+  describe('generateTokens', () => {
+    it('signs refresh tokens with JWT_REFRESH_SECRET', async () => {
+      configService.get.mockImplementation((key: string) => {
+        if (key === 'JWT_REFRESH_SECRET') return 'refresh-secret';
+        if (key === 'JWT_SECRET') return 'access-secret';
+        return null;
+      });
+
+      userRepo.findOne.mockResolvedValue(baseUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-refresh-token');
+      userRepo.update.mockResolvedValue({ affected: 1 });
+
+      await service.login({
+        email: 'test@example.com',
+        password: 'correct',
+      });
+
+      expect(jwtService.signAsync).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ sub: 'u-1', refreshId: expect.any(String) }),
+        { expiresIn: '7d', secret: 'refresh-secret' },
+      );
+    });
+  });
+
   describe('logout', () => {
     it('clears refresh token without session revocation when no sessionId', async () => {
       userRepo.update.mockResolvedValue({ affected: 1 });
@@ -587,7 +627,7 @@ describe('AuthService', () => {
     });
 
     it('throws InternalServerErrorException when sendMail fails', async () => {
-      const nodemailer = await import('nodemailer');
+      const nodemailer = jest.requireMock('nodemailer');
       (nodemailer.default.createTransport as jest.Mock).mockReturnValueOnce({
         sendMail: jest.fn().mockRejectedValue(new Error('SMTP connection failed')),
       });

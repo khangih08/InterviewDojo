@@ -19,8 +19,9 @@ async function bootstrap() {
   // CORS - Thêm origin của Render nếu cần
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') ?? [
-      'http://localhost:3001', 
       'http://localhost:3000',
+      'http://localhost:3002',
+      'http://localhost:8000',
       'https://interview-dojo-smoky.vercel.app',
     ],
     credentials: true,
@@ -50,7 +51,8 @@ async function bootstrap() {
   });
 
   // SỬA LỖI Ở ĐÂY:
-  // Render cung cấp cổng qua process.env.PORT. Nếu không có (local) thì dùng 8000.
+  // Render cung cấp cổng qua process.env.PORT. Nếu không có (local) thì dùng 8000
+  // để khớp với frontend và docker-compose dev.
   // '0.0.0.0' là bắt buộc để Render có thể nhận diện service.
   const port = Number(process.env.PORT) || 8000;
   await app.listen(port, '0.0.0.0');
