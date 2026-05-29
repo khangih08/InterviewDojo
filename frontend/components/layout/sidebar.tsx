@@ -1,19 +1,12 @@
 "use client";
 
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   CircleHelp,
   Video,
-  UserCog,
   BarChart3,
   Settings,
   UserRound,
@@ -21,6 +14,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { useIsMounted } from "@/hooks/useIsMounted";
 
 type NavTone = "blue" | "purple" | "amber" | "emerald" | "rose";
 
@@ -39,7 +33,6 @@ const navItems: Array<{
   { href: "/questions", label: "Questions", icon: CircleHelp, tone: "purple" },
   { href: "/interview", label: "Interview", icon: Video, tone: "amber" },
   { href: "/result", label: "Result", icon: BarChart3, tone: "emerald" },
-  { href: "/admin", label: "Admin", icon: UserCog, tone: "blue" },
 ];
 
 const toneClasses: Record<
@@ -88,11 +81,7 @@ export function Sidebar() {
   const { user, logout } = useAuth();
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const mounted = useIsMounted();
 
   const initials = useMemo(() => {
     const source = (user?.full_name || user?.email || "Candidate").trim();
@@ -103,10 +92,7 @@ export function Sidebar() {
       .join("");
   }, [user?.email, user?.full_name]);
 
-  const visibleNavItems =
-    mounted && user?.role !== "admin"
-      ? navItems.filter((item) => item.href !== "/admin")
-      : navItems;
+  const visibleNavItems = useMemo(() => navItems, []);
 
   useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
@@ -134,7 +120,7 @@ export function Sidebar() {
   }, []);
 
   return (
-    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 shrink-0 flex-col border-r border-border/60 bg-card/50 backdrop-blur-sm px-4 py-6 md:flex">
+    <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 shrink-0 flex-col border-r border-border/70 bg-card/85 px-4 py-6 shadow-sm backdrop-blur md:flex">
       <div className="px-2">
         <Link href="/dashboard" className="flex items-center gap-3 group">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl glow-gradient text-xl font-black text-white shadow-lg shadow-primary/30 transition-transform group-hover:scale-105">
@@ -184,7 +170,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setAccountMenuOpen((value) => !value)}
-          className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-accent/30 px-3 py-3 text-left transition-all duration-200 hover:border-primary/25 hover:bg-accent/50"
+          className="flex w-full items-center gap-3 rounded-xl border border-border/60 bg-accent/30 px-3 py-3 text-left transition-all duration-200 hover:border-primary/25 hover:bg-accent/50"
         >
           <div className="flex h-10 w-10 items-center justify-center rounded-xl glow-gradient text-xs font-bold uppercase text-white shadow-md shadow-primary/20">
             {mounted ? initials : "C"}
@@ -208,7 +194,7 @@ export function Sidebar() {
         {accountMenuOpen && (
           <div
             role="menu"
-            className="absolute bottom-[calc(100%+0.75rem)] left-0 z-20 w-full rounded-2xl border border-border/60 bg-card p-2 shadow-xl shadow-black/10 dark:shadow-black/30 animate-fade-in-up"
+            className="absolute bottom-[calc(100%+0.75rem)] left-0 z-20 w-full rounded-xl border border-border/60 bg-card p-2 shadow-xl shadow-black/10 dark:shadow-black/30 animate-fade-in-up"
           >
             <Link
               href="/profile"

@@ -1,15 +1,11 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useIsMounted } from "@/hooks/useIsMounted";
 import { useAuth } from "@/contexts/auth-context";
 
 export function Navbar() {
   const { user, logout } = useAuth();
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const mounted = useIsMounted();
 
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-xl px-4 py-4 md:px-6">
