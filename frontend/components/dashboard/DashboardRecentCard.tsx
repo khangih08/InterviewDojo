@@ -52,7 +52,7 @@ export function DashboardRecentCard({
   const recentSessions = sessions.slice(0, 5);
 
   return (
-    <Card className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm">
+    <Card className="surface-panel overflow-hidden rounded-xl">
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -105,7 +105,7 @@ export function DashboardRecentCard({
                 <Link
                   key={session.id}
                   href={`/result?sessionId=${session.id}`}
-                  className="group flex items-center justify-between gap-4 rounded-2xl border border-border/40 p-4 transition-all duration-200 hover:border-primary/20 hover:bg-accent/30 hover:shadow-sm"
+                  className="group flex items-center justify-between gap-4 rounded-xl border border-border/40 p-4 transition-all duration-200 hover:border-primary/20 hover:bg-accent/30 hover:shadow-sm"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     {getStatusIcon(session.status)}

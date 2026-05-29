@@ -4,3 +4,16 @@ node_modules
 
 backend/uploads/
 docs/roadmap.md
+response.html
+
+# Generated
+backend/coverage/
+test-results/
+playwright-report/
+
+# Logs
+*.log
+
+# AI / Editor
+.claude/
+.vscode/

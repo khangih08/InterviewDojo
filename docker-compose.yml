@@ -1,6 +1,14 @@
-version: "3.9"
-
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: interviewdojo-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - interviewdojo
+
   # Postgres used by both prod and dev; always enabled
   postgres:
     image: postgres:16
@@ -33,10 +41,11 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/interview_dojo
-      PORT: 3001
+      REDIS_URL: redis://redis:6379/0
+      PORT: 8000
       NODE_ENV: production
     ports:
-      - "3001:3001"
+      - "8000:8000"
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
@@ -59,12 +68,14 @@ services:
     environment:
       NODE_ENV: development
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/interview_dojo
+      REDIS_URL: redis://redis:6379/0
+      PORT: 8000
     volumes:
       - ./backend/src:/app/src:delegated
       - ./backend/.env:/app/.env:ro
       - backend_uploads:/app/uploads
     ports:
-      - "3001:3001"
+      - "8000:8000"
       - "9229:9229"
     depends_on:
       - postgres
@@ -79,13 +90,13 @@ services:
       dockerfile: Dockerfile
       target: production
       args:
-        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
     container_name: interviewdojo-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: production
     ports:
-      - "3000:3000"
+      - "3003:3000"
     depends_on:
       - backend
     networks:
@@ -103,14 +114,14 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
       WATCHPACK_POLLING: "true"
     volumes:
       - ./frontend:/app:delegated
       - /app/node_modules
       - /app/.next
     ports:
-      - "3000:3000"
+      - "3002:3000"
     depends_on:
       - backend-dev
     networks:
@@ -123,3 +134,4 @@ networks:
 volumes:
   postgres_data:
   backend_uploads:
+  redis_data:

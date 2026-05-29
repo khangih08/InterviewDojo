@@ -50,7 +50,7 @@ export function DashboardStatsCard({
       {stats.map(({ label, value, note, icon: Icon, gradient, bgColor }) => (
         <Card
           key={label}
-          className="group overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 hover:border-primary/20"
+          className="surface-panel rounded-xl py-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25"
         >
           <CardHeader className="pb-0">
             <CardTitle className="text-sm text-muted-foreground">{label}</CardTitle>
@@ -67,7 +67,7 @@ export function DashboardStatsCard({
               </div>
               <div
                 className={cn(
-                  "flex items-center gap-2 rounded-2xl px-3 py-2",
+                  "flex items-center gap-2 rounded-xl px-3 py-2",
                   bgColor,
                 )}
               >

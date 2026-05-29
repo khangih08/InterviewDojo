@@ -1,12 +1,11 @@
 import { Shield } from "lucide-react";
 
-import { SessionsManagement } from "@/components/settings/SessionsManagement";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
 
 export const metadata = {
   title: "Settings",
-  description: "Manage your account and signed-in devices",
+  description: "Manage your account preferences",
 };
 
 export default function SettingsPage() {
@@ -28,8 +27,7 @@ export default function SettingsPage() {
               Settings
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Manage your account preferences and control where you are signed
-              in from one place.
+              Manage your account preferences from one place.
             </p>
           </div>
         </div>
@@ -38,8 +36,6 @@ export default function SettingsPage() {
       <ThemeSettings />
 
       <SubscriptionSettings />
-
-      <SessionsManagement />
     </div>
   );
 }
