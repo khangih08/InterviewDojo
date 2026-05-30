@@ -5,7 +5,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GetUser } from '../common/decorator/get-user.decorator';
 import * as fs from 'fs';
 
-const extractPdf = require('pdf-extraction');
 
 @Controller('interviews')
 export class InterviewsController {
@@ -51,6 +50,7 @@ export class InterviewsController {
           throw new BadRequestException('File upload không đúng định dạng chuẩn!');
         }
 
+        const extractPdf = require('pdf-extraction');
         const parsed = await extractPdf(pdfBuffer);
         cvText = parsed.text;
 
