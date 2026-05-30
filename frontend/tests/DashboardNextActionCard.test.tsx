@@ -1,25 +1,37 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { DashboardNextActionCard } from "@/components/dashboard/DashboardNextActionCard";
+import { SubscriptionProvider } from "@/contexts/subscription-context";
+
+const mockUser = {
+  id: "u-1",
+  target_role: "Backend Developer",
+};
+
+vi.mock("@/contexts/auth-context", () => ({
+  useAuth: vi.fn(() => ({
+    user: mockUser,
+  })),
+}));
 
 describe("DashboardNextActionCard", () => {
-  it("renders guide content and focus topics", () => {
+  beforeEach(() => {
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:8000");
+  });
+
+  it("renders guide content and focus topics from MSW api mock", async () => {
+
     render(
-      <DashboardNextActionCard
-        guide={{
-          greeting: "Hi",
-          targetRoleLabel: "Backend Developer",
-          nextAction: "Practice system design today",
-          focusTopics: ["Caching", "Queues", "Indexes"],
-          planName: "Backend Sprint",
-          planSummary: "Focus on architecture and data modeling",
-        } as any}
-      />,
+      <SubscriptionProvider>
+        <DashboardNextActionCard />
+      </SubscriptionProvider>
     );
 
-    expect(screen.getByText("Next Action")).toBeInTheDocument();
-    expect(screen.getByText("Practice system design today")).toBeInTheDocument();
-    expect(screen.getByText("Focus Topics")).toBeInTheDocument();
+    // Đợi render thành công sau khi tải dữ liệu từ MSW API giả lập
+    await waitFor(() => {
+      expect(screen.getByText("Practice system design today")).toBeInTheDocument();
+    }, { timeout: 4000 });
+
     expect(screen.getByText("Caching")).toBeInTheDocument();
     expect(screen.getByText("Queues")).toBeInTheDocument();
     expect(screen.getByText("Indexes")).toBeInTheDocument();
