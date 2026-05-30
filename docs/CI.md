@@ -1,6 +1,7 @@
 # CI Guidance
 
-This document describes recommended CI checks for InterviewDojo.
+
+This documents describes recommended CI checks for InterviewDojo.
 
 ## High-level jobs
 
