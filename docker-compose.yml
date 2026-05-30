@@ -1,6 +1,18 @@
 version: "3.9"
 
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: interviewdojo-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - interviewdojo
+
   # Postgres used by both prod and dev; always enabled
   postgres:
     image: postgres:16

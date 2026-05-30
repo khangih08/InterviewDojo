@@ -6,17 +6,22 @@ import { Message } from '../entities/message.entity';
 import { User, UserPlan } from '../entities/user.entity';
 import { AiService } from '../ai/ai.service';
 import { RagService } from '../rag/rag.service';
+import { RedisService } from '../common/redis/redis.service';
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { EvaluatorAgent } from '../ai/agents/evaluator.agent';
 import { MentorAgent } from '../ai/agents/mentor.agent';
 
 @Injectable()
 export class InterviewsService {
-  private readonly logger = new Logger(InterviewsService.name);
+  private groq: OpenAI;
+  private genAI: GoogleGenerativeAI;
+  private groqApiKey: string;
+  private readonly CACHE_TTL = 300; // 5 minutes for interview list cache
 
   constructor(
     @InjectRepository(Interview) private readonly interviewRepo: Repository<Interview>,
     @InjectRepository(Message) private readonly messageRepo: Repository<Message>,
+    private redisService: RedisService,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     public readonly aiService: AiService,
     private readonly ragService: RagService,
@@ -77,9 +82,17 @@ export class InterviewsService {
   }
 
   async getNextActionPlan(userId: string, targetRole: string = 'Software Engineer') {
+    // Try cache first
+    const cacheKey = `interviews:${userId}`;
+    const cached = await this.redisService.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+
     const lastInterview = await this.interviewRepo.findOne({
       where: { user_id: userId, status: 'COMPLETED' },
       order: { created_at: 'DESC' },
+      take: 50, // Limit to 50 recent interviews
     });
 
     const mentorAgent = new MentorAgent(this.aiService['model']);
