@@ -26,7 +26,7 @@ import { LoginDto } from './dto/login.dto';
 import { GetUser } from 'src/common/decorator/get-user.decorator';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import type { Request } from 'express';
+import { Request } from 'express';
 
 @Controller('auth')
 export class AuthController {

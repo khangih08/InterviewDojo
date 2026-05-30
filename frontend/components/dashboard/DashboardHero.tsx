@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, LayoutDashboard, TimerReset, Trophy } from "lucide-react";
+import { ArrowRight, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { JobRole } from "@/lib/api/types";
 
@@ -109,54 +109,57 @@ export function DashboardHero({
   avgScore,
 }: DashboardHeroProps) {
   return (
-    <section className="surface-panel overflow-hidden rounded-xl p-5 sm:p-6">
-      <div className="grid gap-6 lg:grid-cols-[1.45fr_0.9fr] lg:items-stretch">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-            <LayoutDashboard className="h-4 w-4" />
-            Dashboard
-          </div>
+    <section className="relative overflow-hidden rounded-3xl glow-gradient p-6 text-white shadow-xl shadow-primary/20 sm:p-8">
+      {/* Decorative orbs */}
+      <div className="absolute -top-20 -right-20 h-60 w-60 rounded-full bg-white/5 blur-2xl" />
+      <div className="absolute -bottom-10 -left-10 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
 
-          <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-            Welcome back, {name}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
-            Your current track is {guide.planName} ({guide.planLength}). Keep
-            momentum by completing focused practice sessions and reviewing feedback after
-            each round.
-          </p>
-
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <Button asChild size="lg" className="shadow-sm">
-              <Link href="/questions" className="flex items-center gap-2">
-                Practice now <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-
-            <div className="rounded-lg border border-border/70 bg-accent/35 px-3 py-2 text-sm text-muted-foreground">
-              {guide.mockType}
-            </div>
-          </div>
+      <div className="relative">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-white/60">
+          <LayoutDashboard className="h-4 w-4" />
+          Dashboard
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-          <div className="quiet-panel rounded-xl p-4">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Sessions
-              </p>
-              <TimerReset className="h-4 w-4 text-primary" />
+        <div className="mt-4 grid gap-6 lg:grid-cols-[1.4fr_0.9fr] lg:items-end">
+          <div>
+            <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
+              Welcome back, {name}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+              Your current track is {guide.planName} ({guide.planLength}). Keep
+              momentum by completing focused practice sessions and reviewing feedback after
+              each round.
+            </p>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button
+                asChild
+                className="bg-white text-primary hover:bg-white/90 shadow-lg shadow-black/10 transition-all duration-300 hover:scale-[1.02]"
+              >
+                <Link href="/questions" className="flex items-center gap-2">
+                  Practice now <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+
+              <div className="rounded-full border border-white/20 bg-white/10 backdrop-blur-sm px-4 py-2 text-sm text-white/80">
+                {guide.mockType}
+              </div>
             </div>
-            <p className="mt-3 text-3xl font-semibold tracking-tight">{totalSessions}</p>
-          </div>
-          <div className="quiet-panel rounded-xl p-4">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Average score
-              </p>
-              <Trophy className="h-4 w-4 text-amber-500" />
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:max-w-xl">
+              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-0.5">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-white/60">
+                  Sessions
+                </p>
+                <p className="mt-2 text-2xl font-semibold">{totalSessions}</p>
+              </div>
+              <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 backdrop-blur-sm transition-transform duration-300 hover:-translate-y-0.5">
+                <p className="text-[11px] uppercase tracking-[0.24em] text-white/60">
+                  Average score
+                </p>
+                <p className="mt-2 text-2xl font-semibold">{avgScore}%</p>
+              </div>
             </div>
-            <p className="mt-3 text-3xl font-semibold tracking-tight">{avgScore}%</p>
           </div>
         </div>
       </div>

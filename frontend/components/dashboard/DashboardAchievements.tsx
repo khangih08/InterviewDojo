@@ -62,10 +62,10 @@ export function DashboardAchievements({
     },
   ];
 
-  const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length;
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   return (
-    <Card className="surface-panel rounded-xl">
+    <Card className="border-border/60 bg-card/80 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-sm">
           <span className="flex items-center gap-2">
@@ -84,14 +84,13 @@ export function DashboardAchievements({
         <div className="grid gap-3">
           {achievements.map((achievement) => {
             const Icon = achievement.icon;
-
             return (
               <div
                 key={achievement.id}
-                className={`flex items-center gap-3 rounded-xl border p-3 transition-all duration-200 ${
+                className={`flex items-center gap-3 rounded-xl p-3 transition-all duration-300 ${
                   achievement.unlocked
-                    ? `border-amber-500/20 bg-gradient-to-r ${achievement.unlockedGradient} dark:border-amber-500/15`
-                    : "border-border/30 bg-accent/30 opacity-60"
+                    ? `bg-gradient-to-r ${achievement.unlockedGradient} border border-amber-500/20 dark:border-amber-500/15`
+                    : "bg-accent/30 border border-border/30 opacity-50"
                 }`}
               >
                 <div
@@ -103,26 +102,26 @@ export function DashboardAchievements({
                 >
                   <Icon className="h-4 w-4" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{achievement.label}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                <div className="flex-grow">
+                  <p className="text-sm font-medium">
+                    {achievement.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
                     {achievement.description}
                   </p>
                 </div>
                 {achievement.unlocked && (
-                  <Badge variant="outline" className="shrink-0 text-xs">
-                    ✓
-                  </Badge>
+                  <span className="text-xs font-bold text-amber-600 dark:text-amber-400">✓</span>
                 )}
               </div>
             );
           })}
         </div>
 
-        {unlockedCount === achievements.length && completedSessions > 0 && (
-          <div className="mt-4 rounded-xl border border-violet-500/20 bg-violet-500/10 p-3 text-center">
+        {unlockedCount === achievements.length && (
+          <div className="mt-4 rounded-xl bg-gradient-to-r from-violet-500/10 to-pink-500/10 border border-violet-500/20 p-3 text-center">
             <p className="text-sm font-semibold glow-gradient-text">
-              All Achievements Unlocked!
+              🎉 All Achievements Unlocked!
             </p>
           </div>
         )}

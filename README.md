@@ -109,8 +109,8 @@ SMTP_PASSWORD=your-smtp-password
 SMTP_SECURE=false
 SMTP_FROM="Interview Dojo <no-reply@example.com>"
 
-PORT=8000
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3002,http://localhost:8000
+PORT=3001
+ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
 ```
 
 </details>
@@ -125,14 +125,14 @@ npm run dev
 
 Create `frontend/.env.local`:
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
 ### 4. Open the App
 
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **Swagger docs**: http://localhost:8000/api/docs
+- **Backend API**: http://localhost:3001
+- **Swagger docs**: http://localhost:3001/api/docs
 
 ## 🐳 Docker (Full Stack)
 

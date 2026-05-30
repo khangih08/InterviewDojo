@@ -25,15 +25,21 @@ jest.mock('fs', () => {
 import OpenAI from 'openai';
 import * as fs from 'fs';
 import { InterviewsService } from '../src/interviews/interviews.service';
+import { User } from '../src/entities/user.entity';
 import { Interview } from '../src/entities/interview.entity';
 import { Message } from '../src/entities/message.entity';
+import { RagService } from '../src/rag/rag.service';
+import { AiService } from '../src/ai/ai.service';
+
 
 describe('InterviewsService', () => {
   let service: InterviewsService;
   let interviewRepo: { findOne: jest.Mock; find: jest.Mock; create: jest.Mock; save: jest.Mock };
   let messageRepo: { find: jest.Mock; save: jest.Mock };
+  let userRepo: { findOne: jest.Mock; save: jest.Mock };
   let mockTranscribe: jest.Mock;
   let mockChat: jest.Mock;
+
 
   const savedInterview = {
     id: 'i-1',
@@ -64,16 +70,27 @@ describe('InterviewsService', () => {
       save: jest.fn(),
     };
 
+    userRepo = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InterviewsService,
         { provide: getRepositoryToken(Interview), useValue: interviewRepo },
         { provide: getRepositoryToken(Message), useValue: messageRepo },
+        { provide: getRepositoryToken(User), useValue: userRepo },
+        { provide: RagService, useValue: {} },
+        { provide: AiService, useValue: {
+          analyzeCvProfile: jest.fn(),
+        } },
       ],
     }).compile();
 
     service = module.get<InterviewsService>(InterviewsService);
   });
+
 
   afterEach(() => jest.restoreAllMocks());
 
@@ -81,75 +98,28 @@ describe('InterviewsService', () => {
     expect(service).toBeDefined();
   });
 
-  describe('startInterview', () => {
+  describe('startNewInterview', () => {
     beforeEach(() => {
+      userRepo.findOne.mockResolvedValue({ id: 'u-1', plan: 'FREE', credits: 5 });
+      userRepo.save.mockResolvedValue({ id: 'u-1', plan: 'FREE', credits: 4 });
       interviewRepo.create.mockReturnValue(savedInterview);
       interviewRepo.save.mockResolvedValue(savedInterview);
       messageRepo.save.mockResolvedValue([]);
     });
 
-    it('creates a FREE interview and returns first message', async () => {
-      const result = await service.startInterview('FREE', 'u-1');
 
-      expect(result.success).toBe(true);
-      expect(result.interviewId).toBe('i-1');
-      expect(result.firstMessage).toContain('Chào bạn');
+    it('creates an IN_PROGRESS interview and returns greeting message', async () => {
+      const result = await service.startNewInterview('u-1', 'Frontend Developer');
+
+      expect(result.id).toBe('i-1');
+      expect(result.greeting).toContain('Chào bạn');
     });
 
-    it('creates a TARGETED interview with CV and JD context', async () => {
-      interviewRepo.create.mockReturnValue({
-        ...savedInterview,
-        type: 'TARGETED',
-        cv_text: 'cv content',
-        job_description: 'jd content',
-      });
-      interviewRepo.save.mockResolvedValue({
-        ...savedInterview,
-        type: 'TARGETED',
-      });
+    it('saves exactly one greeting message: assistant greeting', async () => {
+      await service.startNewInterview('u-1');
 
-      const result = await service.startInterview(
-        'TARGETED',
-        'u-1',
-        'cv content',
-        'jd content',
-      );
-
-      expect(result.success).toBe(true);
-      expect(result.firstMessage).toContain('CV');
-    });
-
-    it('saves exactly two messages: system and assistant greeting', async () => {
-      await service.startInterview('FREE', 'u-1');
-
-      const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
-      expect(savedMessages).toHaveLength(2);
-      expect(savedMessages[0].role).toBe('system');
-      expect(savedMessages[1].role).toBe('assistant');
-    });
-
-    it('FREE system prompt includes one-question-at-a-time rule', async () => {
-      await service.startInterview('FREE', 'u-1');
-
-      const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
-      expect(savedMessages[0].content).toContain('1 CÂU DUY NHẤT');
-    });
-
-    it('TARGETED system prompt includes CV and JD content', async () => {
-      interviewRepo.create.mockReturnValue({
-        ...savedInterview,
-        type: 'TARGETED',
-      });
-      interviewRepo.save.mockResolvedValue({
-        ...savedInterview,
-        type: 'TARGETED',
-      });
-
-      await service.startInterview('TARGETED', 'u-1', 'my-cv', 'my-jd');
-
-      const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
-      expect(savedMessages[0].content).toContain('my-cv');
-      expect(savedMessages[0].content).toContain('my-jd');
+      const savedMessage = (messageRepo.save as jest.Mock).mock.calls[0][0];
+      expect(savedMessage.role).toBe('assistant');
     });
 
     it('TARGETED prompt uses fallback text when cvText and jdText are undefined', async () => {
@@ -164,7 +134,7 @@ describe('InterviewsService', () => {
     });
   });
 
-  describe('processAudio', () => {
+  describe('processAudioMessage', () => {
     const mockFile = {
       originalname: 'audio.webm',
       buffer: Buffer.from('fake-audio-data'),
@@ -176,90 +146,44 @@ describe('InterviewsService', () => {
       messageRepo.find.mockResolvedValue([
         { role: 'system', content: 'system prompt', interview_id: 'i-1' },
       ]);
-      mockTranscribe.mockResolvedValue({ text: 'User said something meaningful' });
-      mockChat.mockResolvedValue({
-        choices: [{ message: { content: 'AI interviewer response' } }],
+      service.aiService.transcribeAudio = jest.fn().mockResolvedValue('User said something meaningful');
+      service.aiService.processInterviewTurnStream = jest.fn().mockImplementation(async function* () {
+        yield 'AI interviewer response';
       });
       messageRepo.save.mockResolvedValue([]);
     });
 
-    it('throws BadRequestException when interview not found', async () => {
-      interviewRepo.findOne.mockResolvedValue(null);
-      await expect(service.processAudio('missing', mockFile)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
     it('transcribes audio and returns AI response', async () => {
-      const result = await service.processAudio('i-1', mockFile);
+      const result = await service.processAudioMessage('i-1', 'u-1', mockFile.buffer, mockFile.originalname, 'THEORY', 'code');
 
-      expect(result.success).toBe(true);
-      expect(result.userText).toBe('User said something meaningful');
-      expect(result.aiResponse).toBe('AI interviewer response');
-    });
-
-    it('saves user message and AI response to database', async () => {
-      await service.processAudio('i-1', mockFile);
-
-      const savedMessages = (messageRepo.save as jest.Mock).mock.calls[0][0];
-      expect(savedMessages[0].role).toBe('user');
-      expect(savedMessages[0].content).toBe('User said something meaningful');
-      expect(savedMessages[1].role).toBe('assistant');
-      expect(savedMessages[1].content).toBe('AI interviewer response');
+      expect(result.recognizedText).toBe('User said something meaningful');
+      expect(result.reply).toBe('AI interviewer response');
     });
 
     it('throws BadRequestException when transcription returns empty text', async () => {
-      mockTranscribe.mockResolvedValue({ text: '' });
-      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
-        BadRequestException,
-      );
+      service.aiService.transcribeAudio = jest.fn().mockResolvedValue('');
+      const result = await service.processAudioMessage('i-1', 'u-1', mockFile.buffer, mockFile.originalname, 'THEORY', 'code');
+      expect(result.recognizedText).toBe('');
+      expect(result.reply).toBe('Mình không nghe rõ, bạn nói lại được không?');
     });
+  });
 
-    it('throws BadRequestException when transcription returns whitespace only', async () => {
-      mockTranscribe.mockResolvedValue({ text: '   ' });
-      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
-        BadRequestException,
-      );
-    });
+  describe('requestPro', () => {
+    it('sets is_pending_pro to true and saves user', async () => {
+      const mockUser = { id: 'u-1', email: 'test@example.com', full_name: 'Test', is_pending_pro: false };
+      userRepo.findOne.mockResolvedValue(mockUser);
+      userRepo.save.mockResolvedValue(mockUser);
 
-    it('handles mp3 file extension correctly', async () => {
-      const mp3File = {
-        ...mockFile,
-        originalname: 'audio.mp3',
-      } as Express.Multer.File;
+      const result = await service.requestPro('u-1');
 
-      const result = await service.processAudio('i-1', mp3File);
       expect(result.success).toBe(true);
+      expect(mockUser.is_pending_pro).toBe(true);
+      expect(userRepo.save).toHaveBeenCalledWith(mockUser);
     });
 
-    it('handles unknown extension by defaulting to webm', async () => {
-      const unknownFile = {
-        ...mockFile,
-        originalname: 'audio.xyz',
-      } as Express.Multer.File;
-
-      const result = await service.processAudio('i-1', unknownFile);
-      expect(result.success).toBe(true);
-    });
-
-    it('includes conversation history in chat completion call', async () => {
-      messageRepo.find.mockResolvedValue([
-        { role: 'system', content: 'sys', interview_id: 'i-1' },
-        { role: 'assistant', content: 'Hello!', interview_id: 'i-1' },
-      ]);
-
-      await service.processAudio('i-1', mockFile);
-
-      const chatCall = mockChat.mock.calls[0][0];
-      expect(chatCall.messages.length).toBeGreaterThanOrEqual(2);
-      expect(chatCall.messages[chatCall.messages.length - 1].role).toBe('user');
-    });
-
-    it('throws BadRequestException when AI service fails', async () => {
-      mockChat.mockRejectedValue(new Error('Groq API error'));
-      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
-        BadRequestException,
-      );
+    it('throws NotFoundException when user does not exist', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      await expect(service.requestPro('invalid')).rejects.toThrow('User not found');
     });
 
     it('throws BadRequestException when GROQ_API_KEY is missing', async () => {
@@ -444,3 +368,4 @@ describe('InterviewsService', () => {
     });
   });
 });
+

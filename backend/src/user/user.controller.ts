@@ -3,7 +3,7 @@ import { UserResponseDto } from "./dto/user-response.dto";
 import { UsersService } from "./user.service";
 import { UpdateUserDto } from "./dto/update-user.dto";
 import { GetUser } from "src/common/decorator/get-user.decorator";
-import type { RequestWithUser } from "src/common/interface/request-with-user.interface";
+import { RequestWithUser } from "src/common/interface/request-with-user.interface";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 
 export class UserControllers {

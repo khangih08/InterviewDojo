@@ -2,17 +2,11 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import {
-  BookOpenCheck,
-  CheckCircle2,
-  Filter,
-  RotateCw,
-  Search,
-} from "lucide-react";
+import { Filter, RotateCw, CheckCircle2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getQuestionFilters, getQuestions } from "@/lib/api/questions";
@@ -27,77 +21,54 @@ type FlashCardQuestion = Question & {
   categoryName?: string;
 };
 
-function getQuestionCategory(question: FlashCardQuestion) {
-  return question.categoryName || question.category?.name || "IT General";
-}
-
+// --- COMPONENT FLASHCARD ITEM (ĐÃ FIX RENDER HTML) ---
 function FlashCardItem({ question }: { question: FlashCardQuestion }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const toggleCard = () => setIsFlipped((value) => !value);
-
   return (
-    <div className="flashcard-container h-80 w-full">
+    <div className="flashcard-container min-h-70 w-full mb-8">
       <div
-        role="button"
-        tabIndex={0}
-        className={cn(
-          "flashcard-inner h-full text-left outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-          isFlipped && "is-flipped",
-        )}
-        onClick={toggleCard}
-        onKeyDown={(event) => {
-          if (event.key === "Enter" || event.key === " ") {
-            event.preventDefault();
-            toggleCard();
-          }
-        }}
-        aria-label={isFlipped ? "Xem lại câu hỏi" : "Xem đáp án mẫu"}
+        className={cn("flashcard-inner h-full min-h-70", isFlipped && "is-flipped")}
+        onClick={() => setIsFlipped(!isFlipped)}
       >
-        <Card className="flashcard-front h-full cursor-pointer rounded-xl border-border/70 bg-card shadow-sm transition-all duration-200 hover:border-primary/30 hover:shadow-md">
-          <CardContent className="flex h-full min-h-0 flex-col p-5">
-            <div className="flex items-center justify-between gap-3">
-              <Badge variant="outline" className="rounded-lg">
-                Câu hỏi ôn tập
-              </Badge>
-              <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                Mặt trước
-              </span>
+        <Card className="flashcard-front h-full border-2 border-slate-200 dark:border-slate-800 shadow-sm hover:border-blue-400 dark:hover:border-blue-500 transition-all bg-white dark:bg-slate-900 flex flex-col cursor-pointer">
+          <CardContent className="p-6 flex flex-col justify-between flex-1">
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <Badge variant="outline" className="text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
+                  Câu hỏi ôn tập
+                </Badge>
+                <span className="text-slate-400 dark:text-slate-500 text-[10px] uppercase tracking-wider font-bold">Mặt trước</span>
+              </div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                {question.content}
+              </h3>
             </div>
-
-            <h3 className="flashcard-scroll mt-5 min-h-0 flex-1 overflow-y-auto pr-2 text-lg font-semibold leading-snug text-foreground">
-              {question.content}
-            </h3>
-
-            <div className="mt-4 flex items-center justify-between gap-3 border-t border-border/50 pt-4">
-              <Badge className="min-w-0 max-w-[75%] truncate rounded-lg bg-accent text-accent-foreground hover:bg-accent">
-                {getQuestionCategory(question)}
+            <div className="mt-4 pt-4 border-t border-slate-50 dark:border-slate-800 flex justify-between items-center">
+              <Badge className="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800/50">
+                {question.categoryName || "IT General"}
               </Badge>
-              <RotateCw className="h-4 w-4 text-primary" />
+              <RotateCw size={14} className="text-blue-400 dark:text-blue-500" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="flashcard-back h-full cursor-pointer overflow-hidden rounded-xl border-primary/35 bg-primary/5 shadow-md">
-          <CardContent className="flex h-full min-h-0 flex-col p-5">
-            <div className="mb-4 flex items-center justify-between gap-3 border-b border-primary/20 pb-3 text-primary">
-              <div className="flex min-w-0 items-center gap-2 font-semibold">
-                <CheckCircle2 className="h-4 w-4 shrink-0" />
-                <span className="truncate text-sm uppercase tracking-[0.12em]">
-                  Đáp án chi tiết
-                </span>
+        <Card className="flashcard-back h-full border-2 border-blue-500 shadow-xl bg-blue-50 dark:bg-blue-900/20 overflow-hidden flex flex-col cursor-pointer">
+          <CardContent className="p-6 flex flex-col h-full">
+            <div className="flex items-center justify-between mb-3 text-blue-700 dark:text-blue-400 font-bold border-b border-blue-200 dark:border-blue-800/50 pb-2">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} />
+                <span className="text-sm">ĐÁP ÁN CHI TIẾT</span>
               </div>
-              <RotateCw className="h-4 w-4 shrink-0" />
             </div>
+            {/* FIX TẠI ĐÂY: Sử dụng dangerouslySetInnerHTML để hiển thị <b> và xuống dòng */}
             <div
-              className="flashcard-scroll min-h-0 flex-1 overflow-y-auto pr-2 text-sm leading-6 text-foreground/85"
+              className="flex-1 overflow-y-auto pr-2 text-slate-700 dark:text-slate-300 text-sm leading-relaxed whitespace-pre-line"
               dangerouslySetInnerHTML={{
-                __html: question.sampleAnswer || "Chưa có đáp án mẫu.",
+                __html: question.sampleAnswer || "Chưa có đáp án mẫu."
               }}
             />
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Click để quay lại câu hỏi
-            </p>
+            <p className="mt-2 text-[10px] text-blue-400 dark:text-blue-500/70 text-center italic">Click để quay lại</p>
           </CardContent>
         </Card>
       </div>
@@ -105,6 +76,7 @@ function FlashCardItem({ question }: { question: FlashCardQuestion }) {
   );
 }
 
+// --- PHẦN QUẢN LÝ DANH SÁCH (GIỮ NGUYÊN) ---
 function QuestionsPageContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -122,9 +94,6 @@ function QuestionsPageContent() {
 
   const currentCategoryId = searchParams.get("categoryId") || "";
   const currentSearch = searchParams.get("q") || "";
-  const selectedCategory =
-    categories.find((category) => category.id === currentCategoryId)?.name ||
-    "Tất cả danh mục";
 
   useEffect(() => {
     getQuestionFilters().then((res) => setCategories(res.categories));
@@ -168,34 +137,31 @@ function QuestionsPageContent() {
     };
   }, [currentCategoryId, isComposing, pathname, router, searchParams, searchText]);
 
-  const fetchData = useCallback(
-    async (p: number, catId: string, append: boolean) => {
-      try {
-        if (append) {
-          setLoadingMore(true);
-        } else {
-          setLoading(true);
-        }
-
-        const res = await getQuestions({
-          page: p,
-          limit: PAGE_SIZE,
-          categoryId: catId || undefined,
-          q: currentSearch || undefined,
-        });
-
-        setItems((prev) => (append ? [...prev, ...res.items] : res.items));
-        setTotal(res.total);
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Đã có lỗi xảy ra";
-        toastError(message);
-      } finally {
-        setLoading(false);
-        setLoadingMore(false);
+  const fetchData = useCallback(async (p: number, catId: string, append: boolean) => {
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
       }
-    },
-    [currentSearch],
-  );
+
+      const res = await getQuestions({
+        page: p,
+        limit: PAGE_SIZE,
+        categoryId: catId || undefined,
+        q: currentSearch || undefined,
+      });
+
+      setItems((prev) => (append ? [...prev, ...res.items] : res.items));
+      setTotal(res.total);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Đã có lỗi xảy ra";
+      toastError(message);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, [currentSearch]);
 
   useEffect(() => {
     setLoadedPage(1);
@@ -206,9 +172,8 @@ function QuestionsPageContent() {
     const params = new URLSearchParams();
     if (id) params.set("categoryId", id);
     if (searchText.trim()) params.set("q", searchText.trim());
-    router.push(`${pathname}${params.toString() ? `?${params.toString()}` : ""}`, {
-      scroll: false,
-    });
+    params.set("page", "1");
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const handleLoadMore = () => {
@@ -218,132 +183,108 @@ function QuestionsPageContent() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 animate-fade-in-up">
-      <section className="surface-panel rounded-xl p-5 sm:p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <BookOpenCheck className="h-4 w-4" />
-              Flashcards
-            </div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight">
-              Flashcards ôn tập
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Lọc theo danh mục hoặc tìm theo từ khóa để luyện nhanh các câu hỏi
-              phỏng vấn.
-            </p>
-          </div>
-
-          <div className="quiet-panel rounded-xl px-4 py-3 text-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-              Đang xem
-            </p>
-            <p className="mt-1 font-medium">{selectedCategory}</p>
-          </div>
+    <div className="min-h-screen pb-20 transition-colors">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-10 text-center animate-fade-in-up">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-50">Flashcards Ôn Tập</h1>
+            <p className="mt-2 text-slate-500 dark:text-slate-400">Lọc theo danh mục hoặc tìm theo từ khóa để bắt đầu ôn luyện.</p>
         </div>
-      </section>
 
-      <div className="grid gap-6 lg:grid-cols-[17rem_1fr]">
-        <aside className="space-y-4">
-          <Card className="surface-panel sticky top-6 rounded-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Filter className="h-4 w-4" />
-                Danh mục
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button
-                variant={currentCategoryId === "" ? "default" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => handleCategoryChange("")}
-              >
-                Tất cả
-              </Button>
-              {categories.map((cat) => (
+        <div className="mb-8 mx-auto max-w-2xl">
+          <label htmlFor="question-search" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Tìm kiếm câu hỏi
+          </label>
+          <input
+            id="question-search"
+            type="search"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+            onCompositionStart={() => setIsComposing(true)}
+            onCompositionEnd={(event) => {
+              setIsComposing(false);
+              setSearchText(event.currentTarget.value);
+            }}
+            placeholder="Nhập từ khóa để lọc câu hỏi..."
+            className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-slate-900 dark:text-slate-100 shadow-sm outline-none transition placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-blue-400 dark:focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/30"
+          />
+        </div>
+
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <aside className="w-full lg:w-64">
+            <Card className="border-none shadow-sm sticky top-24 bg-white dark:bg-slate-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm font-bold flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                  <Filter size={16} /> DANH MỤC
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
                 <Button
-                  key={cat.id}
-                  variant={currentCategoryId === cat.id ? "default" : "ghost"}
-                  className="w-full justify-start overflow-hidden text-ellipsis"
-                  onClick={() => handleCategoryChange(cat.id)}
+                  variant={currentCategoryId === "" ? "default" : "ghost"}
+                  className="w-full justify-start text-sm dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+                  onClick={() => handleCategoryChange("")}
                 >
-                  {cat.name}
+                  Tất cả
                 </Button>
-              ))}
-            </CardContent>
-          </Card>
-        </aside>
+                {categories.map((cat) => (
+                  <Button
+                    key={cat.id}
+                    variant={currentCategoryId === cat.id ? "default" : "ghost"}
+                    className="w-full justify-start text-sm overflow-hidden text-ellipsis dark:text-slate-300 dark:hover:text-slate-100 dark:hover:bg-slate-800"
+                    onClick={() => handleCategoryChange(cat.id)}
+                  >
+                    {cat.name}
+                  </Button>
+                ))}
+              </CardContent>
+            </Card>
+          </aside>
 
-        <section className="space-y-5">
-          <div className="surface-panel rounded-xl p-3">
-            <label htmlFor="question-search" className="sr-only">
-              Tìm kiếm câu hỏi
-            </label>
-            <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-background px-3 py-2.5">
-              <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <input
-                id="question-search"
-                type="search"
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                onCompositionStart={() => setIsComposing(true)}
-                onCompositionEnd={(event) => {
-                  setIsComposing(false);
-                  setSearchText(event.currentTarget.value);
-                }}
-                placeholder="Nhập từ khóa để lọc câu hỏi..."
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              {Array.from({ length: 4 }, (_, index) => (
-                <div key={index} className="rounded-xl border border-border/50 bg-card p-5">
-                  <Skeleton className="h-5 w-28" />
-                  <Skeleton className="mt-5 h-44 w-full rounded-xl" />
-                  <Skeleton className="mt-5 h-5 w-40" />
-                </div>
-              ))}
-            </div>
-          ) : items.length === 0 ? (
-            <EmptyState
-              icon={<Filter size={24} />}
-              title="Không có câu hỏi nào trong mục này"
-              description="Thử xóa bộ lọc hoặc đổi từ khóa để xem thêm câu hỏi mẫu."
-              action={{
-                label: "Xóa bộ lọc",
-                onClick: () => {
-                  setSearchText("");
-                  router.replace(pathname, { scroll: false });
-                },
-              }}
-            />
-          ) : (
-            <>
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                {items.map((question) => (
-                  <FlashCardItem key={question.id} question={question} />
+          <div className="flex-1">
+            {loading ? (
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {Array.from({ length: 4 }, (_, index) => (
+                  <div key={index} className="rounded-2xl border border-border/40 bg-card p-4">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="mt-4 h-40 w-full rounded-2xl" />
+                    <Skeleton className="mt-4 h-4 w-40" />
+                  </div>
                 ))}
               </div>
-
-              {items.length < total && (
-                <div className="flex justify-center pt-2">
-                  <Button
-                    type="button"
-                    onClick={handleLoadMore}
-                    disabled={loadingMore}
-                    size="lg"
-                  >
-                    {loadingMore ? "Đang tải..." : "Xem thêm"}
-                  </Button>
+            ) : items.length === 0 ? (
+              <EmptyState
+                icon={<Filter size={24} />}
+                title="Không có câu hỏi nào trong mục này"
+                description="Thử xóa bộ lọc hoặc đổi từ khóa để xem thêm câu hỏi mẫu."
+                action={{
+                  label: "Xóa bộ lọc",
+                  onClick: () => {
+                    setSearchText("");
+                    router.replace(pathname, { scroll: false });
+                  },
+                }}
+              />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
+                  {items.map((q) => <FlashCardItem key={q.id} question={q} />)}
                 </div>
-              )}
-            </>
-          )}
-        </section>
+
+                {items.length < total && (
+                  <div className="mt-8 flex justify-center">
+                    <Button
+                      type="button"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-10 rounded-full dark:bg-blue-600 dark:hover:bg-blue-700"
+                    >
+                      {loadingMore ? "Đang tải..." : "Xem thêm"}
+                    </Button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { userSessionsApi } from '@/lib/api/sessions';
 import { UserSession } from '@/lib/api/types';
 import { toastError, toastSuccess } from '@/lib/toast';
-import { Loader2, LogOut, Smartphone, Trash2 } from 'lucide-react';
+import { Loader2, LogOut, Monitor, Smartphone, Trash2 } from 'lucide-react';
 
 export function SessionsManagement() {
   const { hydrated, isAuthenticated } = useAuth();
@@ -26,8 +26,9 @@ export function SessionsManagement() {
       setLoading(true);
       const data = await userSessionsApi.getAllSessions();
       setSessions(data);
-    } catch {
+    } catch (error) {
       toastError('Failed to load sessions');
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -39,8 +40,9 @@ export function SessionsManagement() {
       await userSessionsApi.revokeSession(sessionId);
       toastSuccess('Session revoked successfully');
       setSessions(sessions.filter(s => s.id !== sessionId));
-    } catch {
+    } catch (error) {
       toastError('Failed to revoke session');
+      console.error(error);
     } finally {
       setRevoking(null);
     }
@@ -52,29 +54,27 @@ export function SessionsManagement() {
       const result = await userSessionsApi.revokeAllOtherSessions();
       toastSuccess(`${result.revoked_count} sessions revoked`);
       await loadSessions();
-    } catch {
+    } catch (error) {
       toastError('Failed to revoke sessions');
+      console.error(error);
     } finally {
       setRevoking(null);
     }
   };
 
   const handleRevokeAll = async () => {
-    const confirmed = window.confirm(
-      'Are you sure you want to revoke all sessions? This will log you out of every device.',
-    );
-
-    if (!confirmed) {
+    if (!confirm('This will log you out from all devices. Are you sure?')) {
       return;
     }
 
     try {
       setRevoking('all');
       const result = await userSessionsApi.revokeAllSessions();
-      toastSuccess(`${result.revoked_count} sessions revoked`);
+      toastSuccess(`All ${result.revoked_count} sessions revoked`);
       setSessions([]);
-    } catch {
+    } catch (error) {
       toastError('Failed to revoke all sessions');
+      console.error(error);
     } finally {
       setRevoking(null);
     }
@@ -111,25 +111,23 @@ export function SessionsManagement() {
       <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl" />
 
       <div className="relative space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-2xl font-bold tracking-tight">Active Devices</h2>
-            <p className="text-sm text-muted-foreground">
-              Manage your active devices and revoke sessions when needed.
-            </p>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 text-white shadow-md shadow-blue-500/20">
+              <Monitor className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-blue-600 dark:text-blue-400">
+                Security
+              </p>
+              <h2 className="mt-1 text-xl font-bold">Active Devices</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Manage your active devices
+              </p>
+            </div>
           </div>
-
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleRevokeAll}
-              disabled={revoking === 'all'}
-              className="px-4 py-2.5 bg-destructive/10 text-destructive border border-destructive/20 rounded-xl hover:bg-destructive/20 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 text-sm font-medium"
-            >
-              {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
-              <LogOut className="h-4 w-4" />
-              Logout All Devices
-            </button>
-
             {sessions.length > 1 && (
               <button
                 onClick={handleRevokeAllOther}
@@ -141,14 +139,23 @@ export function SessionsManagement() {
                 Logout Other Devices
               </button>
             )}
+            <button
+              onClick={handleRevokeAll}
+              disabled={revoking === 'all'}
+              className="px-4 py-2.5 bg-destructive/10 text-destructive border border-destructive/20 rounded-xl hover:bg-destructive/20 disabled:opacity-50 transition-all duration-200 flex items-center gap-2 text-sm font-medium"
+            >
+              {revoking === 'all' && <Loader2 className="h-4 w-4 animate-spin" />}
+              <LogOut className="h-4 w-4" />
+              Logout All Devices
+            </button>
           </div>
         </div>
 
+        {/* Sessions List */}
         {sessions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border/60 bg-background/60 px-6 py-10 text-center">
-            <p className="text-sm font-medium text-muted-foreground">
-              No active devices found
-            </p>
+          <div className="rounded-2xl bg-accent/30 border border-border/30 p-12 text-center">
+            <Smartphone className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+            <p className="text-muted-foreground font-medium">No active devices found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
@@ -208,6 +215,17 @@ export function SessionsManagement() {
             ))}
           </div>
         )}
+
+        {/* Info Box */}
+        <div className="rounded-2xl bg-primary/5 border border-primary/15 p-5">
+          <div className="flex gap-3">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-[10px] font-bold mt-0.5">!</div>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              <strong className="font-bold text-foreground">Tip:</strong> Each time you log in, a new device is registered. Log out from specific
+              devices if you don't recognize them. Devices automatically expire after 7 days of inactivity.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
   );

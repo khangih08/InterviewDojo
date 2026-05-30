@@ -17,3 +17,6 @@ playwright-report/
 # AI / Editor
 .claude/
 .vscode/
+.idea/
+.agent/
+GEMINI.md
