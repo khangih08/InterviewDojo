@@ -613,4 +613,16 @@ export class AuthService {
       );
     }
   }
+
+  async cleanupTestUser(email: string): Promise<{ message: string }> {
+    if (!email.startsWith('real-test-')) {
+      throw new BadRequestException('Only test users can be cleaned up.');
+    }
+    const user = await this.UserRepository.findOne({ where: { email } });
+    if (user) {
+      await this.UserRepository.delete({ id: user.id });
+      return { message: `Test user ${email} successfully cleaned up` };
+    }
+    return { message: `Test user ${email} not found` };
+  }
 }

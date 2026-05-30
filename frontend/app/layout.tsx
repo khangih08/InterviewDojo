@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Roboto, Geist_Mono } from "next/font/google";
 import { GlobalToaster } from "@/components/ui/global-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
+const roboto = Roboto({
+  weight: ["300", "400", "500", "700"],
+  variable: "--font-roboto",
+  subsets: ["latin", "vietnamese"],
 });
 
 const geistMono = Geist_Mono({
@@ -37,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en" className={`${roboto.variable} ${geistMono.variable} scroll-smooth`} suppressHydrationWarning>
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

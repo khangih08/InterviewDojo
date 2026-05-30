@@ -334,13 +334,14 @@ describe('InterviewsService', () => {
       expect(result.success).toBe(true);
     });
 
-    it('returns empty string as aiResponse when choices content is null', async () => {
+    it('throws BadRequestException when AI completion response content is null or empty', async () => {
       mockChat.mockResolvedValue({
         choices: [{ message: { content: null } }],
       });
 
-      const result = await service.processAudio('i-1', mockFile);
-      expect(result.aiResponse).toBe('');
+      await expect(service.processAudio('i-1', mockFile)).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('throws when audio file size is zero', async () => {

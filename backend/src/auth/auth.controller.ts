@@ -236,4 +236,10 @@ export class AuthController {
       completeGoogleProfileDto,
     );
   }
+
+  @Post('cleanup-test-user')
+  @HttpCode(HttpStatus.OK)
+  async cleanupTestUser(@Body('email') email: string): Promise<{ message: string }> {
+    return await this.authService.cleanupTestUser(email);
+  }
 }

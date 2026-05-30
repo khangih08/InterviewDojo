@@ -181,7 +181,13 @@ export class InterviewsService {
         messages: messages,
       });
 
-      const aiResponse = completion.choices[0]?.message?.content || '';
+      let aiResponse = completion.choices[0]?.message?.content || '';
+
+      // AI Robustness: Đảm bảo AI phản hồi không rỗng và làm sạch dữ liệu
+      if (!aiResponse || aiResponse.trim() === '') {
+        throw new Error('Mô hình AI phản hồi rỗng hoặc không hợp lệ.');
+      }
+      aiResponse = aiResponse.trim();
 
       await this.messageRepo.save([
         { interview_id: interviewId, role: 'user' as any, content: userText },
