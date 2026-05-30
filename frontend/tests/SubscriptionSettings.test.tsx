@@ -1,115 +1,78 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
-import { SubscriptionProvider } from "@/contexts/subscription-context";
-import * as toastModule from "@/lib/toast";
 
-vi.mock("@/lib/toast", () => ({
-  toastSuccess: vi.fn(),
-  toastInfo: vi.fn(),
-}));
+const mockUser = {
+  id: "u-1",
+  email: "test@example.com",
+  full_name: "Test User",
+  plan: "FREE",
+  is_pending_pro: false,
+};
 
 vi.mock("@/contexts/auth-context", () => ({
   useAuth: vi.fn(() => ({
     hydrated: true,
     isAuthenticated: true,
-    user: null,
+    user: mockUser,
     loading: false,
   })),
 }));
 
-describe("SubscriptionSettings and Context", () => {
+// Mock window.alert
+const mockAlert = vi.fn();
+Object.defineProperty(window, "alert", {
+  writable: true,
+  configurable: true,
+  value: mockAlert,
+});
+
+describe("SubscriptionSettings", () => {
   beforeEach(() => {
-    localStorage.clear();
+    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:8000");
     vi.clearAllMocks();
   });
 
-  const renderComponent = () => {
-    return render(
-      <SubscriptionProvider>
-        <SubscriptionSettings />
-      </SubscriptionProvider>
-    );
-  };
 
-  it("defaults to Free plan and shows 'Current Plan' badge on Free plan", async () => {
-    renderComponent();
+  it("renders correctly with Free plan default status in Vietnamese", async () => {
+    render(<SubscriptionSettings />);
     
-    // Check that "Free" plan has the "Current Plan" text
-    expect(await screen.findByText("Current Plan")).toBeInTheDocument();
+    // Kiểm tra tiêu đề
+    expect(screen.getByText("Subscription Plan")).toBeInTheDocument();
     
-    // Check that there's an "Active Plan" button
-    const activeBtn = screen.getByRole("button", { name: /Active Plan/i });
-    expect(activeBtn).toBeDisabled();
+    // Kiểm tra gói FREE có nhãn "Gói hiện tại"
+    const freeCurrentBtn = screen.getByRole("button", { name: "Gói hiện tại" });
+    expect(freeCurrentBtn).toBeInTheDocument();
+    expect(freeCurrentBtn).toBeDisabled();
     
-    // Check that Pro and Teams have "Upgrade" buttons
-    expect(screen.getByRole("button", { name: /Upgrade to Pro/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Upgrade to Teams/i })).toBeInTheDocument();
+    // Kiểm tra gói PRO có nút "Nâng cấp lên PRO"
+    const proBtn = screen.getByRole("button", { name: "Nâng cấp lên PRO" });
+    expect(proBtn).toBeInTheDocument();
   });
 
-  it("opens upgrade dialog when clicking upgrade button", async () => {
-    renderComponent();
+  it("opens modal and allows sending PRO upgrade request successfully", async () => {
+    render(<SubscriptionSettings />);
     
-    const upgradeProBtn = await screen.findByRole("button", { name: /Upgrade to Pro/i });
-    fireEvent.click(upgradeProBtn);
+    // Nhấp nâng cấp lên PRO
+    const proBtn = screen.getByRole("button", { name: "Nâng cấp lên PRO" });
+    fireEvent.click(proBtn);
     
-    // Dialog opens and shows text
-    expect(await screen.findByText(/You're about to upgrade to the Pro plan/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Confirm Upgrade/i })).toBeInTheDocument();
-  });
-
-  it("updates current plan and saves to localStorage after successful upgrade", async () => {
-    renderComponent();
+    // Hộp thoại quét mã QR hiển thị
+    expect(screen.getByText("Nâng cấp tài khoản")).toBeInTheDocument();
+    expect(screen.getByText("XÁC NHẬN ĐÃ CHUYỂN TIỀN")).toBeInTheDocument();
     
-    const upgradeProBtn = await screen.findByRole("button", { name: /Upgrade to Pro/i });
-    fireEvent.click(upgradeProBtn);
-    
-    const confirmBtn = await screen.findByRole("button", { name: /Confirm Upgrade/i });
+    // Nhấp nút xác nhận thanh toán
+    const confirmBtn = screen.getByRole("button", { name: "XÁC NHẬN ĐÃ CHUYỂN TIỀN" });
     fireEvent.click(confirmBtn);
     
-    // Expect button to show loading
-    expect(screen.getByRole("button", { name: /Upgrading\.\.\./i })).toBeInTheDocument();
-    
-    // Wait for the simulated delay
-    await waitFor(() => {
-      expect(toastModule.toastSuccess).toHaveBeenCalledWith("Upgraded to Pro successfully!");
-    }, { timeout: 2000 });
-    
-    // Check localStorage
-    const saved = localStorage.getItem("idc_subscription");
-    expect(saved).toContain('"currentPlan":"Pro"');
-    
-    // Check UI updated
-    const downgradeFreeBtn = await screen.findByRole("button", { name: /Downgrade to Free/i });
-    expect(downgradeFreeBtn).toBeInTheDocument();
-  });
+    // Đang gửi yêu cầu...
+    expect(screen.getByRole("button", { name: "ĐANG GỬI..." })).toBeInTheDocument();
 
-  it("shows downgrade dialog and returns to Free plan after downgrade", async () => {
-    // Setup initial state as Pro
-    localStorage.setItem("idc_subscription", JSON.stringify({ currentPlan: "Pro", subscribedAt: new Date().toISOString() }));
-    
-    renderComponent();
-    
-    const downgradeFreeBtn = await screen.findByRole("button", { name: /Downgrade to Free/i });
-    fireEvent.click(downgradeFreeBtn);
-    
-    // Dialog opens
-    expect(await screen.findByText(/Downgrade to Free\?/i)).toBeInTheDocument();
-    
-    const confirmDowngradeBtn = screen.getByRole("button", { name: /Downgrade ↓/i });
-    fireEvent.click(confirmDowngradeBtn);
-    
-    // Wait for simulated delay
+    // Chờ alert thông báo thành công từ API mock
     await waitFor(() => {
-      expect(toastModule.toastInfo).toHaveBeenCalledWith("Downgraded to Free plan");
-    }, { timeout: 1500 });
-    
-    // Check localStorage is back to Free
-    const saved = localStorage.getItem("idc_subscription");
-    expect(saved).toContain('"currentPlan":"Free"');
-    
-    // UI is back to Free
-    expect(await screen.findByRole("button", { name: /Active Plan/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /Upgrade to Pro/i })).toBeInTheDocument();
+      expect(mockAlert).toHaveBeenCalledWith(
+        expect.stringContaining("Hệ thống đã ghi nhận! Vui lòng chờ 1-5 phút")
+      );
+    });
   });
 });

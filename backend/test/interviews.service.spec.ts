@@ -19,6 +19,7 @@ jest.mock('../src/rag/rag.service', () => ({
 }));
 
 import { InterviewsService } from '../src/interviews/interviews.service';
+import { User } from '../src/entities/user.entity';
 import { Interview } from '../src/entities/interview.entity';
 import { Message } from '../src/entities/message.entity';
 import { User, UserPlan } from '../src/entities/user.entity';
@@ -74,14 +75,21 @@ describe('InterviewsService (unit)', () => {
     messageRepoMock = mockRepository();
     userRepoMock = mockRepository();
 
+    userRepo = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InterviewsService,
-        { provide: getRepositoryToken(Interview), useFactory: () => interviewRepoMock },
-        { provide: getRepositoryToken(Message), useFactory: () => messageRepoMock },
-        { provide: getRepositoryToken(User), useFactory: () => userRepoMock },
-        { provide: AiService, useValue: aiServiceMock },
-        { provide: RagService, useValue: ragServiceMock },
+        { provide: getRepositoryToken(Interview), useValue: interviewRepo },
+        { provide: getRepositoryToken(Message), useValue: messageRepo },
+        { provide: getRepositoryToken(User), useValue: userRepo },
+        { provide: RagService, useValue: {} },
+        { provide: AiService, useValue: {
+          analyzeCvProfile: jest.fn(),
+        } },
       ],
     }).compile();
 
@@ -339,3 +347,4 @@ describe('InterviewsService (unit)', () => {
     });
   });
 });
+

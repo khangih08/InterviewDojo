@@ -130,4 +130,21 @@ export const handlers = [
       file_url: "https://s3.example.com/file.webm",
     }),
   ),
+
+  // New Upgrade Request Pro API
+  http.post(`${BASE}/interviews/request-pro`, () =>
+    HttpResponse.json({ success: true, message: "Yêu cầu của bạn đã được gửi tới quản trị viên." }),
+  ),
+
+  // New Next Action Plan API
+  http.get(`${BASE}/interviews/next-action/:userId`, () =>
+    HttpResponse.json({
+      motivational_message: "Practice system design today",
+      focus_topics: ["Caching", "Queues", "Indexes"],
+      suggested_track: "Backend Sprint",
+      track_description: "Focus on architecture and data modeling",
+    }),
+  ),
 ];
+
+
