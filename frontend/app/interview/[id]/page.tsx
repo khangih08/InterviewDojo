@@ -41,7 +41,7 @@ export default function InterviewRoomPage() {
     async function checkRoomState() {
       if (!roomId || !user?.id) return;
       try {
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
         const res = await fetch(`${API_BASE}/interviews/${roomId}/state?userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
@@ -93,7 +93,7 @@ export default function InterviewRoomPage() {
         ) : (
           <div className="bg-emerald-500/5 border-b border-white/5 px-4 py-1.5 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 uppercase tracking-tighter">
-              <Zap size={12} fill="currentColor"/>
+              <Zap size={12} fill="currentColor" />
               Luồng phỏng vấn hiện tại: {user?.plan === 'FREE' ? `Còn ${user.credits} lượt` : 'Gói PRO vô hạn'}
             </div>
             {user?.plan === 'FREE' && (

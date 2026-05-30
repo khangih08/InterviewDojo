@@ -27,7 +27,7 @@ export default function InterviewSetupPage() {
       formData.append('file', file);
       formData.append('userId', user.id);
 
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/interviews/start-with-cv`, {
         method: 'POST',
         body: formData,
@@ -51,7 +51,7 @@ export default function InterviewSetupPage() {
     if (!user?.id || isOutOfCredits) return;
     setIsLoading(true);
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
       const res = await fetch(`${API_BASE}/interviews/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -90,9 +90,9 @@ export default function InterviewSetupPage() {
         <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl relative">
           <FileText size={48} className="text-white" />
           {user?.plan === 'FREE' && (
-             <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-[10px] font-black px-2 py-1 rounded-lg text-white shadow-lg">
-                {user.credits} LƯỢT
-             </div>
+            <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-[10px] font-black px-2 py-1 rounded-lg text-white shadow-lg">
+              {user.credits} LƯỢT
+            </div>
           )}
         </div>
 
@@ -131,7 +131,7 @@ export default function InterviewSetupPage() {
               onClick={handleQuickStart} disabled={isLoading}
               className="w-full bg-slate-800 py-4 rounded-2xl font-black text-sm text-white hover:bg-slate-700 transition-all flex items-center justify-center gap-2"
             >
-              {isLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : <><Zap size={16}/> BẮT ĐẦU NHANH</>}
+              {isLoading ? <Loader2 className="animate-spin mx-auto" size={20} /> : <><Zap size={16} /> BẮT ĐẦU NHANH</>}
             </button>
           </>
         )}

@@ -23,7 +23,7 @@ export function SubscriptionSettings() {
   const handleConfirmPayment = async () => {
     setIsSubmitting(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/interviews/request-pro`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/interviews/request-pro`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user?.id }),
@@ -53,7 +53,7 @@ export function SubscriptionSettings() {
       buttonText: "Đang sử dụng",
       isCurrent: user?.plan === "FREE",
       highlight: false,
-      onClick: () => {},
+      onClick: () => { },
     },
     {
       name: "PRO",

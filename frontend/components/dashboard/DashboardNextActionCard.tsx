@@ -19,7 +19,7 @@ export function DashboardNextActionCard() {
     async function fetchNextAction() {
       if (!user?.id) return;
       try {
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
         const role = user?.target_role || "Frontend Developer";
 
         const res = await fetch(`${API_BASE}/interviews/next-action/${user.id}?role=${encodeURIComponent(role)}`);
@@ -44,7 +44,7 @@ export function DashboardNextActionCard() {
     setIsCreating(true);
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
       // Ưu tiên dùng suggested_track của AI làm chủ đề bài thi tiếp theo
       const jobTitle = plan.suggested_track || user.target_role || "Frontend Developer";
 

@@ -16,7 +16,7 @@ vi.mock("@/contexts/auth-context", () => ({
 
 describe("DashboardNextActionCard", () => {
   beforeEach(() => {
-    vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:8000");
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "http://localhost:8000");
   });
 
   it("renders guide content and focus topics from MSW api mock", async () => {

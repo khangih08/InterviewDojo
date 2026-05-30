@@ -21,7 +21,7 @@ export function useInterviewSession(roomId?: string) {
   const audioChunks = useRef<Blob[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/interviews';
+  const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/interviews';
   const USER_ID = user?.id || '';
 
   // [MỚI]: Kiểm tra tương tác thực tế của người dùng
@@ -143,7 +143,7 @@ export function useInterviewSession(roomId?: string) {
                 }
               }
             } catch (e) {
-                console.error("Lỗi parse metadata:", e);
+              console.error("Lỗi parse metadata:", e);
             }
           } else {
             setMessages(prev => {
