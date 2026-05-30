@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowRight, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,9 @@ import {
 type DashboardRecentCardProps = {
   sessions: Session[];
   loading: boolean;
+  onViewReport?: (sessionId: string) => void; // Hàm gọi mở Modal
+  limit?: number; // Giới hạn số lượng hiển thị (dùng cho Dashboard)
+  hideHeader?: boolean; // Ẩn header nếu dùng ở trang History
 };
 
 function getStatusIcon(status: string) {
@@ -48,31 +52,38 @@ function getStatusLabel(status: string) {
 export function DashboardRecentCard({
   sessions,
   loading,
+  onViewReport,
+  limit = 5,
+  hideHeader = false,
 }: DashboardRecentCardProps) {
-  const recentSessions = sessions.slice(0, 5);
+  const router = useRouter();
+  // Nếu không truyền limit (undefined), sẽ hiển thị tất cả
+  const displaySessions = limit ? sessions.slice(0, limit) : sessions;
 
   return (
     <Card className="overflow-hidden border-border/60 bg-card/80 backdrop-blur-sm">
-      <CardHeader>
-        <div className="flex items-center justify-between gap-3">
-          <CardTitle className="flex items-center gap-2 text-sm">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-indigo-500 to-violet-500 text-white shadow-sm">
-              <Clock className="h-3.5 w-3.5" />
-            </div>
-            Recent Practice Sessions
-          </CardTitle>
-          <Link
-            href="/history"
-            className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
-          >
-            View all
-          </Link>
-        </div>
-      </CardHeader>
+      {!hideHeader && (
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-linear-to-br from-indigo-500 to-violet-500 text-white shadow-sm">
+                <Clock className="h-3.5 w-3.5" />
+              </div>
+              Recent Practice Sessions
+            </CardTitle>
+            <Link
+              href="/history"
+              className="text-xs font-medium text-primary transition-colors hover:text-primary/80"
+            >
+              View all
+            </Link>
+          </div>
+        </CardHeader>
+      )}
 
-      <CardContent>
+      <CardContent className={hideHeader ? "p-0" : ""}>
         {loading ? (
-          <div className="space-y-3">
+          <div className="space-y-3 p-4">
             {[0, 1, 2].map((index) => (
               <div
                 key={index}
@@ -94,18 +105,20 @@ export function DashboardRecentCard({
               <span>Loading...</span>
             </div>
           </div>
-        ) : recentSessions.length > 0 ? (
-          <div className="space-y-3">
-            {recentSessions.map((session) => {
+        ) : displaySessions.length > 0 ? (
+          <div className="space-y-3 p-4">
+            {displaySessions.map((session) => {
               const score = getAverageScore(session);
               const tone = getScoreTone(score);
               const category = inferSessionCategory(session.question_content);
 
               return (
-                <Link
+                <button
                   key={session.id}
-                  href={`/result?sessionId=${session.id}`}
-                  className="group flex items-center justify-between gap-4 rounded-2xl border border-border/40 p-4 transition-all duration-200 hover:border-primary/20 hover:bg-accent/30 hover:shadow-sm"
+                  onClick={() =>
+                    onViewReport ? onViewReport(session.id) : router.push("/history")
+                  }
+                  className="group w-full flex items-center justify-between gap-4 rounded-2xl border border-border/40 p-4 transition-all duration-200 hover:border-primary/20 hover:bg-accent/30 hover:shadow-sm text-left"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     {getStatusIcon(session.status)}
@@ -119,13 +132,19 @@ export function DashboardRecentCard({
                           : ""}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(session.created_at).toLocaleDateString("vi-VN")}
+                        {new Date(session.created_at).toLocaleDateString("vi-VN", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric"
+                        })}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <Badge variant="outline" className="rounded-full text-xs">
+                  <div className="flex items-center gap-3 shrink-0">
+                    <Badge variant="outline" className="hidden sm:flex rounded-full text-xs">
                       {category}
                     </Badge>
                     {session.status === "COMPLETED" && (
@@ -140,18 +159,20 @@ export function DashboardRecentCard({
                     </Badge>
                     <ArrowRight className="h-4 w-4 text-muted-foreground/40 transition-transform duration-200 group-hover:translate-x-0.5" />
                   </div>
-                </Link>
+                </button>
               );
             })}
           </div>
         ) : (
-          <EmptyState
-            icon={<Clock className="h-6 w-6" />}
-            title="No practice sessions yet"
-            description="Start with one interview to populate this panel with recent scores and feedback."
-            action={{ label: "Practice now", href: "/questions" }}
-            className="border-border/40"
-          />
+          <div className="p-4">
+            <EmptyState
+              icon={<Clock className="h-6 w-6" />}
+              title="No practice sessions yet"
+              description="Start with one interview to populate this panel with recent scores and feedback."
+              action={{ label: "Practice now", href: "/interview" }}
+              className="border-border/40"
+            />
+          </div>
         )}
       </CardContent>
     </Card>

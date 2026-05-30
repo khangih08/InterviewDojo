@@ -14,7 +14,7 @@ import {
   CircleHelp,
   Video,
   UserCog,
-  BarChart3,
+  History, // [THAY ĐỔI]: Đổi BarChart3 thành History icon
   Settings,
   UserRound,
   ChevronUp,
@@ -38,7 +38,8 @@ const navItems: Array<{
   },
   { href: "/questions", label: "Questions", icon: CircleHelp, tone: "purple" },
   { href: "/interview", label: "Interview", icon: Video, tone: "amber" },
-  { href: "/result", label: "Result", icon: BarChart3, tone: "emerald" },
+  // [THAY ĐỔI]: Cập nhật tab Result thành History
+  { href: "/history", label: "History", icon: History, tone: "emerald" },
   { href: "/admin", label: "Admin", icon: UserCog, tone: "blue" },
 ];
 

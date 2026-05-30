@@ -1,18 +1,17 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "../entities/user.entity";
+import { User, UserPlan } from "../entities/user.entity"; // Đã thêm UserPlan
 import { Repository } from "typeorm";
 import * as bcrypt from 'bcrypt';
 import { UserResponseDto } from "./dto/user-response.dto";
 import { UpdateUserDto } from "./dto/update-user.dto";
-import { use } from "passport";
 import { ChangePasswordDto } from "./dto/change-password.dto";
 
 @Injectable()
 export class UsersService {
     private readonly SALT_ROUND = 10;
     constructor(
-        @InjectRepository(User) 
+        @InjectRepository(User)
         private userRepository: Repository<User>,
     ) {}
 
@@ -26,6 +25,8 @@ export class UsersService {
                 target_role: true,
                 experience_level: true,
                 role: true,
+                plan: true,      // Trả về plan cho FE
+                credits: true,   // Trả về credits cho FE
                 password: false,
             },
         });
@@ -33,6 +34,16 @@ export class UsersService {
             throw new NotFoundException('User not found');
         }
         return user;
+    }
+
+    // --- HÀM NÂNG CẤP GÓI ---
+    async upgradeToPro(userId: string) {
+      const user = await this.userRepository.findOne({ where: { id: userId } });
+      if (!user) throw new NotFoundException('User not found');
+
+      user.plan = UserPlan.PRO;
+      user.credits = 9999; // Coi như vô hạn
+      return await this.userRepository.save(user);
     }
 
     async findAll(): Promise<UserResponseDto[]>{
@@ -44,12 +55,14 @@ export class UsersService {
                 target_role: true,
                 experience_level: true,
                 role: true,
+                plan: true,
+                credits: true,
                 password: false,
             },
         });
     }
 
-    async update(userId: string, updateUserDto: UpdateUserDto,): Promise<UserResponseDto> {
+    async update(userId: string, updateUserDto: UpdateUserDto): Promise<UserResponseDto> {
         const existingUser = await this.userRepository.findOne({
             where: {id: userId},
         });
@@ -78,13 +91,15 @@ export class UsersService {
                 target_role: true,
                 experience_level: true,
                 role: true,
+                plan: true,
+                credits: true,
             },
       });
-      
+
       if (!updatedUser) {
         throw new NotFoundException('Update failed: User not found after saving')};
-        
-        return updatedUser;
+
+        return updatedUser as any;
     }
 
     async changePassword(
@@ -93,7 +108,8 @@ export class UsersService {
     ): Promise<{ message: string }> {
         const { currentPassword, newPassword } = changePasswordDto;
         const user = await this.userRepository.findOne({
-            where: { id: userId }
+            where: { id: userId },
+            select: { password: true, id: true } // Phải select password để so sánh
         });
 
     if (!user) {
@@ -122,7 +138,7 @@ export class UsersService {
       userId ,
       { password: hashedNewPassword }
     );
-    
+
     return { message: 'Password changed successfully' };
 }
 

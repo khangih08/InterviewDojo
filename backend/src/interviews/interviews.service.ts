@@ -1,213 +1,355 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 import { Interview } from '../entities/interview.entity';
 import { Message } from '../entities/message.entity';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import OpenAI from 'openai';
-import * as fs from 'fs';
-import * as path from 'path';
+import { User, UserPlan } from '../entities/user.entity';
+import { AiService } from '../ai/ai.service';
+import { RagService } from '../rag/rag.service';
+import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { EvaluatorAgent } from '../ai/agents/evaluator.agent';
+import { MentorAgent } from '../ai/agents/mentor.agent';
 
 @Injectable()
 export class InterviewsService {
-  private groq: OpenAI;
-  private genAI: GoogleGenerativeAI;
-  private groqApiKey: string;
+  private readonly logger = new Logger(InterviewsService.name);
 
   constructor(
-    @InjectRepository(Interview) private interviewRepo: Repository<Interview>,
-    @InjectRepository(Message) private messageRepo: Repository<Message>,
-  ) {
-    this.groqApiKey = (process.env.GROQ_API_KEY || '').trim();
-    this.groq = new OpenAI({
-      apiKey: this.groqApiKey,
-      baseURL: 'https://api.groq.com/openai/v1',
-    });
+    @InjectRepository(Interview) private readonly interviewRepo: Repository<Interview>,
+    @InjectRepository(Message) private readonly messageRepo: Repository<Message>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    public readonly aiService: AiService,
+    private readonly ragService: RagService,
+  ) {}
 
-    this.genAI = new GoogleGenerativeAI((process.env.Gemini_API_KEY || '').trim());
+  // --- API MỚI: Xử lý yêu cầu nâng cấp ---
+  async requestPro(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    // Đánh dấu user đang chờ duyệt
+    user.is_pending_pro = true;
+    await this.userRepo.save(user);
+
+    // LOG ra console để bạn biết (Trong thực tế có thể gửi Telegram ở đây)
+    this.logger.warn(`[PAYMENT] User ${user.full_name} (${user.email}) vừa gửi xác nhận thanh toán PRO. Nội dung: UPGRADE ${user.id.substring(0, 8).toUpperCase()}`);
+
+    return { success: true, message: 'Yêu cầu của bạn đã được gửi tới quản trị viên.' };
   }
 
-  async getUserInterviews(userId: string) {
-    const interviews = await this.interviewRepo.find({
-      where: { user_id: userId },
+  private async checkAndDeductCredits(userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Người dùng không tồn tại');
+
+    if (user.plan === UserPlan.FREE && user.credits <= 0) {
+      throw new BadRequestException('Bạn đã hết lượt phỏng vấn miễn phí. Vui lòng nâng cấp gói PRO để tiếp tục!');
+    }
+
+    if (user.plan === UserPlan.FREE) {
+      user.credits -= 1;
+      await this.userRepo.save(user);
+    }
+  }
+
+  async getAllInterviewsByUser(userId: string) {
+    const validInterviewIdsQuery = await this.interviewRepo
+      .createQueryBuilder('interview')
+      .select('interview.id')
+      .leftJoin('interview.messages', 'msg')
+      .where('interview.user_id = :userId', { userId })
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('interview.status = :status', { status: 'COMPLETED' })
+            .orWhere('msg.role = :role', { role: 'user' });
+        }),
+      )
+      .groupBy('interview.id')
+      .getMany();
+
+    const ids = validInterviewIdsQuery.map(i => i.id);
+    if (ids.length === 0) return [];
+
+    return await this.interviewRepo
+      .createQueryBuilder('interview')
+      .where('interview.id IN (:...ids)', { ids })
+      .orderBy('interview.created_at', 'DESC')
+      .getMany();
+  }
+
+  async getNextActionPlan(userId: string, targetRole: string = 'Software Engineer') {
+    const lastInterview = await this.interviewRepo.findOne({
+      where: { user_id: userId, status: 'COMPLETED' },
       order: { created_at: 'DESC' },
     });
 
-    return interviews.map((interview) => ({
-      id: interview.id,
-      created_at: interview.created_at,
-      status: 'COMPLETED',
-      question_content: interview.type === 'TARGETED' ? 'Phỏng vấn theo CV' : 'Phỏng vấn tự do',
-      ai_analysis: {
-        technical_score: 85,
-        communication_score: 80,
-        feedback: 'Good',
-      },
-    }));
-  }
+    const mentorAgent = new MentorAgent(this.aiService['model']);
 
-  async getInterviewById(id: string, userId: string) {
-    const interview = await this.interviewRepo.findOne({
-      where: { id, user_id: userId },
-    });
-
-    if (!interview) {
-      throw new BadRequestException('Interview not found');
+    if (!lastInterview || !lastInterview.final_report) {
+      return {
+        motivational_message: "Hành trình ngàn dặm bắt đầu từ một bước chân. Hãy làm bài phỏng vấn đầu tiên!",
+        focus_topics: ["Lý thuyết cơ bản", "Thực hành Code", "Kỹ năng mềm"],
+        suggested_track: `${targetRole} Starter Track`,
+        track_description: "Bài kiểm tra đánh giá năng lực tổng quan để AI lên lộ trình cho bạn."
+      };
     }
 
+    const plan = await mentorAgent.invoke(
+      targetRole,
+      lastInterview.final_report,
+      lastInterview.average_score
+    );
+
+    return plan;
+  }
+
+  async startNewInterview(userId: string, jobTitle: string = 'Frontend Developer') {
+    await this.checkAndDeductCredits(userId);
+
+    const newInterview = this.interviewRepo.create({
+      user_id: userId,
+      status: 'IN_PROGRESS',
+      current_phase: 'THEORY',
+      job_title: jobTitle,
+    });
+
+    const savedInterview = await this.interviewRepo.save(newInterview);
+
+    const greetingMsg = `Chào bạn! Mình đã sẵn sàng phỏng vấn bạn cho vị trí ${jobTitle}. Bất cứ khi nào bạn sẵn sàng, hãy gõ "Bắt đầu" nhé!`;
+    await this.messageRepo.save({
+      interview_id: savedInterview.id,
+      role: 'assistant',
+      content: greetingMsg,
+      phase: 'THEORY'
+    });
+
+    return { id: savedInterview.id, jobTitle, greeting: greetingMsg };
+  }
+
+  async startWithCv(userId: string, fileBuffer: Buffer) {
+    await this.checkAndDeductCredits(userId);
+
+    const blob = new Blob([new Uint8Array(fileBuffer)], { type: 'application/pdf' });
+    const loader = new PDFLoader(blob, { splitPages: false });
+    const docs = await loader.load();
+
+    const cvText = docs.map(doc => doc.pageContent).join('\n').replace(/\s+/g, ' ').trim();
+    if (!cvText || cvText.length < 10) {
+      throw new BadRequestException('Không thể đọc được nội dung từ file PDF này.');
+    }
+
+    const cvProfile = await this.aiService.analyzeCvProfile(cvText);
+
+    const newInterview = this.interviewRepo.create({
+      user_id: userId,
+      status: 'IN_PROGRESS',
+      current_phase: 'THEORY',
+      job_title: cvProfile.job_title,
+      experience_level: cvProfile.experience_level,
+      cv_text: cvText
+    });
+
+    const savedInterview = await this.interviewRepo.save(newInterview);
+    await this.ragService.indexCv(userId, savedInterview.id, cvText);
+
+    const greetingMsg = `Chào bạn! Mình đã đọc CV của bạn và sẵn sàng phỏng vấn cho vị trí ${cvProfile.job_title}. Chúng ta bắt đầu nhé!`;
+    await this.messageRepo.save({
+      interview_id: savedInterview.id,
+      role: 'assistant',
+      content: greetingMsg,
+      phase: 'THEORY'
+    });
+
+    return { id: savedInterview.id, jobTitle: cvProfile.job_title, greeting: greetingMsg };
+  }
+
+  async getInterviewState(interviewId: string, userId: string) {
+    const interview = await this.interviewRepo.findOne({ where: { id: interviewId, user_id: userId } });
+    if (!interview) throw new NotFoundException('Không tìm thấy phiên phỏng vấn này.');
+
+    const history = await this.messageRepo.find({ where: { interview_id: interviewId }, order: { created_at: 'ASC' } });
+
     return {
-      id: interview.id,
-      created_at: interview.created_at,
-      status: 'COMPLETED',
-      question_content: interview.type === 'TARGETED' ? 'Phỏng vấn theo CV' : 'Phỏng vấn tự do',
-      ai_analysis: {
-        technical_score: 85,
-        communication_score: 80,
-        feedback: 'Good',
-      },
+      interviewId: interview.id,
+      jobTitle: interview.job_title,
+      currentPhase: interview.current_phase,
+      status: interview.status,
+      lastCode: interview.last_code,
+      chatHistory: history.map(msg => ({
+        id: msg.id, role: msg.role, content: msg.content, phase: msg.phase, score: msg.score
+      }))
     };
   }
 
-  async startInterview(type: string, userId: string, cvText?: string, jdText?: string) {
-    const interview = this.interviewRepo.create({
-      user_id: userId,
-      type: type as 'FREE' | 'TARGETED',
-      cv_text: cvText,
-      job_description: jdText,
-    });
-    const savedInterview = await this.interviewRepo.save(interview);
+  async *processUserMessageStream(
+    interviewId: string,
+    userId: string,
+    userMessage: string,
+    activeTab: 'THEORY' | 'CODING' | 'EVALUATION',
+    codeSnippet: string,
+    terminalOutput: string = '',
+    emotion: string = 'neutral'
+  ) {
+    const interview = await this.interviewRepo.findOne({ where: { id: interviewId, user_id: userId } });
+    if (!interview) throw new NotFoundException('Không tìm thấy phiên phỏng vấn');
 
-    let systemPrompt = '';
-    let firstAiGreeting = '';
-
-    if (type === 'FREE') {
-      systemPrompt = `
-        Bạn là một chuyên gia phỏng vấn kỹ thuật (Technical Interviewer) cấp cao trong lĩnh vực IT (Software Engineering).
-        Nhiệm vụ của bạn là phỏng vấn ứng viên để đánh giá năng lực lập trình, tư duy hệ thống (System Design), và kiến thức công nghệ.
-
-        Quy tắc:
-        1. Hỏi ứng viên xem họ muốn phỏng vấn vị trí gì (Frontend, Backend, DevOps, Mobile...) và tech stack nào.
-        2. Dựa vào vị trí đó, đưa ra các câu hỏi chuyên sâu từ lý thuyết cơ bản đến các tình huống thực tế khó (tránh hỏi quá hàn lâm).
-        3. QUAN TRỌNG: Chỉ hỏi MỖI LẦN 1 CÂU DUY NHẤT. Tuyệt đối không hỏi dồn dập nhiều câu cùng lúc.
-        4. Chờ ứng viên trả lời, nhận xét ngắn gọn đúng sai, rồi mới hỏi câu tiếp theo. Giao tiếp tự nhiên, ngắn gọn như người thật.
-      `;
-      firstAiGreeting = 'Chào bạn! Tôi là Technical Interviewer. Hôm nay bạn muốn chúng ta luyện tập phỏng vấn cho vị trí IT nào (ví dụ: ReactJS Developer, Backend Nodejs, Data Engineer...) và mức độ là Fresher, Junior hay Senior?';
-
-    } else {
-      systemPrompt = `
-        Bạn là Giám đốc Kỹ thuật (CTO) đang trực tiếp phỏng vấn ứng viên.
-        Dưới đây là tài liệu của ứng viên:
-        ---
-        YÊU CẦU CÔNG VIỆC (JD): ${jdText || 'Không có thông tin JD cụ thể'}
-        ---
-        HỒ SƠ ỨNG VIÊN (CV): ${cvText || 'Không đọc được CV'}
-        ---
-
-        Nhiệm vụ của bạn:
-        1. SOI KỸ CV: Đừng hỏi chung chung. Hãy tìm các dự án, công nghệ, hoặc kinh nghiệm mà ứng viên ghi trong CV để đặt câu hỏi xoáy sâu (ví dụ: "Trong CV bạn có ghi dùng Redis cho dự án X, bạn đã giải quyết vấn đề cache invalidation thế nào?").
-        2. ĐỐI CHIẾU JD: Đặt các câu hỏi tình huống để xem ứng viên có đáp ứng được các kỹ năng yêu cầu trong JD hay không.
-        3. QUAN TRỌNG NHẤT: Bắt buộc chỉ được hỏi MỖI LẦN 1 CÂU DUY NHẤT. Phải đợi ứng viên trả lời xong mới được nhận xét và hỏi câu tiếp theo.
-        4. Giữ thái độ chuyên nghiệp, sắc sảo của một người làm kỹ thuật lâu năm. Phản hồi ngắn gọn, đi thẳng vào vấn đề.
-      `;
-      firstAiGreeting = 'Chào bạn! Tôi đã đọc kỹ CV của bạn và đối chiếu với JD vị trí đang tuyển. Hồ sơ của bạn có một vài điểm khá thú vị. Để bắt đầu, bạn hãy chọn một dự án kỹ thuật trong CV mà bạn tâm đắc nhất và chia sẻ về vai trò của mình trong đó nhé?';
+    if (interview.status === 'COMPLETED') {
+      throw new BadRequestException('Phiên phỏng vấn này đã kết thúc, không thể chat thêm.');
     }
 
-    await this.messageRepo.save([
-      { interview_id: savedInterview.id, role: 'system' as any, content: systemPrompt },
-      { interview_id: savedInterview.id, role: 'assistant' as any, content: firstAiGreeting }
-    ]);
+    if (activeTab === 'CODING' && codeSnippet !== undefined) {
+      interview.last_code = codeSnippet;
+      await this.interviewRepo.save(interview);
+    }
 
-    return { success: true, interviewId: savedInterview.id, firstMessage: firstAiGreeting };
+    if (userMessage && userMessage.trim().length > 0) {
+      await this.messageRepo.save({
+        interview_id: interviewId,
+        role: 'user',
+        content: userMessage,
+        score: 0,
+        phase: activeTab
+      });
+    }
+
+    const rawHistory = await this.messageRepo.find({
+      where: { interview_id: interviewId },
+      order: { created_at: 'ASC' }
+    });
+
+    const aiGenerator = this.aiService.processInterviewTurnStream(
+      userId,
+      interviewId,
+      userMessage,
+      { target_role: interview.job_title, experience_level: interview.experience_level || 'Senior' },
+      rawHistory.map(msg => ({ role: msg.role as any, content: msg.content })),
+      activeTab,
+      codeSnippet,
+      terminalOutput,
+      emotion
+    );
+
+    let aiFinalData: any = null;
+    let fullReply = '';
+
+    while (true) {
+      const { value, done } = await aiGenerator.next();
+      if (done) {
+        aiFinalData = value;
+        break;
+      }
+      fullReply += value;
+      yield value;
+    }
+
+    const nextAction = aiFinalData?.next_action;
+    let finalPhase = activeTab;
+
+    if (nextAction === 'SWITCH_TO_CODING' && interview.current_phase !== 'CODING') {
+      interview.current_phase = 'CODING';
+      finalPhase = 'CODING';
+      await this.interviewRepo.save(interview);
+    } else if (nextAction === 'END_INTERVIEW' || activeTab === 'EVALUATION') {
+      interview.status = 'COMPLETED';
+      interview.current_phase = 'EVALUATION';
+      finalPhase = 'EVALUATION';
+      await this.interviewRepo.save(interview);
+    }
+
+    await this.messageRepo.save({
+      interview_id: interviewId,
+      role: 'assistant',
+      content: fullReply,
+      phase: finalPhase
+    });
+
+    yield `__METADATA__${JSON.stringify({ current_phase: finalPhase })}`;
   }
 
-  async processAudio(interviewId: string, file: Express.Multer.File) {
+  async getSummaryReport(interviewId: string) {
     const interview = await this.interviewRepo.findOne({ where: { id: interviewId } });
-    if (!interview) throw new BadRequestException('Phỏng vấn không tồn tại!');
+    if (!interview) throw new NotFoundException('Không tìm thấy phiên phỏng vấn.');
 
-    if (!this.groqApiKey) throw new BadRequestException('Thiáº¿u GROQ_API_KEY trÃªn backend.');
-    let audioFilePath = '';
+    const fullHistory = await this.messageRepo.find({
+      where: { interview_id: interviewId },
+      order: { created_at: 'ASC' }
+    });
 
-    try {
-      let ext = 'webm';
-      if (file.originalname && file.originalname.includes('.')) {
-        ext = file.originalname.split('.').pop()?.toLowerCase() || 'webm';
-      }
-
-      const validExts = ['flac', 'mp3', 'mp4', 'mpeg', 'mpga', 'm4a', 'ogg', 'opus', 'wav', 'webm'];
-      if (!validExts.includes(ext)) {
-        ext = 'webm';
-      }
-
-      audioFilePath = path.join(process.cwd(), 'uploads', `temp_${Date.now()}.${ext}`);
-      fs.mkdirSync(path.dirname(audioFilePath), { recursive: true });
-
-      if (file.buffer?.length) {
-        fs.writeFileSync(audioFilePath, file.buffer);
-      } else if (file.path) {
-        fs.copyFileSync(file.path, audioFilePath);
-      } else {
-        throw new Error('File âm thanh bị lỗi cấu trúc.');
-      }
-
-      const audioStats = fs.statSync(audioFilePath);
-      if (!audioStats.size) {
-        throw new Error('File âm thanh rỗng.');
-      }
-
-      const transcription = await this.groq.audio.transcriptions.create({
-        file: fs.createReadStream(audioFilePath),
-        model: 'whisper-large-v3',
-        language: 'vi',
-      });
-      const userText = transcription.text || '';
-
-      if (!userText || userText.trim() === "") {
-        throw new Error('Không nhận diện được giọng nói.');
-      }
-
-      const history = await this.messageRepo.find({
-        where: { interview_id: interviewId },
-        order: { created_at: 'ASC' }
-      });
-
-      const messages = history.map(m => ({
-        role: m.role as 'system' | 'user' | 'assistant',
-        content: m.content
-      }));
-      messages.push({ role: 'user', content: userText });
-
-      const completion = await this.groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages: messages,
-      });
-
-      const aiResponse = completion.choices[0]?.message?.content || '';
-
-      await this.messageRepo.save([
-        { interview_id: interviewId, role: 'user' as any, content: userText },
-        { interview_id: interviewId, role: 'assistant' as any, content: aiResponse }
-      ]);
-
-      return { success: true, userText, aiResponse };
-
-    } catch (error: any) {
-      console.error('Lỗi AI:', error);
-      if (error?.status === 401) {
-        throw new BadRequestException('GROQ_API_KEY khong hop le hoac da het hieu luc. Hay cap nhat key trong backend/.env va khoi dong lai backend.');
-      }
-      const message =
-        typeof error?.message === 'string' && error.message.trim() !== ''
-          ? error.message
-          : 'AI đang bận hoặc không nghe rõ, thử lại sau!';
-      throw new BadRequestException(message);
-    } finally {
-      if (audioFilePath && fs.existsSync(audioFilePath)) {
-        fs.unlinkSync(audioFilePath);
-      }
-
-      if (file.path && file.path !== audioFilePath && fs.existsSync(file.path)) {
-        fs.unlinkSync(file.path);
-      }
+    if (!fullHistory.some(m => m.role === 'user')) {
+      throw new BadRequestException('Không thể xuất báo cáo cho bài thi chưa có tương tác.');
     }
+
+    const hasData = interview.radar_data &&
+                    Array.isArray(interview.radar_data) &&
+                    interview.radar_data.some(value => value !== 0);
+
+    if (interview.status === 'COMPLETED' && hasData) {
+      return {
+        avgScore: interview.average_score,
+        theory: interview.score_theory,
+        coding: interview.score_coding,
+        softSkills: interview.score_softskills,
+        radarData: interview.radar_data,
+        learningPath: interview.learning_path,
+        summary: interview.final_report,
+        chatHistory: fullHistory
+      };
+    }
+
+    const evaluator = new EvaluatorAgent(this.aiService['model']);
+    const reportData = await evaluator.invoke(
+      fullHistory,
+      { target_role: interview.job_title },
+      interview.last_code
+    );
+
+    interview.average_score = reportData.average_score;
+    interview.score_theory = reportData.breakdown.theory;
+    interview.score_coding = reportData.breakdown.coding;
+    interview.score_softskills = reportData.breakdown.soft_skills;
+    interview.radar_data = reportData.radar_chart;
+    interview.learning_path = reportData.learning_path;
+    interview.final_report = reportData.summary_markdown;
+    interview.status = 'COMPLETED';
+    interview.current_phase = 'EVALUATION';
+
+    await this.interviewRepo.save(interview);
+
+    return {
+      avgScore: interview.average_score,
+      theory: interview.score_theory,
+      coding: interview.score_coding,
+      softSkills: interview.score_softskills,
+      radarData: interview.radar_data,
+      learningPath: interview.learning_path,
+      summary: interview.final_report,
+      chatHistory: fullHistory
+    };
+  }
+
+  async processAudioMessage(
+    interviewId: string,
+    userId: string,
+    fileBuffer: Buffer,
+    filename: string,
+    activeTab: 'THEORY' | 'CODING' | 'EVALUATION',
+    codeSnippet: string,
+    terminalOutput: string = '',
+    emotion: string = 'neutral'
+  ) {
+    const transcribedText = await this.aiService.transcribeAudio(fileBuffer, filename);
+    if (!transcribedText || transcribedText.trim().length === 0) {
+      return { reply: "Mình không nghe rõ, bạn nói lại được không?", recognizedText: "" };
+    }
+    const stream = this.processUserMessageStream(interviewId, userId, transcribedText, activeTab, codeSnippet, terminalOutput, emotion);
+    let fullReply = "";
+    for await (const chunk of stream) {
+      if (!chunk.startsWith('__METADATA__')) fullReply += chunk;
+    }
+    const updatedInterview = await this.interviewRepo.findOne({ where: { id: interviewId } });
+    return {
+      recognizedText: transcribedText,
+      reply: fullReply,
+      current_phase: updatedInterview?.current_phase || activeTab
+    };
   }
 }

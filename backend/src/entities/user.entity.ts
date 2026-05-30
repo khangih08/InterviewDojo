@@ -18,6 +18,11 @@ export enum Role {
   ADMIN = 'admin',
 }
 
+export enum UserPlan {
+  FREE = 'FREE',
+  PRO = 'PRO',
+}
+
 export enum ExperienceLevel {
   INTERN = 'intern',
   FRESHER = 'fresher',
@@ -59,6 +64,21 @@ export class User {
     })
     role!: Role;
 
+    @Column({
+        type: 'enum',
+        enum: UserPlan,
+        default: UserPlan.FREE,
+    })
+    plan!: UserPlan;
+
+    @Column({ type: 'int', default: 5 })
+    credits!: number;
+
+    // --- PHẦN THÊM MỚI: TRẠNG THÁI CHỜ DUYỆT THANH TOÁN ---
+    @Column({ default: false })
+    is_pending_pro!: boolean;
+    // --------------------------------------------------
+
     @Column({ default: false })
     is_google_user!: boolean;
 
@@ -76,4 +96,4 @@ export class User {
 
     @Column({ type: 'text', nullable: true })
     refreshToken!: string | null;
-};
+}
