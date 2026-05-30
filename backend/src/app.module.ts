@@ -51,6 +51,8 @@ import { InterviewsService } from './interviews/interviews.service';
           entities: [User, Category, Tag, TagRelation, Question, Session, Interview, Message],
           synchronize: true,
           logging: true,
+          retryAttempts: process.env.NODE_ENV === 'test' ? 1 : 10,
+          retryDelay: 1000,
         };
       },
     }),
