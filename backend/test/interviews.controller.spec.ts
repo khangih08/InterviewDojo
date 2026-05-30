@@ -18,8 +18,9 @@ import { InterviewsController } from '../src/interviews/interviews.controller';
 
 describe('InterviewsController', () => {
   const interviewsService = {
-    startInterview: jest.fn(),
-    processAudio: jest.fn(),
+    startNewInterview: jest.fn(),
+    processAudioMessage: jest.fn(),
+    requestPro: jest.fn(),
   };
 
   let controller: InterviewsController;
@@ -29,96 +30,46 @@ describe('InterviewsController', () => {
     controller = new InterviewsController(interviewsService as any);
   });
 
-  it('starts a FREE interview without CV text', async () => {
-    interviewsService.startInterview.mockResolvedValue({ success: true });
+  it('starts a new interview successfully', async () => {
+    interviewsService.startNewInterview.mockResolvedValue({ id: 'i-1', jobTitle: 'Frontend', greeting: 'Hi' });
 
     await expect(
-      controller.startInterview({ type: 'FREE' }, 'u-1'),
-    ).resolves.toEqual({ success: true });
-    expect(interviewsService.startInterview).toHaveBeenCalledWith(
-      'FREE',
+      controller.startInterview('u-1', 'Frontend Developer'),
+    ).resolves.toEqual({ id: 'i-1', jobTitle: 'Frontend', greeting: 'Hi' });
+    expect(interviewsService.startNewInterview).toHaveBeenCalledWith(
       'u-1',
-      '',
-      undefined,
+      'Frontend Developer',
     );
   });
 
-  it('throws when TARGETED interview is missing CV file', async () => {
+  it('throws when requestPro is missing userId', async () => {
     await expect(
-      controller.startInterview({ type: 'TARGETED' }, 'u-1'),
+      controller.requestPro(undefined as any),
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('extracts CV text from file buffer for TARGETED interview', async () => {
-    interviewsService.startInterview.mockResolvedValue({ success: true });
-    mockExtractPdf.mockResolvedValue({ text: 'cv content' });
-
-    await controller.startInterview(
-      { type: 'TARGETED', jobDescription: 'jd' },
-      'u-1',
-      { buffer: Buffer.from('pdf') } as Express.Multer.File,
-    );
-
-    expect(mockExtractPdf).toHaveBeenCalled();
-    expect(interviewsService.startInterview).toHaveBeenCalledWith(
-      'TARGETED',
-      'u-1',
-      'cv content',
-      'jd',
-    );
+  it('delegates requestPro to service', async () => {
+    interviewsService.requestPro.mockResolvedValue({ success: true });
+    await expect(controller.requestPro('u-1')).resolves.toEqual({ success: true });
+    expect(interviewsService.requestPro).toHaveBeenCalledWith('u-1');
   });
 
-  it('reads file path when uploaded file is stored on disk', async () => {
-    (fs.readFileSync as jest.Mock).mockReturnValue(Buffer.from('pdf'));
-    interviewsService.startInterview.mockResolvedValue({ success: true });
-    mockExtractPdf.mockResolvedValue({ text: 'cv from path' });
-
-    await controller.startInterview(
-      { type: 'TARGETED' },
-      'u-1',
-      { path: 'tmp/cv.pdf' } as Express.Multer.File,
-    );
-
-    expect(fs.readFileSync).toHaveBeenCalledWith('tmp/cv.pdf');
-    expect(interviewsService.startInterview).toHaveBeenCalledWith(
-      'TARGETED',
-      'u-1',
-      'cv from path',
-      undefined,
-    );
-  });
-
-  it('throws when pdf extraction fails', async () => {
-    mockExtractPdf.mockRejectedValue(new Error('parse failed'));
-
-    await expect(
-      controller.startInterview(
-        { type: 'TARGETED' },
-        'u-1',
-        { buffer: Buffer.from('pdf') } as Express.Multer.File,
-      ),
-    ).rejects.toThrow(BadRequestException);
-  });
-
-  it('throws when uploadAudio is missing interview id', async () => {
-    await expect(
-      controller.uploadAudio(undefined as any, {} as Express.Multer.File),
-    ).rejects.toThrow(BadRequestException);
-  });
-
-  it('throws when uploadAudio is missing file', async () => {
-    await expect(controller.uploadAudio('i-1', undefined as any)).rejects.toThrow(
+  it('throws when chatWithAudio is missing file', async () => {
+    await expect(controller.chatWithAudio('i-1', undefined as any, 'u-1', 'THEORY')).rejects.toThrow(
       BadRequestException,
     );
   });
 
-  it('delegates uploadAudio to interviewsService.processAudio', async () => {
-    interviewsService.processAudio.mockResolvedValue({ success: true });
-    const file = { originalname: 'answer.webm' } as Express.Multer.File;
+  it('delegates chatWithAudio to interviewsService.processAudioMessage', async () => {
+    interviewsService.processAudioMessage.mockResolvedValue({ recognizedText: 'hello', reply: 'hi', current_phase: 'THEORY' });
+    const file = { buffer: Buffer.from('audio'), originalname: 'answer.webm' } as Express.Multer.File;
 
-    await expect(controller.uploadAudio('i-1', file)).resolves.toEqual({
-      success: true,
+    await expect(controller.chatWithAudio('i-1', file, 'u-1', 'THEORY')).resolves.toEqual({
+      recognizedText: 'hello',
+      reply: 'hi',
+      current_phase: 'THEORY',
     });
-    expect(interviewsService.processAudio).toHaveBeenCalledWith('i-1', file);
+    expect(interviewsService.processAudioMessage).toHaveBeenCalledWith('i-1', 'u-1', file.buffer, file.originalname, 'THEORY', '', '', 'neutral');
   });
 });
+
