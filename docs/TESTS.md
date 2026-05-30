@@ -1,6 +1,6 @@
 # Tests — Important Suites
 
-This file lists the most important test suites and where to run them.
+This file lists the most important test suites and where to runs them.
 
 ## Frontend
 
