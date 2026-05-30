@@ -1,4 +1,4 @@
-import { ExperienceLevel, JobRole, Role } from "src/entities/user.entity";
+import { ExperienceLevel, JobRole, Role, UserPlan } from "src/entities/user.entity";
 
 export class UserResponseDto {
     id: string;
@@ -12,4 +12,8 @@ export class UserResponseDto {
     experience_level: ExperienceLevel;
 
     role: Role;
+
+    plan: UserPlan;
+
+    credits: number;
 }

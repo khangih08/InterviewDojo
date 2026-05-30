@@ -1,7 +1,8 @@
 "use client";
 
-import { UserRound, Mail, Briefcase, GraduationCap, MapPin, Calendar, ShieldCheck } from "lucide-react";
+import { UserRound, Mail, Briefcase, GraduationCap, MapPin, Calendar, Edit3, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export default function ProfilePage() {
@@ -20,8 +21,8 @@ export default function ProfilePage() {
 
         {/* Profile Content */}
         <div className="px-8 pb-8 relative">
-          {/* Avatar */}
-          <div className="flex items-end -mt-16 mb-6">
+          {/* Avatar & Edit Button */}
+          <div className="flex justify-between items-end -mt-16 mb-6">
             <div className="relative group cursor-pointer">
               <div className="h-32 w-32 rounded-3xl bg-white dark:bg-slate-800 p-2 shadow-lg ring-4 ring-white/50 dark:ring-slate-900/50 relative z-10 overflow-hidden transition-transform duration-300 group-hover:scale-105">
                 <div className="w-full h-full rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-50 dark:from-violet-900/40 dark:to-indigo-900/40 flex items-center justify-center text-violet-600 dark:text-violet-400">
@@ -31,6 +32,11 @@ export default function ProfilePage() {
               {/* Optional glow behind avatar */}
               <div className="absolute inset-0 rounded-3xl bg-violet-400/30 blur-xl z-0 animate-pulse-glow" />
             </div>
+            
+            <Button variant="outline" className="hidden sm:flex gap-2 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
+              <Edit3 className="w-4 h-4" />
+              Chỉnh sửa hồ sơ
+            </Button>
           </div>
 
           {/* User Info */}

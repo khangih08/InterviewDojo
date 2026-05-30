@@ -6,6 +6,7 @@ const protectedPrefixes = [
   "/dashboard",
   "/questions",
   "/interview",
+  "/admin",
   "/sessions",
   "/google-onboarding",
 ];
@@ -50,6 +51,7 @@ export const config = {
     "/dashboard/:path*",
     "/questions/:path*",
     "/interview/:path*",
+    "/admin/:path*",
     "/sessions/:path*",
     "/google-onboarding",
   ],

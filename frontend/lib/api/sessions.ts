@@ -48,13 +48,14 @@ export async function completeSession(
 // Interview sessions API - for practice history
 export const sessionsApi = {
   // GET /sessions - get interview sessions
-  getAllSessions: async (): Promise<Session[]> => {
+  // [ĐÃ CẬP NHẬT]: Thêm userId và gắn vào URL
+  getAllSessions: async (userId: string): Promise<Session[]> => {
     if (shouldUseMocks()) {
       return getDemoInterviewSessions();
     }
 
     try {
-      const response = await http.get<Session[]>("/interviews");
+      const response = await http.get<Session[]>(`/interviews?userId=${userId}`);
       return response.data;
     } catch (error) {
       throw new Error(toApiError(error).message);

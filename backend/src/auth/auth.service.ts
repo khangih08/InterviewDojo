@@ -90,17 +90,9 @@ export class AuthService {
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const payload = { sub: userId, email, role };
     const refreshId = randomBytes(16).toString('hex');
-    const refreshSecret =
-      this.configService.get<string>('JWT_REFRESH_SECRET') ??
-      this.configService.get<string>('JWT_SECRET') ??
-      'defaultsecret2026';
-
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, { expiresIn: '15m' }),
-      this.jwtService.signAsync(
-        { ...payload, refreshId },
-        { expiresIn: '7d', secret: refreshSecret },
-      ),
+      this.jwtService.signAsync({ ...payload, refreshId }, { expiresIn: '7d' }),
     ]);
 
     return { accessToken, refreshToken };
@@ -111,10 +103,7 @@ export class AuthService {
     userId: string,
     refreshToken: string,
   ): Promise<void> {
-    const hashedRefreshToken = await bcrypt.hash(refreshToken, this.SALT_ROUNDS);
-    await this.UserRepository.update(userId, {
-      refreshToken: hashedRefreshToken,
-    });
+    await this.UserRepository.update(userId, { refreshToken });
   }
 
   async refreshToken(userId: string): Promise<AuthResponseDto> {
@@ -612,17 +601,5 @@ export class AuthService {
         'Unable to send verification email. Please try again later.',
       );
     }
-  }
-
-  async cleanupTestUser(email: string): Promise<{ message: string }> {
-    if (!email.startsWith('real-test-')) {
-      throw new BadRequestException('Only test users can be cleaned up.');
-    }
-    const user = await this.UserRepository.findOne({ where: { email } });
-    if (user) {
-      await this.UserRepository.delete({ id: user.id });
-      return { message: `Test user ${email} successfully cleaned up` };
-    }
-    return { message: `Test user ${email} not found` };
   }
 }

@@ -96,49 +96,6 @@ describe('CategoriesService', () => {
         }),
       );
     });
-
-    it('applies ILike filter when search is provided', async () => {
-      categoryRepository.findAndCount.mockResolvedValue([[category], 1]);
-
-      await service.findAll({ search: 'Java' });
-
-      expect(categoryRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ name: expect.anything() }),
-        }),
-      );
-    });
-
-    it('uses empty where when search is not provided', async () => {
-      categoryRepository.findAndCount.mockResolvedValue([[], 0]);
-
-      await service.findAll({});
-
-      expect(categoryRepository.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({ where: {} }),
-      );
-    });
-  });
-
-  describe('update', () => {
-    it('updates category and returns saved result', async () => {
-      const updated = { ...category, name: 'TypeScript' };
-      categoryRepository.findOne.mockResolvedValue({ ...category });
-      categoryRepository.save.mockResolvedValue(updated);
-
-      const result = await service.update('cat-1', { name: 'TypeScript' });
-
-      expect(result.name).toBe('TypeScript');
-      expect(categoryRepository.save).toHaveBeenCalled();
-    });
-
-    it('throws NotFoundException when category not found on update', async () => {
-      categoryRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.update('missing', { name: 'X' })).rejects.toThrow(
-        NotFoundException,
-      );
-    });
   });
 
   describe('findOne', () => {

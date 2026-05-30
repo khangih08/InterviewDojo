@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Roboto, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { GlobalToaster } from "@/components/ui/global-toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/auth-context"; // [THÊM 1]: Import AuthProvider
 import "./globals.css";
 
-const roboto = Roboto({
-  weight: ["300", "400", "500", "700"],
-  variable: "--font-roboto",
-  subsets: ["latin", "vietnamese"],
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
@@ -38,16 +38,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${roboto.variable} ${geistMono.variable} scroll-smooth`} suppressHydrationWarning>
-      <body className="antialiased">
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <GlobalToaster />
+          {/* [THÊM 2]: Bọc AuthProvider quanh children */}
+          <AuthProvider>
+            {children}
+            <GlobalToaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

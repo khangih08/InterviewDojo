@@ -67,9 +67,15 @@ function LoginPageContent() {
       });
       saveUser(result.user, form.remember);
 
+      // --- LOGIC ĐIỀU HƯỚNG MỚI ---
       const next = searchParams.get("next");
-      router.push(next || "/dashboard");
+      if (result.user?.role === 'admin') {
+        router.push("/admin"); // Nếu là admin, ưu tiên vào quản trị
+      } else {
+        router.push(next || "/dashboard"); // User thường vào dashboard
+      }
       router.refresh();
+      // ----------------------------
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : "";
       const normalizedMessage =
@@ -105,6 +111,8 @@ function LoginPageContent() {
       saveUser(result.user, form.remember);
 
       const next = searchParams.get("next") || "/dashboard";
+
+      // Nếu là Google và cần cập nhật profile
       if (result.requiresProfileCompletion) {
         const params = new URLSearchParams({
           next,
@@ -115,8 +123,14 @@ function LoginPageContent() {
         return;
       }
 
-      router.push(next);
+      // --- LOGIC ĐIỀU HƯỚNG MỚI CHO GOOGLE ---
+      if (result.user?.role === 'admin') {
+        router.push("/admin");
+      } else {
+        router.push(next);
+      }
       router.refresh();
+      // ---------------------------------------
     } catch (err) {
       const rawMessage = err instanceof Error ? err.message : "";
       setGoogleError(rawMessage || "Google login failed. Please try again.");

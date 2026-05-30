@@ -21,7 +21,20 @@ import {
   logoutApi,
   register as registerApi,
 } from "@/lib/api/auth";
-import type { AuthRegisterRequest, User } from "@/lib/api/types";
+import type { AuthRegisterRequest } from "@/lib/api/types";
+
+// ĐỊNH NGHĨA USER CHUẨN ĐỂ DÙNG TOÀN APP
+export type User = {
+  id: string;
+  email: string;
+  full_name: string;
+  role: 'user' | 'admin'; // Thêm mới để phân quyền
+  plan: 'FREE' | 'PRO';
+  credits: number;
+  is_pending_pro: boolean; // Thêm mới để check trạng thái thanh toán
+  target_role?: string;
+  experience_level?: string;
+};
 
 type AuthContextValue = {
   user: User | null;
@@ -59,11 +72,9 @@ function subscribeAuthStore(onStoreChange: () => void) {
   if (typeof window === "undefined") {
     return () => {};
   }
-
   const handleStorage = () => {
     onStoreChange();
   };
-
   window.addEventListener("storage", handleStorage);
   return () => {
     window.removeEventListener("storage", handleStorage);
@@ -86,7 +97,6 @@ function getClientAuthSnapshot(): AuthSnapshot {
     token,
     hydrated: true,
   };
-
   return cachedSnapshot;
 }
 
@@ -114,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshToken: response.refreshToken,
         remember: input.remember,
       });
+      // Response từ API bây giờ sẽ có đủ role, plan, credits, is_pending_pro
       saveUser(response.user, input.remember);
       window.dispatchEvent(new Event("storage"));
     },

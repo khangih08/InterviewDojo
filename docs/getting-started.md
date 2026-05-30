@@ -32,8 +32,8 @@ npm run dev
 ## Local URLs
 
 - Frontend: `http://localhost:3000`
-- Backend: `http://localhost:8000`
-- Swagger (backend API docs): `http://localhost:8000/api/docs`
+- Backend: `http://localhost:3001`
+- Swagger (backend API docs): `http://localhost:3001/api/docs`
 
 ## Database connection (default local)
 
@@ -48,7 +48,7 @@ npm run dev
 Ensure frontend environment points to the backend, for example in `frontend/.env`:
 
 ```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:8000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 ```
 
 ## Troubleshooting quick checks

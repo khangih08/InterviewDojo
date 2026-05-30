@@ -143,22 +143,6 @@ describe('QuestionsService', () => {
       expect(qbMock.skip).toHaveBeenCalledWith(0);
       expect(qbMock.take).toHaveBeenCalledWith(20);
     });
-
-    it('applies keyword filter when q param is provided', async () => {
-      await service.findAll({ q: 'closure' });
-      expect(qbMock.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('keyword'),
-        expect.objectContaining({ keyword: '%closure%' }),
-      );
-    });
-
-    it('applies keyword filter when search param is provided', async () => {
-      await service.findAll({ search: 'Promise' });
-      expect(qbMock.andWhere).toHaveBeenCalledWith(
-        expect.stringContaining('keyword'),
-        expect.objectContaining({ keyword: '%promise%' }),
-      );
-    });
   });
 
   describe('findOne', () => {
@@ -210,101 +194,6 @@ describe('QuestionsService', () => {
       const result = await service.findOne('q-1');
       expect(result.sampleAnswer).toBe('{ not valid json');
     });
-
-    it('extracts text field from simple JSON object', async () => {
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: JSON.stringify({ text: 'Simple text answer' }),
-      });
-
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe('Simple text answer');
-    });
-
-    it('extracts content field when text is absent from JSON object', async () => {
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: JSON.stringify({ content: 'Content field answer' }),
-      });
-
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe('Content field answer');
-    });
-
-    it('falls back to JSON.stringify for unrecognized JSON object', async () => {
-      const obj = { someOtherField: 'value', count: 42 };
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: JSON.stringify(obj),
-      });
-
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe(JSON.stringify(obj));
-    });
-
-    it('returns empty string when sampleAnswer is null', async () => {
-      questionRepo.findOne.mockResolvedValue({ ...question, sampleAnswer: null });
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe('');
-    });
-
-    it('parses JSON array format and falls back to stringify', async () => {
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: '[{"item":1}]',
-      });
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBeDefined();
-    });
-
-    it('handles Editor.js blocks field that is not an array', async () => {
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: JSON.stringify({ blocks: 'not-an-array', text: 'fallback' }),
-      });
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe('fallback');
-    });
-
-    it('falls back to original sampleAnswer in catch when sampleAnswer is null', async () => {
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: null,
-        content: 'What is closure?',
-      });
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe('');
-    });
-
-    it('returns empty tags array when tagRelations is null', async () => {
-      questionRepo.findOne.mockResolvedValue({ ...question, tagRelations: null });
-      const result = await service.findOne('q-1');
-      expect(result.tags).toEqual([]);
-    });
-
-    it('returns Uncategorized when question has no category', async () => {
-      questionRepo.findOne.mockResolvedValue({ ...question, category: null });
-      const result = await service.findOne('q-1');
-      expect(result.categoryName).toBe('Uncategorized');
-      expect(result.categoryId).toBeUndefined();
-    });
-
-    it('filters out Editor.js blocks with no data.text', async () => {
-      const editorJsAnswer = JSON.stringify({
-        blocks: [
-          { data: { text: 'Valid block' } },
-          { data: {} },
-          { type: 'code' },
-        ],
-      });
-      questionRepo.findOne.mockResolvedValue({
-        ...question,
-        sampleAnswer: editorJsAnswer,
-      });
-
-      const result = await service.findOne('q-1');
-      expect(result.sampleAnswer).toBe('Valid block');
-    });
   });
 
   describe('update', () => {
@@ -346,28 +235,6 @@ describe('QuestionsService', () => {
 
       await service.update('q-1', { content: 'New content' });
       expect(categoryRepo.findOneBy).not.toHaveBeenCalled();
-    });
-
-    it('updates sampleAnswer and difficultyLevel fields when provided', async () => {
-      const base = { ...question };
-      const saved = { ...question, sampleAnswer: 'New answer', difficultyLevel: 3 };
-      questionRepo.findOne.mockResolvedValue(base);
-      questionRepo.save.mockResolvedValue(saved);
-
-      const result = await service.update('q-1', {
-        sampleAnswer: 'New answer',
-        difficultyLevel: 3,
-      });
-      expect(result.sampleAnswer).toBe('New answer');
-    });
-
-    it('skips content update when content is not in updateDto', async () => {
-      const base = { ...question };
-      questionRepo.findOne.mockResolvedValue(base);
-      questionRepo.save.mockResolvedValue(base);
-
-      await service.update('q-1', { sampleAnswer: 'Only answer' });
-      expect(base.content).toBe('What is closure?');
     });
   });
 

@@ -1,80 +1,138 @@
-import { Controller, Post, Body, UploadedFile, UseInterceptors, BadRequestException, Get, UseGuards, Param } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Body,
+  Query,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
+  Res
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { InterviewsService } from './interviews.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { GetUser } from '../common/decorator/get-user.decorator';
-import * as fs from 'fs';
-
 
 @Controller('interviews')
 export class InterviewsController {
   constructor(private readonly interviewsService: InterviewsService) {}
 
-  @Get()
-  @UseGuards(JwtAuthGuard)
-  async getUserInterviews(@GetUser('id') userId: string) {
-    return this.interviewsService.getUserInterviews(userId);
+  // --- API MỚI: YÊU CẦU NÂNG CẤP PRO ---
+  @Post('request-pro')
+  async requestPro(@Body('userId') userId: string) {
+    if (!userId) throw new BadRequestException('Missing userId');
+    return await this.interviewsService.requestPro(userId);
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async getInterviewById(@Param('id') id: string, @GetUser('id') userId: string) {
-    return this.interviewsService.getInterviewById(id, userId);
+  @Get()
+  async getAllInterviews(@Query('userId') userId: string) {
+    if (!userId) {
+      throw new BadRequestException('Thiếu thông tin userId để lấy lịch sử phỏng vấn.');
+    }
+    return await this.interviewsService.getAllInterviewsByUser(userId);
+  }
+
+  @Get('next-action/:userId')
+  async getNextAction(
+    @Param('userId') userId: string,
+    @Query('role') role: string
+  ) {
+    if (!userId) {
+      throw new BadRequestException('Thiếu thông tin userId.');
+    }
+    return await this.interviewsService.getNextActionPlan(userId, role);
   }
 
   @Post('start')
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('cvFile'))
   async startInterview(
-    @Body() body: { type: string; jobDescription?: string },
-    @GetUser('id') userId: string,
-    @UploadedFile() file?: Express.Multer.File,
+    @Body('userId') userId: string,
+    @Body('jobTitle') jobTitle: string
   ) {
-    let cvText = '';
-
-    if (body.type === 'TARGETED') {
-      if (!file) throw new BadRequestException('Vui lòng upload CV (PDF)!');
-
-      try {
-        console.log("Bắt đầu đọc file PDF với pdf-extraction...");
-
-        let pdfBuffer: Buffer;
-        if (file.buffer) {
-          pdfBuffer = file.buffer;
-          console.log("-> File đang nằm trên RAM (buffer)");
-        } else if (file.path) {
-          pdfBuffer = fs.readFileSync(file.path);
-          console.log("-> File đang nằm trên ổ cứng, đường dẫn:", file.path);
-        } else {
-          console.log("Cấu trúc file bị dị dạng:", file);
-          throw new BadRequestException('File upload không đúng định dạng chuẩn!');
-        }
-
-        const extractPdf = require('pdf-extraction');
-        const parsed = await extractPdf(pdfBuffer);
-        cvText = parsed.text;
-
-        console.log("🎉 BÓC TEXT THÀNH CÔNG! Số ký tự:", cvText.length);
-      } catch (err) {
-        console.error("\n=== LỖI ĐỌC PDF ===");
-        console.error(err);
-        console.error("===================\n");
-        throw new BadRequestException('Không thể đọc chữ trong file PDF này! Vui lòng thử lại.');
-      }
-    }
-
-    return this.interviewsService.startInterview(body.type, userId, cvText, body.jobDescription);
+    if (!userId) throw new BadRequestException('Thiếu thông tin userId.');
+    return await this.interviewsService.startNewInterview(userId, jobTitle);
   }
 
-  @Post('upload-audio')
+  @Post('start-with-cv')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAudio(
-    @Body('interviewId') interviewId: string,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!interviewId) throw new BadRequestException('Thiếu ID buổi phỏng vấn!');
-    if (!file) throw new BadRequestException('Không tìm thấy file âm thanh!');
+  async startWithCv(@Body('userId') userId: string, @UploadedFile() file: Express.Multer.File) {
+    if (!file || !file.buffer) throw new BadRequestException('Vui lòng upload file CV (PDF).');
+    return await this.interviewsService.startWithCv(userId, file.buffer);
+  }
 
-    return this.interviewsService.processAudio(interviewId, file);
+  @Get(':id/state')
+  async getInterviewState(@Param('id') interviewId: string, @Query('userId') userId: string) {
+    if (!userId) throw new BadRequestException('Thiếu thông tin userId');
+    return await this.interviewsService.getInterviewState(interviewId, userId);
+  }
+
+  @Post('execute')
+  async executeCode(@Body('code') code: string) {
+    if (!code) throw new BadRequestException('Vui lòng cung cấp mã nguồn.');
+    return await this.interviewsService.aiService.executeCode(code);
+  }
+
+  @Post(':id/chat')
+  async chatWithAgent(
+    @Param('id') interviewId: string,
+    @Body('userId') userId: string,
+    @Body('message') message: string,
+    @Body('activeTab') activeTab: 'THEORY' | 'CODING' | 'EVALUATION',
+    @Body('codeSnippet') codeSnippet: string,
+    @Body('terminalOutput') terminalOutput: string,
+    @Body('emotion') emotion: string,
+    @Res() res: Response
+  ) {
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+      const stream = this.interviewsService.processUserMessageStream(
+        interviewId,
+        userId,
+        message,
+        activeTab || 'THEORY',
+        codeSnippet || '',
+        terminalOutput || '',
+        emotion || 'neutral'
+      );
+
+      for await (const chunk of stream) {
+        res.write(chunk);
+      }
+      res.end();
+    } catch (error) {
+      res.status(400).end(`__METADATA__${JSON.stringify({ error: error.message })}`);
+    }
+  }
+
+  @Post(':id/chat-audio')
+  @UseInterceptors(FileInterceptor('audio'))
+  async chatWithAudio(
+    @Param('id') interviewId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Body('userId') userId: string,
+    @Body('activeTab') activeTab: 'THEORY' | 'CODING' | 'EVALUATION',
+    @Body('codeSnippet') codeSnippet?: string,
+    @Body('terminalOutput') terminalOutput?: string,
+    @Body('emotion') emotion?: string,
+  ) {
+    if (!file) throw new BadRequestException('Không tìm thấy file âm thanh.');
+    return await this.interviewsService.processAudioMessage(
+      interviewId,
+      userId,
+      file.buffer,
+      file.originalname,
+      activeTab || 'THEORY',
+      codeSnippet || '',
+      terminalOutput || '',
+      emotion || 'neutral'
+    );
+  }
+
+  @Get(':id/report')
+  async getReport(@Param('id') interviewId: string) {
+    return await this.interviewsService.getSummaryReport(interviewId);
   }
 }

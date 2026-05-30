@@ -17,8 +17,8 @@ export function MobileNav() {
   const visibleItems = mobileNavItems;
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 shadow-[0_-10px_30px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
-      <div className="mx-auto grid max-w-5xl grid-cols-5 gap-1 px-2 py-2">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden">
+      <div className="mx-auto grid max-w-5xl grid-cols-5 gap-1 px-3 py-2">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const active = pathname.startsWith(item.href);
@@ -28,7 +28,7 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={[
-                "flex min-h-14 flex-col items-center justify-center rounded-xl px-1.5 py-2 text-[11px] font-medium transition-all duration-200",
+                "flex flex-col items-center justify-center rounded-2xl px-2 py-2 text-[11px] font-medium transition-all duration-200",
                 active
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground",

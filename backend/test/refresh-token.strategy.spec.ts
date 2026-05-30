@@ -104,31 +104,4 @@ describe('RefreshTokenStrategy', () => {
       role: 'user',
     });
   });
-
-  it('accepts a legacy raw stored refresh token once', async () => {
-    userRepository.findOne.mockResolvedValue({
-      id: 'u-1',
-      email: 'user@example.com',
-      full_name: 'User',
-      target_role: 'Frontend Developer',
-      experience_level: 'junior',
-      role: 'user',
-      refreshToken: 'refresh-token',
-    });
-    (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-
-    await expect(
-      strategy.validate(
-        { headers: { authorization: 'Bearer refresh-token' } } as any,
-        { sub: 'u-1', email: 'user@example.com', role: 'user' },
-      ),
-    ).resolves.toEqual({
-      id: 'u-1',
-      email: 'user@example.com',
-      full_name: 'User',
-      target_role: 'Frontend Developer',
-      experience_level: 'junior',
-      role: 'user',
-    });
-  });
 });

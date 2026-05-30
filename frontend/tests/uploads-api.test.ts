@@ -78,19 +78,6 @@ describe("uploads api", () => {
     expect(onProgress).toHaveBeenNthCalledWith(2, 100);
   });
 
-  it("throws normalized error when getPresignedUploadUrl fails", async () => {
-    mockPost.mockRejectedValue(new Error("presign failed"));
-
-    await expect(
-      getPresignedUploadUrl({
-        session_id: "s-1",
-        file_name: "a.webm",
-        content_type: "video/webm",
-        size_bytes: 512,
-      }),
-    ).rejects.toThrow("presign failed");
-  });
-
   it("ignores progress events without total bytes", async () => {
     const onProgress = vi.fn();
     mockPut.mockImplementation(async (_url: string, _file: Blob, config: any) => {

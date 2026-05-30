@@ -38,12 +38,16 @@ export type DashboardDataState = {
   latestScoreDelta: number;
 };
 
-export function useDashboardData(): DashboardDataState {
+// [CẬP NHẬT]: Thêm userId vào để fetch đúng dữ liệu của user đang đăng nhập
+export function useDashboardData(userId?: string): DashboardDataState {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    // Nếu chưa có userId thì chưa gọi API vội
+    if (!userId) return;
+
     let cancelled = false;
 
     async function load() {
@@ -51,7 +55,8 @@ export function useDashboardData(): DashboardDataState {
         setLoading(true);
         setErrorMessage(null);
 
-        const data = await sessionsApi.getAllSessions();
+        // [CẬP NHẬT]: Truyền userId vào hàm fetch
+        const data = await sessionsApi.getAllSessions(userId);
         if (cancelled) return;
 
         const sorted = [...data].sort(
@@ -75,10 +80,11 @@ export function useDashboardData(): DashboardDataState {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [userId]); // [CẬP NHẬT]: Chạy lại khi userId thay đổi
 
   const completedSessions = useMemo(
-    () => sessions.filter((s) => s.status === "COMPLETED" && !!s.ai_analysis),
+    // [CẬP NHẬT]: Backend NestJS có thể dùng trường final_report hoặc status thay vì ai_analysis
+    () => sessions.filter((s) => s.status === "COMPLETED"),
     [sessions],
   );
 
@@ -87,7 +93,7 @@ export function useDashboardData(): DashboardDataState {
   const avgScore = useMemo(() => {
     if (!completedSessions.length) return 0;
     const total = completedSessions.reduce(
-      (acc, s) => acc + getAverageScore(s),
+      (acc, s) => acc + (s.average_score || getAverageScore(s)), // Dùng average_score từ backend NestJS nếu có
       0,
     );
     return Math.round(total / completedSessions.length);
@@ -95,7 +101,7 @@ export function useDashboardData(): DashboardDataState {
 
   const bestScore = useMemo(() => {
     if (!completedSessions.length) return 0;
-    return Math.max(...completedSessions.map((s) => getAverageScore(s)));
+    return Math.max(...completedSessions.map((s) => s.average_score || getAverageScore(s)));
   }, [completedSessions]);
 
   const chartData = useMemo<ChartPoint[]>(
@@ -107,7 +113,7 @@ export function useDashboardData(): DashboardDataState {
             day: "2-digit",
             month: "2-digit",
           }),
-          score: getAverageScore(s),
+          score: s.average_score || getAverageScore(s),
         }))
         .reverse(),
     [completedSessions],
@@ -117,7 +123,9 @@ export function useDashboardData(): DashboardDataState {
     const counts = new Map<SessionCategory, number>();
 
     for (const session of sessions) {
-      const category = inferSessionCategory(session.question_content);
+      // Dùng job_title từ backend thay cho question_content nếu có
+      const contentToAnalyze = session.job_title || session.question_content || "";
+      const category = inferSessionCategory(contentToAnalyze as any);
       counts.set(category, (counts.get(category) ?? 0) + 1);
     }
 
@@ -139,7 +147,7 @@ export function useDashboardData(): DashboardDataState {
       },
       {
         label: "Processing",
-        value: sessions.filter((session) => session.status === "PROCESSING")
+        value: sessions.filter((session) => session.status === "PROCESSING" || session.status === "IN_PROGRESS")
           .length,
       },
       {
@@ -156,9 +164,9 @@ export function useDashboardData(): DashboardDataState {
 
   const latestScoreDelta = useMemo(() => {
     if (completedSessions.length < 2) return 0;
-    return (
-      getAverageScore(completedSessions[0]) - getAverageScore(completedSessions[1])
-    );
+    const score1 = completedSessions[0].average_score || getAverageScore(completedSessions[0]);
+    const score2 = completedSessions[1].average_score || getAverageScore(completedSessions[1]);
+    return score1 - score2;
   }, [completedSessions]);
 
   return {

@@ -34,13 +34,6 @@ import {
   refreshAccessToken,
 } from "@/lib/api/auth";
 import { getRefreshToken } from "@/lib/auth";
-import { shouldUseMocks } from "@/lib/api/mock";
-import {
-  mockLogin,
-  mockForgotPassword,
-  mockResetPassword,
-  mockVerifyPasswordCode,
-} from "@/lib/mocks/auth";
 
 const authResponse = {
   token: "access-token",
@@ -52,8 +45,6 @@ describe("auth API", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getRefreshToken).mockReturnValue("stored-refresh-token");
-    // Reset shouldUseMocks to false before every test; individual tests opt-in to true.
-    vi.mocked(shouldUseMocks).mockReturnValue(false);
   });
 
   describe("login", () => {
@@ -69,31 +60,7 @@ describe("auth API", () => {
       expect(result).toEqual(authResponse);
     });
 
-    it("returns mock response when shouldUseMocks is true", async () => {
-      vi.mocked(shouldUseMocks).mockReturnValue(true);
-      vi.mocked(mockLogin).mockResolvedValue(authResponse);
-
-      const result = await login({ email: "a@b.com", password: "pw" });
-
-      expect(mockLogin).toHaveBeenCalledWith({ email: "a@b.com", password: "pw" });
-      expect(mockPost).not.toHaveBeenCalled();
-      expect(result).toEqual(authResponse);
-    });
-
-    it("falls back to mock in development when http fails", async () => {
-      const env = process.env as Record<string, string | undefined>;
-      const origEnv = env.NODE_ENV;
-      env.NODE_ENV = "development";
-      mockPost.mockRejectedValue(new Error("Network error"));
-      vi.mocked(mockLogin).mockResolvedValue(authResponse);
-
-      const result = await login({ email: "a@b.com", password: "pw" });
-
-      expect(result).toEqual(authResponse);
-      env.NODE_ENV = origEnv;
-    });
-
-    it("throws with error message on failure (non-dev)", async () => {
+    it("throws with error message on failure", async () => {
       mockPost.mockRejectedValue(new Error("Invalid credentials"));
 
       await expect(
@@ -119,21 +86,6 @@ describe("auth API", () => {
         expect.any(Object),
       );
       expect(result).toEqual({ message: "registered" });
-    });
-
-    it("returns mock success when shouldUseMocks is true", async () => {
-      vi.mocked(shouldUseMocks).mockReturnValue(true);
-
-      const result = await register({
-        email: "a@b.com",
-        password: "pw",
-        full_name: "A",
-        target_role: "Frontend Developer" as any,
-        experience_level: "junior" as any,
-      });
-
-      expect(result).toEqual({ message: "Register success" });
-      expect(mockPost).not.toHaveBeenCalled();
     });
 
     it("throws on registration failure", async () => {
@@ -215,17 +167,6 @@ describe("auth API", () => {
       );
       expect(result).toEqual(response);
     });
-
-    it("throws on failure", async () => {
-      mockPost.mockRejectedValue(new Error("Google error"));
-      await expect(
-        googleRegisterStart({
-          idToken: "bad",
-          target_role: "Frontend Developer" as any,
-          experience_level: "junior" as any,
-        }),
-      ).rejects.toThrow("Google error");
-    });
   });
 
   describe("googleRegisterVerify", () => {
@@ -242,13 +183,6 @@ describe("auth API", () => {
         expect.any(Object),
       );
       expect(result).toEqual(authResponse);
-    });
-
-    it("throws on failure", async () => {
-      mockPost.mockRejectedValue(new Error("Invalid code"));
-      await expect(
-        googleRegisterVerify({ email: "a@b.com", code: "bad" }),
-      ).rejects.toThrow("Invalid code");
     });
   });
 
@@ -269,17 +203,6 @@ describe("auth API", () => {
       );
       expect(result).toEqual(response);
     });
-
-    it("throws on failure", async () => {
-      mockPost.mockRejectedValue(new Error("Profile error"));
-      await expect(
-        completeGoogleProfile({
-          full_name: "A",
-          target_role: "Frontend Developer" as any,
-          experience_level: "junior" as any,
-        }),
-      ).rejects.toThrow("Profile error");
-    });
   });
 
   describe("forgotPassword", () => {
@@ -293,23 +216,6 @@ describe("auth API", () => {
         expect.any(Object),
       );
       expect(result.message).toBe("code sent");
-    });
-
-    it("returns mock response when shouldUseMocks is true", async () => {
-      vi.mocked(shouldUseMocks).mockReturnValue(true);
-      vi.mocked(mockForgotPassword).mockResolvedValue({ message: "mock code sent" });
-
-      const result = await forgotPassword({ email: "a@b.com" });
-
-      expect(result.message).toBe("mock code sent");
-      expect(mockPost).not.toHaveBeenCalled();
-    });
-
-    it("throws on failure", async () => {
-      mockPost.mockRejectedValue(new Error("Email not found"));
-      await expect(forgotPassword({ email: "x@y.com" })).rejects.toThrow(
-        "Email not found",
-      );
     });
   });
 
@@ -328,26 +234,6 @@ describe("auth API", () => {
       );
       expect(result.message).toBe("verified");
     });
-
-    it("returns mock response when shouldUseMocks is true", async () => {
-      vi.mocked(shouldUseMocks).mockReturnValue(true);
-      vi.mocked(mockVerifyPasswordCode).mockResolvedValue({ message: "mock verified" });
-
-      const result = await verifyForgotPasswordCode({
-        email: "a@b.com",
-        code: "1234",
-      });
-
-      expect(result.message).toBe("mock verified");
-      expect(mockPost).not.toHaveBeenCalled();
-    });
-
-    it("throws on failure", async () => {
-      mockPost.mockRejectedValue(new Error("Invalid code"));
-      await expect(
-        verifyForgotPasswordCode({ email: "a@b.com", code: "bad" }),
-      ).rejects.toThrow("Invalid code");
-    });
   });
 
   describe("resetPassword", () => {
@@ -365,27 +251,6 @@ describe("auth API", () => {
         expect.any(Object),
       );
       expect(result.message).toBe("password reset");
-    });
-
-    it("returns mock response when shouldUseMocks is true", async () => {
-      vi.mocked(shouldUseMocks).mockReturnValue(true);
-      vi.mocked(mockResetPassword).mockResolvedValue({ message: "mock reset" });
-
-      const result = await resetPassword({
-        email: "a@b.com",
-        code: "1234",
-        password: "NewPass#1",
-      });
-
-      expect(result.message).toBe("mock reset");
-      expect(mockPost).not.toHaveBeenCalled();
-    });
-
-    it("throws on failure", async () => {
-      mockPost.mockRejectedValue(new Error("Reset failed"));
-      await expect(
-        resetPassword({ email: "a@b.com", code: "1234", password: "NewPass#1" }),
-      ).rejects.toThrow("Reset failed");
     });
   });
 
