@@ -6,8 +6,7 @@ export function useSandboxEditor() {
   const [isRunningCode, setIsRunningCode] = useState(false);
 
   // ĐÃ FIX LỖI API CHỖ NÀY: Dùng biến môi trường
-  const BACKEND_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001/interviews';
-
+const BACKEND_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/interviews`;
   const handleRunCode = async () => {
     setIsRunningCode(true);
     setCodeOutput("> Đang thực thi mã nguồn...\n");

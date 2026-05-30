@@ -5,70 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="a3acb946-061d-4deb-b14d-2a4c98a2b819" name="Changes" comment="feat: simplify question filtering to category only">
-      <change afterPath="$PROJECT_DIR$/backend/src/admin/admin.controller.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/agents/code_tester.agent.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/agents/evaluator.agent.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/agents/interviewer.agent.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/agents/mentor.agent.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/ai.module.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/ai.service.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/tools/search_cv.tool.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/workflows/interview.graph.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/ai/workflows/interview.state.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/rag/rag.module.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/src/rag/rag.service.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/app/admin/layout.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/app/admin/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/app/interview/[id]/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/app/interview/layout.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/app/interview/page.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/components/interview/EvaluationReport.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/components/interview/InterviewChat.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/components/interview/InterviewHeader.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/components/interview/InterviewWorkspace.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/components/interview/ReportModal.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/hooks/useInterviewSession.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/hooks/useMediaPipeCamera.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/hooks/useSandboxEditor.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/public/models/face_expression_model-shard1" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/public/models/face_expression_model-weights_manifest.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/public/models/tiny_face_detector_model-shard1" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/public/models/tiny_face_detector_model-weights_manifest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/backend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/app.module.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/app.module.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/entities/interview.entity.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/entities/interview.entity.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/entities/message.entity.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/entities/message.entity.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/entities/user.entity.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/entities/user.entity.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/interviews/interviews.controller.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/interviews/interviews.controller.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/interviews/interviews.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/interviews/interviews.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/main.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/user/dto/user-response.dto.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/user/dto/user-response.dto.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/src/user/user.service.ts" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/user/user.service.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(auth)/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/(auth)/login/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(main)/dashboard/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/(main)/dashboard/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(main)/history/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/(main)/history/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(main)/interview/page.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(main)/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/(main)/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(main)/result/ResultClient.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/(main)/result/ResultClient.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/(main)/result/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/(main)/result/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/globals.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/globals.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/app/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/app/layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/dashboard/DashboardNextActionCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/components/dashboard/DashboardNextActionCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/dashboard/DashboardRecentCard.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/components/dashboard/DashboardRecentCard.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/interview/CircularTimer.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/interview/RecorderPanel.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/interview/RecordingStatus.tsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/layout/navbar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/components/layout/navbar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/layout/sidebar.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/components/layout/sidebar.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/components/settings/SubscriptionSettings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/components/settings/SubscriptionSettings.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/contexts/auth-context.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/contexts/auth-context.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/hooks/useDashboardData.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/hooks/useDashboardData.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/hooks/useMediaPreview.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/hooks/useRecorder.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/lib/api/sessions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/lib/api/sessions.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/hooks/useInterviewSession.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/hooks/useInterviewSession.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/hooks/useSandboxEditor.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/hooks/useSandboxEditor.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -104,21 +43,21 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;D:/InterviewDojo/frontend/public&quot;,
-    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "develop",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "last_opened_file_path": "D:/InterviewDojo/frontend/public",
+    "to.speed.mode.migration.done": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\InterviewDojo\frontend\public" />
