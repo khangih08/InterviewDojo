@@ -153,4 +153,42 @@ describe('AdminController', () => {
       expect(mockUserRepo.save).toHaveBeenCalledWith(mockUser);
     });
   });
+
+  describe('revokePro', () => {
+    it('should throw BadRequestException if user is not found', async () => {
+      mockUserRepo.findOne.mockResolvedValue(null);
+
+      await expect(controller.revokePro('u-notfound')).rejects.toThrow(
+        new BadRequestException('User không tồn tại'),
+      );
+    });
+
+    it('should downgrade user plan to FREE and reset credits', async () => {
+      const mockUser = {
+        id: 'u-1',
+        full_name: 'Alice',
+        plan: UserPlan.PRO,
+        credits: 9999,
+        is_pending_pro: false,
+      };
+      mockUserRepo.findOne.mockResolvedValue(mockUser);
+      mockUserRepo.save.mockResolvedValue({
+        ...mockUser,
+        plan: UserPlan.FREE,
+        credits: 10,
+        is_pending_pro: false,
+      });
+
+      const result = await controller.revokePro('u-1');
+
+      expect(result).toEqual({
+        success: true,
+        message: 'Đã hạ cấp xuống FREE cho Alice',
+      });
+      expect(mockUser.plan).toBe(UserPlan.FREE);
+      expect(mockUser.credits).toBe(10);
+      expect(mockUser.is_pending_pro).toBe(false);
+      expect(mockUserRepo.save).toHaveBeenCalledWith(mockUser);
+    });
+  });
 });

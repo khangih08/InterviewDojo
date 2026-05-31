@@ -45,11 +45,11 @@ Pipeline CI được chia thành các **Jobs** chạy song song hoặc tuần t�
 
 Khi một Pull Request được phê duyệt và được **Merge (gộp)** thành công vào nhánh `main`, quy trình CD sẽ được kích hoạt để tự động triển khai mã nguồn mới lên môi trường Production thực tế:
 
-### A. Triển Khai Frontend (Next.js) -> Vercel
+### A. Triển Khai Frontend (Next.js) -> Vercel (Thông qua Repo Fork)
 - **Dịch vụ lưu trữ**: **Vercel** (tối ưu hóa hoàn hảo cho các ứng dụng Next.js SSR/Static).
 - **Luồng triển khai**:
-  - Kích hoạt thông qua webhook/action [vercel-deploy.yml](file:///d:/git_clone_repo/InterviewDojo/.github/workflows/vercel-deploy.yml).
-  - Vercel tự động build dự án Next.js, cấu hình CDN toàn cầu và cập nhật phiên bản live chỉ trong vài phút.
+  - Khi có code mới được gộp vào các nhánh chính (`main`/`develop`), workflow [mirror-to-fork.yml](file:///d:/git_clone_repo/InterviewDojo/.github/workflows/mirror-to-fork.yml) sẽ tự động mirror (đồng bộ) các thay đổi này sang repo fork cá nhân của bạn.
+  - Dự án Vercel cá nhân liên kết trực tiếp với repo fork đó sẽ tự động kích hoạt tiến trình biên dịch (build) và triển khai (deploy) mượt mà lên môi trường tương ứng (`production` hoặc `preview`).
 
 ### B. Triển Khai Backend (NestJS) -> Render
 - **Dịch vụ lưu trữ**: **Render** (chạy dưới dạng Web Service chạy Node.js hoặc Docker Container kết nối với database PostgreSQL).
