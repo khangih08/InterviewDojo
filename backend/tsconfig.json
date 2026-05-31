@@ -21,10 +21,12 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
+    "types": ["node", "jest"],
     "paths": {
       "@/*": ["src/*"]
     }
   },
+  "include": ["src/**/*", "test/**/*"],
   "exclude": [
     "node_modules",
     "dist", // QUAN TRỌNG: Phải loại trừ thư mục đầu ra
