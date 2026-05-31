@@ -1,0 +1,30 @@
+name: Mirror to Fork
+
+on:
+  push:
+    branches: [main, develop]
+
+jobs:
+  mirror:
+    name: Mirror commits to personal fork
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.FORK_SYNC_PAT }}
+          fetch-depth: 0
+
+      - name: Push to Fork
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Thêm remote trỏ tới repo fork cá nhân lấy từ Secret để đảm bảo bảo mật và linh hoạt
+          git remote add fork "${{ secrets.PERSONAL_FORK_URL }}"
+          
+          # Lấy tên nhánh hiện tại đang được push
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          
+          # Push code sang nhánh tương ứng trên repo fork
+          git push fork HEAD:refs/heads/$BRANCH_NAME --force
