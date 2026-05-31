@@ -22,7 +22,8 @@ export default function InterviewRoomPage() {
   const [isCheckingRoom, setIsCheckingRoom] = useState(true);
 
   const {
-    codeSnippet, setCodeSnippet, codeOutput, setCodeOutput, isRunningCode, handleRunCode
+    codeSnippet, setCodeSnippet, codeOutput, setCodeOutput, isRunningCode, handleRunCode,
+    language, handleLanguageChange
   } = useSandboxEditor();
 
   const {
@@ -129,6 +130,7 @@ export default function InterviewRoomPage() {
               codeSnippet={codeSnippet} setCodeSnippet={setCodeSnippet}
               codeOutput={codeOutput} setCodeOutput={setCodeOutput}
               isRunningCode={isRunningCode} handleRunCode={handleRunCode}
+              language={language} handleLanguageChange={handleLanguageChange}
             />
           )}
         </div>
