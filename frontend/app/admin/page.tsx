@@ -14,7 +14,8 @@ export default function AdminPage() {
   const [userLogs, setUserLogs] = useState<any[]>([]);
   const [loadingLogs, setLoadingLogs] = useState(false);
 
-  const apiUrl = 'http://localhost:3001';
+  // 1. [ĐÃ FIX LỖI LOCALHOST]: Dùng biến môi trường để gọi đúng Backend trên Render
+  const apiUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001';
 
   const loadData = async () => {
     try {
@@ -72,7 +73,7 @@ export default function AdminPage() {
     finally { setLoadingLogs(false); }
   };
 
-  if (loading) return <div className="p-10 text-white flex justify-center items-center h-screen"><MessageSquare className="animate-pulse mr-2"/> Loading Command Center...</div>;
+  if (loading) return <div className="p-10 text-white flex justify-center items-center h-screen"><MessageSquare className="animate-pulse mr-2" /> Loading Command Center...</div>;
 
   return (
     <div className="p-8 max-w-7xl mx-auto text-slate-200">
@@ -85,10 +86,11 @@ export default function AdminPage() {
 
       {/* STATS CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-        <StatCard icon={<Users />} label="Tổng User" value={stats?.totalUsers} color="text-blue-400" />
-        <StatCard icon={<CreditCard />} label="Gói PRO" value={stats?.proUsers} color="text-emerald-400" />
-        <StatCard icon={<ShieldAlert />} label="Chờ duyệt" value={stats?.pendingPayments} color="text-orange-400" />
-        <StatCard icon={<DollarSign />} label="Doanh thu" value={stats?.revenue?.toLocaleString() + 'đ'} color="text-purple-400" />
+        <StatCard icon={<Users />} label="Tổng User" value={stats?.totalUsers || 0} color="text-blue-400" />
+        <StatCard icon={<CreditCard />} label="Gói PRO" value={stats?.proUsers || 0} color="text-emerald-400" />
+        <StatCard icon={<ShieldAlert />} label="Chờ duyệt" value={stats?.pendingPayments || 0} color="text-orange-400" />
+        {/* 2. [ĐÃ FIX LỖI undefinedđ]: Bọc fallback (stats?.revenue || 0) trước khi toLocaleString */}
+        <StatCard icon={<DollarSign />} label="Doanh thu" value={`${(stats?.revenue || 0).toLocaleString()}đ`} color="text-purple-400" />
       </div>
 
       {/* BỘ LỌC TABS */}
@@ -97,9 +99,8 @@ export default function AdminPage() {
           <button
             key={tab}
             onClick={() => handleTabChange(tab as any)}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-              activeTab === tab ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/50' : 'bg-[#1e293b] text-slate-400 hover:bg-slate-800'
-            }`}
+            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${activeTab === tab ? 'bg-violet-600 text-white shadow-lg shadow-violet-900/50' : 'bg-[#1e293b] text-slate-400 hover:bg-slate-800'
+              }`}
           >
             {tab === 'ALL' ? 'Tất cả' : tab === 'PENDING' ? 'Chờ duyệt' : 'Đã lên PRO'}
           </button>
@@ -141,9 +142,9 @@ export default function AdminPage() {
                     </button>
                     {/* Nút Tặng Credits (Chỉ dùng cho acc Free) */}
                     {u.plan !== 'PRO' && (
-                       <button onClick={() => handleAddCredits(u.id, u.full_name, u.credits)} title="Tặng Credits" className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 p-2.5 rounded-xl transition-all">
-                       <Gift size={16} />
-                     </button>
+                      <button onClick={() => handleAddCredits(u.id, u.full_name, u.credits)} title="Tặng Credits" className="bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 p-2.5 rounded-xl transition-all">
+                        <Gift size={16} />
+                      </button>
                     )}
                     {/* Nút Duyệt PRO */}
                     {u.is_pending_pro && (
@@ -162,7 +163,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* MODAL XEM CHI TIẾT LOG (Chỉ hiện khi selectedUser có data) */}
+      {/* MODAL XEM CHI TIẾT LOG */}
       {selectedUser && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-[#0f172a] border border-slate-700 w-full max-w-4xl max-h-[85vh] rounded-3xl overflow-hidden flex flex-col shadow-2xl">
@@ -202,7 +203,7 @@ export default function AdminPage() {
                         <div><span className="text-slate-500">Điểm đánh giá:</span> <span className="font-bold text-yellow-400">{log.evaluation_score || 'Chưa có'} / 10</span></div>
                       </div>
 
-                      {/* Hiển thị tóm tắt tin nhắn cuối cùng (để Admin lướt nhanh) */}
+                      {/* Hiển thị tóm tắt tin nhắn cuối cùng */}
                       {log.messages && log.messages.length > 0 && (
                         <div className="text-xs text-slate-400 bg-slate-800/50 p-3 rounded-lg line-clamp-2">
                           <span className="font-bold text-white">Tin nhắn cuối: </span>
