@@ -125,6 +125,71 @@ describe('AiService', () => {
       const resultJava = await service.executeCode(codeJava, 'java');
       expect(resultJava.output).toContain('Đang biên dịch mã nguồn JAVA');
     });
+
+    it('should return error for unsupported language', async () => {
+      const result = await service.executeCode('print("hi")', 'ruby');
+      expect(result.error).toContain('Chưa hỗ trợ ngôn ngữ lập trình: ruby');
+    });
+
+    it('should execute console.warn and console.error and return formatted log in JS VM', async () => {
+      const code = `console.warn("warning!"); console.error("error!");`;
+      const result = await service.executeCode(code, 'javascript');
+      expect(result.output).toContain('⚠️ Warn: warning!');
+      expect(result.output).toContain('❌ Error: error!');
+    });
+
+    it('should return no-output message when execution produces no logs', async () => {
+      const code = `const a = 1 + 2;`;
+      const result = await service.executeCode(code, 'javascript');
+      expect(result.output).toContain('> Code executed successfully (no output).');
+    });
+
+    it('should return compilation error when ts transpile fails', async () => {
+      jest.doMock('typescript', () => {
+        return {
+          transpileModule: () => {
+            throw new Error('Transpile error');
+          },
+          ModuleKind: { CommonJS: 1 }
+        };
+      });
+      
+      const code = `const a = 1;`;
+      const result = await service.executeCode(code, 'typescript');
+      expect(result.error).toContain('❌ Lỗi biên dịch TypeScript');
+      
+      jest.dontMock('typescript');
+    });
+
+    it('should return custom message if python executable is not found', async () => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
+        callback(new Error('python is not recognized as an internal or external command'), '', '');
+      });
+      const code = `print("hi")`;
+      const result = await service.executeCode(code, 'python');
+      expect(result.output).toContain('Trình thông dịch Python chưa được cài đặt');
+      expect(result.error).toBeUndefined();
+    });
+
+    it('should return timeout error if python execution is killed', async () => {
+      const err = new Error('Killed') as any;
+      err.killed = true;
+      mockExec.mockImplementation((cmd, opts, callback) => {
+        callback(err, '', '');
+      });
+      const code = `import time; time.sleep(10)`;
+      const result = await service.executeCode(code, 'python');
+      expect(result.error).toContain('Thực thi mã nguồn quá thời gian cho phép');
+    });
+
+    it('should return execution stderr on python script failure', async () => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
+        callback(new Error('script failed'), '', 'SyntaxError: invalid syntax');
+      });
+      const code = `print "hi"`;
+      const result = await service.executeCode(code, 'python');
+      expect(result.error).toContain('SyntaxError: invalid syntax');
+    });
   });
 
   describe('transcribeAudio', () => {
@@ -272,6 +337,46 @@ describe('AiService', () => {
 
       expect(yieldedValues.join('')).toContain('Hệ thống gặp gián đoạn nhỏ');
       expect(finalReturn).toBeNull();
+    });
+
+    it('should format history User/Assistant roles and handle EVALUATION tab without userMessage', async () => {
+      mockRagService.search.mockResolvedValue([]);
+      mockGraphInvoke.mockResolvedValue({
+        finalAgentOutput: {
+          reply_to_user: 'Báo cáo cuối cùng',
+          reasoning: 'Evaluation complete',
+          score: 85,
+          next_action: 'END_INTERVIEW',
+        },
+      });
+
+      const history = [
+        { role: 'user', content: 'Tôi đã trả lời' },
+        { role: 'assistant', content: 'Tuyệt vời' },
+      ];
+
+      const stream = service.processInterviewTurnStream(
+        'u-1',
+        'i-1',
+        '', // empty user message
+        { target_role: 'Frontend', experience_level: 'Senior' },
+        history,
+        'EVALUATION',
+      );
+
+      const yieldedValues: string[] = [];
+      let finalReturn: any = null;
+      while (true) {
+        const next = await stream.next();
+        if (next.done) {
+          finalReturn = next.value;
+          break;
+        }
+        yieldedValues.push(next.value);
+      }
+
+      expect(yieldedValues.join('')).toBe('Báo cáo cuối cùng');
+      expect(finalReturn?.score).toBe(85);
     });
   });
 
