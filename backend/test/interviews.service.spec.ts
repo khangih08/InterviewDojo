@@ -151,6 +151,11 @@ describe('InterviewsService', () => {
       userRepo.findOne.mockResolvedValue({ id: 'u-1', plan: UserPlan.FREE, credits: 0 });
       await expect(service.startNewInterview('u-1')).rejects.toThrow(BadRequestException);
     });
+
+    it('throws NotFoundException if user is not found', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      await expect(service.startNewInterview('missing')).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('startWithCv', () => {
@@ -174,6 +179,40 @@ describe('InterviewsService', () => {
       expect(result.id).toBe('i-1');
       expect(result.jobTitle).toBe('NodeJS Developer');
       expect(ragService.indexCv).toHaveBeenCalled();
+    });
+  });
+
+  describe('getAllInterviewsByUser', () => {
+    let mockQb: any;
+    beforeEach(() => {
+      mockQb = {
+        select: jest.fn().mockReturnThis(),
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        andWhere: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        getMany: jest.fn(),
+      };
+      interviewRepo.createQueryBuilder.mockReturnValue(mockQb);
+    });
+
+    it('returns empty array when no interviews match criteria', async () => {
+      mockQb.getMany.mockResolvedValue([]);
+      const result = await service.getAllInterviewsByUser('u-1');
+      expect(result).toEqual([]);
+      expect(mockQb.select).toHaveBeenCalled();
+    });
+
+    it('returns interviews sorted by date when matching interviews exist', async () => {
+      const mockMatches = [{ id: 'i-1' }, { id: 'i-2' }];
+      mockQb.getMany
+        .mockResolvedValueOnce(mockMatches)
+        .mockResolvedValueOnce([{ id: 'i-2' }, { id: 'i-1' }]);
+
+      const result = await service.getAllInterviewsByUser('u-1');
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('i-2');
     });
   });
 
@@ -234,6 +273,31 @@ describe('InterviewsService', () => {
       expect(result.theory).toBe(8);
       expect(interviewRepo.save).toHaveBeenCalled();
     });
+
+    it('throws BadRequestException if history contains no user interaction', async () => {
+      interviewRepo.findOne.mockResolvedValue(mockInterview);
+      messageRepo.find.mockResolvedValue([
+        { role: 'assistant', content: 'Greeting' }
+      ]);
+
+      await expect(service.getSummaryReport('i-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('generates new report even if completed when radar_data is empty or all zeros', async () => {
+      const completedInterview = {
+        ...mockInterview,
+        status: 'COMPLETED',
+        radar_data: [0, 0, 0],
+      };
+      interviewRepo.findOne.mockResolvedValue(completedInterview);
+      messageRepo.find.mockResolvedValue([
+        { role: 'user', content: 'Answer' },
+      ]);
+      interviewRepo.save.mockResolvedValue({});
+
+      const result = await service.getSummaryReport('i-1');
+      expect(result.avgScore).toBe(8.5);
+    });
   });
 
   describe('processAudioMessage', () => {
@@ -258,6 +322,20 @@ describe('InterviewsService', () => {
 
       expect(result.recognizedText).toBe('Hello AI');
       expect(result.reply).toBe('Hello back');
+    });
+
+    it('returns fallback reply when transcribedText is empty or invalid', async () => {
+      aiService.transcribeAudio.mockResolvedValue('');
+      const result = await service.processAudioMessage(
+        'i-1',
+        'u-1',
+        Buffer.from('audio'),
+        'test.webm',
+        'THEORY',
+        'code',
+      );
+      expect(result.reply).toBe('Mình không nghe rõ, bạn nói lại được không?');
+      expect(result.recognizedText).toBe('');
     });
   });
 });
