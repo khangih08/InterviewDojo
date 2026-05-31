@@ -77,6 +77,12 @@ export class User {
     // --- PHẦN THÊM MỚI: TRẠNG THÁI CHỜ DUYỆT THANH TOÁN ---
     @Column({ default: false })
     is_pending_pro!: boolean;
+
+    @Column({ type: 'varchar', nullable: true })
+    pending_pro_provider!: string | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    pending_pro_order_ref!: string | null;
     // --------------------------------------------------
 
     @Column({ default: false })
@@ -96,4 +102,5 @@ export class User {
 
     @Column({ type: 'text', nullable: true })
     refreshToken!: string | null;
+
 }

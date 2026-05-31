@@ -72,4 +72,3 @@ describe('InterviewsController', () => {
     expect(interviewsService.processAudioMessage).toHaveBeenCalledWith('i-1', 'u-1', file.buffer, file.originalname, 'THEORY', '', '', 'neutral');
   });
 });
-
