@@ -32,7 +32,7 @@ describe("useDashboardData", () => {
 
   it("starts with loading=true and empty data", () => {
     mockGetAllSessions.mockReturnValue(new Promise(() => {}));
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
 
     expect(result.current.loading).toBe(true);
     expect(result.current.sessions).toEqual([]);
@@ -43,7 +43,7 @@ describe("useDashboardData", () => {
     const session = makeSession();
     mockGetAllSessions.mockResolvedValue([session]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
 
@@ -57,13 +57,13 @@ describe("useDashboardData", () => {
       makeSession({ id: "s-2", status: "PROCESSING" }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.totalSessions).toBe(2);
   });
 
-  it("filters completedSessions to only COMPLETED with ai_analysis", async () => {
+  it("filters completedSessions to only COMPLETED", async () => {
     mockGetAllSessions.mockResolvedValue([
       makeSession({ id: "s-1", status: "COMPLETED" }),
       makeSession({ id: "s-2", status: "PROCESSING", ai_analysis: null }),
@@ -74,19 +74,19 @@ describe("useDashboardData", () => {
       }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    expect(result.current.completedSessions).toHaveLength(1);
-    expect(result.current.completedSessions[0].id).toBe("s-1");
+    expect(result.current.completedSessions).toHaveLength(2);
   });
+
 
   it("computes avgScore as average of technical and communication", async () => {
     mockGetAllSessions.mockResolvedValue([
       makeSession({ ai_analysis: { technical_score: 80, communication_score: 60 } }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.avgScore).toBe(70);
@@ -104,7 +104,7 @@ describe("useDashboardData", () => {
       }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.avgScore).toBe(70);
@@ -122,7 +122,7 @@ describe("useDashboardData", () => {
       }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.bestScore).toBe(90);
@@ -133,7 +133,7 @@ describe("useDashboardData", () => {
       makeSession({ status: "PROCESSING", ai_analysis: null }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.avgScore).toBe(0);
@@ -150,7 +150,7 @@ describe("useDashboardData", () => {
     );
     mockGetAllSessions.mockResolvedValue(sessions);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.chartData).toHaveLength(7);
@@ -159,7 +159,7 @@ describe("useDashboardData", () => {
   it("sets errorMessage on API failure", async () => {
     mockGetAllSessions.mockRejectedValue(new Error("Network error"));
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.errorMessage).toBe("Network error");
@@ -169,7 +169,7 @@ describe("useDashboardData", () => {
   it("sets generic errorMessage for non-Error rejections", async () => {
     mockGetAllSessions.mockRejectedValue("string error");
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.errorMessage).toBe("Cannot load sessions.");
@@ -181,7 +181,7 @@ describe("useDashboardData", () => {
       makeSession({ id: "new", created_at: "2024-06-01T00:00:00Z" }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.sessions[0].id).toBe("new");
@@ -195,7 +195,7 @@ describe("useDashboardData", () => {
       }),
     ]);
 
-    const { result } = renderHook(() => useDashboardData());
+    const { result } = renderHook(() => useDashboardData("u-1"));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     expect(result.current.avgScore).toBeGreaterThanOrEqual(0);

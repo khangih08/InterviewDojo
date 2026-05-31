@@ -203,5 +203,3 @@ export async function resetPassword(
     throw new Error(toApiError(error).message);
   }
 }
-
-console.log("USE MOCKS:", shouldUseMocks(), process.env.NEXT_PUBLIC_USE_MOCKS);

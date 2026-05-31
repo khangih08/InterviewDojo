@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 // vi.hoisted ensures the mock variable is initialized before vi.mock hoisting runs
 const { mockGet, mockToApiError } = vi.hoisted(() => ({
@@ -25,12 +25,20 @@ const mockAnalysis = {
   suggestions: ["Practice more"],
 };
 
+const silenceConsoleError = () =>
+  vi.spyOn(console, "error").mockImplementation(() => {});
+
 describe("getAnalysis", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS;
     mockToApiError.mockImplementation((err: unknown) => ({
       message: err instanceof Error ? err.message : "API error",
     }));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("fetches analysis by sessionId and returns response data", async () => {
@@ -60,9 +68,25 @@ describe("getAnalysis", () => {
   });
 
   it("throws an error with normalized message when the API fails", async () => {
+    silenceConsoleError();
     mockGet.mockRejectedValue(new Error("Session not found"));
 
     await expect(getAnalysis("bad-id")).rejects.toThrow("Session not found");
+  });
+
+  it("returns mock data when USE_MOCK env is enabled", async () => {
+    vi.resetModules();
+    process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS = "true";
+
+    const { getAnalysis: getAnalysisMock } = await import("@/lib/api/analysis");
+    const result = await getAnalysisMock("any-id");
+
+    expect(result.sessionId).toBe("mock-session-123");
+    expect(result.status).toBe("done");
+    expect(mockGet).not.toHaveBeenCalled();
+
+    delete process.env.NEXT_PUBLIC_USE_MOCK_ANALYSIS;
+    vi.resetModules();
   });
 
   it("returns all optional fields when present in the response", async () => {

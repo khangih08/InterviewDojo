@@ -67,9 +67,12 @@ export class InterviewsController {
   }
 
   @Post('execute')
-  async executeCode(@Body('code') code: string) {
+  async executeCode(
+    @Body('code') code: string,
+    @Body('language') language: string = 'javascript'
+  ) {
     if (!code) throw new BadRequestException('Vui lòng cung cấp mã nguồn.');
-    return await this.interviewsService.aiService.executeCode(code);
+    return await this.interviewsService.aiService.executeCode(code, language);
   }
 
   @Post(':id/chat')

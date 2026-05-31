@@ -20,7 +20,7 @@ vi.mock("@/contexts/auth-context", () => ({
 
 describe("SubscriptionSettings Component Tests", () => {
   beforeEach(() => {
-    localStorage.clear();
+    vi.stubEnv("NEXT_PUBLIC_API_BASE_URL", "http://localhost:8000");
     vi.clearAllMocks();
   });
 

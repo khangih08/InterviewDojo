@@ -67,7 +67,7 @@
     "typeorm": "^0.3.28",
     "uuid": "^14.0.0",
     "vm2": "^3.11.5",
-    "zod": "^4.4.3"
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -114,7 +114,8 @@
     ],
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/src/$1",
-      "^@/(.*)$": "<rootDir>/src/$1"
+      "^@/(.*)$": "<rootDir>/src/$1",
+      "^uuid$": "<rootDir>/test/mocks/uuid.mock.ts"
     },
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
