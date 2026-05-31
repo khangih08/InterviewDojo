@@ -24,6 +24,7 @@ describe("SubscriptionSettings and Context", () => {
     vi.clearAllMocks();
   });
 
+  // Hàm helper nằm trong block describe để tất cả các hàm it() đều gọi được
   const renderComponent = () => {
     return render(
       <SubscriptionProvider>
