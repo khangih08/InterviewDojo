@@ -2,43 +2,76 @@
 
 import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { Check, Crown, X, QrCode } from "lucide-react";
+import { setUser } from "@/lib/auth";
+import { Check, Crown, X, ArrowRight, CreditCard } from "lucide-react";
+
+const paymentProviders = [
+  {
+    id: "vnpay",
+    label: "VNPay",
+    description: "Thanh toán nhanh qua VNPay QR hoặc link thanh toán.",
+    checkoutUrl: "https://sandbox.vnpayment.vn/tryitnow/Home/Index",
+  },
+  {
+    id: "momo",
+    label: "MoMo",
+    description: "Thanh toán qua ví MoMo trên điện thoại.",
+    checkoutUrl: "https://momo.vn/",
+  },
+  {
+    id: "zalopay",
+    label: "ZaloPay",
+    description: "Thanh toán qua ZaloPay nhanh chóng.",
+    checkoutUrl: "https://zalopay.vn/",
+  },
+];
 
 export function SubscriptionSettings() {
-  const { user } = useAuth(); // Lưu ý: Đảm bảo useAuth trả về cả is_pending_pro
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const myBank = {
-    id: "MB",
-    number: "0362586418",
-    name: "NGUYEN QUANG HUY",
-  };
+  const [selectedProvider, setSelectedProvider] = useState<"vnpay" | "momo" | "zalopay">("vnpay");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const proAmount = 199000;
+  const selectedProviderData = paymentProviders.find((provider) => provider.id === selectedProvider)!;
   const paymentContent = `UPGRADE ${user?.id?.substring(0, 8).toUpperCase()}`;
-  const qrUrl = `https://img.vietqr.io/image/${myBank.id}-${myBank.number}-compact.jpg?amount=${proAmount}&addInfo=${paymentContent}&accountName=${encodeURIComponent(myBank.name)}`;
 
-  // HÀM GỌI API XÁC NHẬN VỀ BACKEND
+  const openProviderCheckout = () => {
+    window.open(selectedProviderData.checkoutUrl, "_blank");
+  };
+
+  // HÀM GỌI API ĐỂ TẠO ĐƠN THANH TOÁN THỰC
   const handleConfirmPayment = async () => {
+    if (!user) return;
+    if (selectedProvider !== 'vnpay') {
+      setStatusMessage('Hiện tại chỉ hỗ trợ VNPay. Vui lòng chọn VNPay để thanh toán.');
+      return;
+    }
+
     setIsSubmitting(true);
+    setStatusMessage(null);
+
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/interviews/request-pro`, {
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payment/vnpay/create-url`;
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id }),
+        body: JSON.stringify({ userId: user.id, amount: proAmount }),
       });
 
-      if (response.ok) {
-        alert("Hệ thống đã ghi nhận! Vui lòng chờ 1-5 phút để AI Dojo duyệt giao dịch của bạn.");
-        setShowModal(false);
-        // Lưu ý: Bạn nên gọi hàm refresh user profile ở đây để cập nhật UI ngay lập tức
-      } else {
-        alert("Có lỗi xảy ra khi gửi yêu cầu. Vui lòng thử lại!");
+      const data = await response.json();
+      if (response.ok && data?.paymentUrl) {
+        setStatusMessage('Đang chuyển bạn đến cổng VNPay...');
+        window.location.href = data.paymentUrl;
+        return;
       }
+
+      const errorMessage = data?.message || data?.error || 'Không thể tạo link thanh toán VNPay. Vui lòng thử lại.';
+      setStatusMessage(errorMessage);
     } catch (error) {
-      console.error("Payment Confirmation Error:", error);
-      alert("Không thể kết nối đến máy chủ.");
+      console.error('Payment Confirmation Error:', error);
+      setStatusMessage('Không thể kết nối đến máy chủ. Vui lòng kiểm tra lại kết nối.');
     } finally {
       setIsSubmitting(false);
     }
@@ -53,7 +86,7 @@ export function SubscriptionSettings() {
       buttonText: "Đang sử dụng",
       isCurrent: user?.plan === "FREE",
       highlight: false,
-      onClick: () => {},
+      onClick: () => { },
     },
     {
       name: "PRO",
@@ -65,9 +98,8 @@ export function SubscriptionSettings() {
         "Báo cáo lộ trình học tập cá nhân hóa",
         "Hỗ trợ Voice Interaction toàn diện",
       ],
-      // Đổi chữ trên nút nếu đang chờ duyệt
-      buttonText: user?.is_pending_pro ? "Đang chờ duyệt..." : "Nâng cấp lên PRO",
-      isCurrent: user?.plan === "PRO" || user?.is_pending_pro,
+      buttonText: user?.plan === "PRO" ? "Đang sử dụng" : "Nâng cấp lên PRO",
+      isCurrent: user?.plan === "PRO",
       highlight: true,
       onClick: () => setShowModal(true),
     },
@@ -157,17 +189,43 @@ export function SubscriptionSettings() {
 
             <div className="p-8 text-center text-slate-900">
               <div className="bg-emerald-100 w-12 h-12 rounded-2xl text-emerald-600 flex items-center justify-center mx-auto mb-4">
-                <QrCode size={24} />
+                <CreditCard size={24} />
               </div>
 
-              <h3 className="text-xl font-black mb-1 px-4">Nâng cấp tài khoản</h3>
-              <p className="text-slate-500 text-xs mb-6">Quét mã để thanh toán tự động qua App Ngân hàng</p>
+              <h3 className="text-xl font-black mb-1 px-4">Nâng cấp tài khoản PRO</h3>
+              <p className="text-slate-500 text-xs mb-6">Chọn cổng thanh toán và xác nhận để nâng cấp tự động, không cần admin duyệt.</p>
 
-              <div className="bg-slate-50 p-4 rounded-[2rem] border-2 border-slate-100 mb-6">
-                <img src={qrUrl} alt="VietQR" className="w-full aspect-square rounded-xl shadow-sm" />
+              <div className="grid grid-cols-3 gap-3 mb-6">
+                {paymentProviders.map((provider) => (
+                  <button
+                    key={provider.id}
+                    type="button"
+                    onClick={() => setSelectedProvider(provider.id as any)}
+                    className={`rounded-3xl border px-3 py-3 text-xs font-semibold transition-all ${selectedProvider === provider.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-border/60 bg-white text-slate-700 hover:border-slate-400'}`}
+                  >
+                    {provider.label}
+                  </button>
+                ))}
               </div>
 
-              <div className="space-y-3 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4 text-left mb-6">
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.24em] text-slate-500">Cổng thanh toán</p>
+                    <h4 className="font-bold text-base">{selectedProviderData.label}</h4>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openProviderCheckout}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-[11px] font-bold uppercase text-white transition hover:bg-slate-800"
+                  >
+                    Mở cổng <ArrowRight size={14} />
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500">{selectedProviderData.description}</p>
+              </div>
+
+              <div className="space-y-3 text-left bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Số tiền</span>
                   <span className="font-black">199.000đ</span>
@@ -179,15 +237,22 @@ export function SubscriptionSettings() {
               </div>
 
               <button
+                type="button"
                 disabled={isSubmitting}
                 onClick={handleConfirmPayment}
-                className="mt-6 w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-xl disabled:opacity-50"
+                className="mt-2 w-full py-4 bg-emerald-600 text-white rounded-2xl font-bold hover:bg-emerald-700 transition-all shadow-xl disabled:opacity-50"
               >
-                {isSubmitting ? "ĐANG GỬI..." : "XÁC NHẬN ĐÃ CHUYỂN TIỀN"}
+                {isSubmitting ? "ĐANG XÁC NHẬN..." : "Xác nhận thanh toán"}
               </button>
 
+              {statusMessage && (
+                <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
+                  {statusMessage}
+                </div>
+              )}
+
               <p className="mt-4 text-[10px] text-slate-400 leading-relaxed italic">
-                * Sau khi quét mã thành công, nhấn nút trên để thông báo cho đội ngũ hỗ trợ.
+                * Khi đã hoàn thành thanh toán trên cổng, hệ thống sẽ tự động bật PRO ngay lập tức.
               </p>
             </div>
           </div>

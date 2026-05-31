@@ -25,7 +25,7 @@ export function ReportModal({ isOpen, onClose, sessionId }: ReportModalProps) {
       try {
         setLoading(true);
         setErrorMessage(null);
-        const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001";
         const response = await fetch(`${API_BASE}/interviews/${sessionId}/report`);
         if (!response.ok) throw new Error("Không thể tải báo cáo từ máy chủ.");
         const data = await response.json();

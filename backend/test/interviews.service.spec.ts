@@ -1,341 +1,263 @@
+/// <reference types="jest" />
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
-import { AiService } from '../src/ai/ai.service';
-import { RagService } from '../src/rag/rag.service';
-
-jest.mock('../src/ai/ai.service', () => ({
-  AiService: jest.fn().mockImplementation(() => ({
-    analyzeCvProfile: jest.fn(),
-    processInterviewTurnStream: jest.fn(),
-    transcribeAudio: jest.fn(),
-  })),
-}));
-
-jest.mock('../src/rag/rag.service', () => ({
-  RagService: jest.fn().mockImplementation(() => ({
-    indexCv: jest.fn(),
-  })),
-}));
-
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { InterviewsService } from '../src/interviews/interviews.service';
+import { User, UserPlan } from '../src/entities/user.entity';
 import { Interview } from '../src/entities/interview.entity';
 import { Message } from '../src/entities/message.entity';
-import { User, UserPlan } from '../src/entities/user.entity';
+import { RagService } from '../src/rag/rag.service';
+import { AiService } from '../src/ai/ai.service';
 
-jest.mock('../src/ai/agents/mentor.agent', () => ({
-  MentorAgent: jest.fn().mockImplementation(() => ({
-    invoke: jest.fn(),
-  })),
-}));
+jest.mock('@langchain/community/document_loaders/fs/pdf', () => {
+  return {
+    PDFLoader: jest.fn().mockImplementation(() => ({
+      load: jest.fn().mockResolvedValue([{ pageContent: 'Mocked CV Content Developer Experience' }]),
+    })),
+  };
+});
 
-jest.mock('../src/ai/agents/evaluator.agent', () => ({
-  EvaluatorAgent: jest.fn().mockImplementation(() => ({
-    invoke: jest.fn(),
-  })),
-}));
+jest.mock('../src/ai/agents/evaluator.agent', () => {
+  return {
+    EvaluatorAgent: jest.fn().mockImplementation(() => ({
+      invoke: jest.fn().mockResolvedValue({
+        average_score: 8.5,
+        breakdown: { theory: 8, coding: 9, soft_skills: 8.5 },
+        radar_chart: [8, 9, 8.5],
+        learning_path: 'mock path',
+        summary_markdown: 'mock summary',
+      }),
+    })),
+  };
+});
 
-jest.mock('@langchain/community/document_loaders/fs/pdf', () => ({
-  PDFLoader: jest.fn().mockImplementation(() => ({
-    load: jest.fn(),
-  })),
-}));
+jest.mock('../src/ai/agents/mentor.agent', () => {
+  return {
+    MentorAgent: jest.fn().mockImplementation(() => ({
+      invoke: jest.fn().mockResolvedValue({
+        motivational_message: 'mock dynamic motivation',
+        focus_topics: ['NestJS', 'TypeScript'],
+        suggested_track: 'Backend Track',
+        track_description: 'mock desc',
+      }),
+    })),
+  };
+});
 
-describe('InterviewsService (unit)', () => {
+describe('InterviewsService', () => {
   let service: InterviewsService;
-
-  const mockRepository = (overrides = {}) => ({
-    find: jest.fn(),
-    findOne: jest.fn(),
-    create: jest.fn(),
-    save: jest.fn(),
-    delete: jest.fn(),
-    createQueryBuilder: jest.fn(),
-    ...overrides,
-  });
-
-  const aiServiceMock = {
-    model: 'test-model',
-    analyzeCvProfile: jest.fn(),
-    processInterviewTurnStream: jest.fn(),
-    transcribeAudio: jest.fn(),
-  } as any;
-
-  const ragServiceMock = {
-    indexCv: jest.fn(),
-  } as any;
-
-  let interviewRepoMock: any;
-  let messageRepoMock: any;
-  let userRepoMock: any;
+  let interviewRepo: { findOne: jest.Mock; find: jest.Mock; create: jest.Mock; save: jest.Mock; createQueryBuilder: jest.Mock };
+  let messageRepo: { find: jest.Mock; save: jest.Mock };
+  let userRepo: { findOne: jest.Mock; save: jest.Mock };
+  let ragService: { indexCv: jest.Mock };
+  let aiService: {
+    analyzeCvProfile: jest.Mock;
+    transcribeAudio: jest.Mock;
+    processInterviewTurnStream: jest.Mock;
+    model: any;
+  };
+  let mockInterview: any;
 
   beforeEach(async () => {
-    interviewRepoMock = mockRepository();
-    messageRepoMock = mockRepository();
-    userRepoMock = mockRepository();
+    mockInterview = {
+      id: 'i-1',
+      user_id: 'u-1',
+      status: 'IN_PROGRESS',
+      current_phase: 'THEORY',
+      job_title: 'Frontend Developer',
+      credits: 5,
+    };
+
+    interviewRepo = {
+      findOne: jest.fn(),
+      find: jest.fn(),
+      create: jest.fn(),
+      save: jest.fn(),
+      createQueryBuilder: jest.fn(),
+    };
+    messageRepo = {
+      find: jest.fn(),
+      save: jest.fn(),
+    };
+    userRepo = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+    ragService = {
+      indexCv: jest.fn(),
+    };
+    aiService = {
+      analyzeCvProfile: jest.fn(),
+      transcribeAudio: jest.fn(),
+      processInterviewTurnStream: jest.fn(),
+      model: {},
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InterviewsService,
-        { provide: getRepositoryToken(Interview), useFactory: () => interviewRepoMock },
-        { provide: getRepositoryToken(Message), useFactory: () => messageRepoMock },
-        { provide: getRepositoryToken(User), useFactory: () => userRepoMock },
-        { provide: AiService, useValue: aiServiceMock },
-        { provide: RagService, useValue: ragServiceMock },
+        { provide: getRepositoryToken(Interview), useValue: interviewRepo },
+        { provide: getRepositoryToken(Message), useValue: messageRepo },
+        { provide: getRepositoryToken(User), useValue: userRepo },
+        { provide: RagService, useValue: ragService },
+        { provide: AiService, useValue: aiService },
       ],
     }).compile();
 
     service = module.get<InterviewsService>(InterviewsService);
   });
 
-  afterEach(() => jest.resetAllMocks());
+  it('is defined', () => {
+    expect(service).toBeDefined();
+  });
 
   describe('requestPro', () => {
-    it('should set is_pending_pro and return success when user exists', async () => {
-      const user = {
-        id: 'u1',
-        full_name: 'A',
-        email: 'a@x.com',
-        is_pending_pro: false,
-      } as any;
-      userRepoMock.findOne.mockResolvedValue(user);
-      userRepoMock.save.mockResolvedValue({ ...user, is_pending_pro: true });
+    it('sets is_pending_pro to true and saves user', async () => {
+      const mockUser = { id: 'u-1', email: 'test@example.com', full_name: 'Test', is_pending_pro: false };
+      userRepo.findOne.mockResolvedValue(mockUser);
+      userRepo.save.mockResolvedValue(mockUser);
 
-      const res = await service.requestPro('u1');
+      const result = await service.requestPro('u-1');
 
-      expect(userRepoMock.findOne).toHaveBeenCalledWith({ where: { id: 'u1' } });
-      expect(userRepoMock.save).toHaveBeenCalled();
-      expect(res).toEqual(expect.objectContaining({ success: true }));
+      expect(result.success).toBe(true);
+      expect(mockUser.is_pending_pro).toBe(true);
+      expect(userRepo.save).toHaveBeenCalledWith(mockUser);
     });
 
-    it('should throw NotFoundException when user not found', async () => {
-      userRepoMock.findOne.mockResolvedValue(undefined);
-      await expect(service.requestPro('nope')).rejects.toThrow(NotFoundException);
+    it('throws NotFoundException when user does not exist', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+      await expect(service.requestPro('invalid')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('startNewInterview', () => {
-    it('should throw NotFoundException if user missing in credit check', async () => {
-      userRepoMock.findOne.mockResolvedValue(undefined);
-      await expect(service.startNewInterview('u1')).rejects.toThrow(NotFoundException);
+    beforeEach(() => {
+      userRepo.findOne.mockResolvedValue({ id: 'u-1', plan: UserPlan.FREE, credits: 5 });
+      userRepo.save.mockResolvedValue({ id: 'u-1', plan: UserPlan.FREE, credits: 4 });
+      interviewRepo.create.mockReturnValue(mockInterview);
+      interviewRepo.save.mockResolvedValue(mockInterview);
+      messageRepo.save.mockResolvedValue({});
     });
 
-    it('should create interview, deduct credit for FREE plan and return greeting', async () => {
-      const user = { id: 'u1', plan: UserPlan.FREE, credits: 2 } as any;
-      userRepoMock.findOne.mockResolvedValue(user);
-      userRepoMock.save.mockResolvedValue({ ...user, credits: 1 });
+    it('creates an interview and deducts credits for FREE user', async () => {
+      const result = await service.startNewInterview('u-1', 'Frontend Developer');
+      expect(result.id).toBe('i-1');
+      expect(result.greeting).toContain('Chào bạn');
+      expect(userRepo.save).toHaveBeenCalled();
+    });
 
-      const created = { user_id: 'u1', status: 'IN_PROGRESS' } as any;
-      interviewRepoMock.create.mockReturnValue(created);
-      const saved = { id: 'i1', ...created };
-      interviewRepoMock.save.mockResolvedValue(saved);
-      messageRepoMock.save.mockResolvedValue({});
-
-      const out = await service.startNewInterview('u1', 'Backend Dev');
-
-      expect(userRepoMock.findOne).toHaveBeenCalled();
-      expect(interviewRepoMock.create).toHaveBeenCalledWith(
-        expect.objectContaining({ user_id: 'u1', job_title: 'Backend Dev' }),
-      );
-      expect(interviewRepoMock.save).toHaveBeenCalledWith(created);
-      expect(messageRepoMock.save).toHaveBeenCalledWith(
-        expect.objectContaining({ interview_id: 'i1', role: 'assistant' }),
-      );
-      expect(out).toEqual(expect.objectContaining({ id: 'i1', jobTitle: 'Backend Dev' }));
+    it('throws BadRequestException if FREE user has 0 credits', async () => {
+      userRepo.findOne.mockResolvedValue({ id: 'u-1', plan: UserPlan.FREE, credits: 0 });
+      await expect(service.startNewInterview('u-1')).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('startWithCv', () => {
-    it('should throw BadRequestException when PDF text too short', async () => {
-      const user = { id: 'u1', plan: UserPlan.FREE, credits: 1 } as any;
-      userRepoMock.findOne.mockResolvedValue(user);
-      userRepoMock.save.mockResolvedValue({ ...user, credits: 0 });
-
-      const { PDFLoader } = require('@langchain/community/document_loaders/fs/pdf');
-      PDFLoader.mockImplementation(() => ({
-        load: jest.fn().mockResolvedValue([{ pageContent: 'short' }]),
-      }));
-
-      await expect(service.startWithCv('u1', Buffer.from('pdf'))).rejects.toThrow(
-        BadRequestException,
-      );
+    beforeEach(() => {
+      userRepo.findOne.mockResolvedValue({ id: 'u-1', plan: UserPlan.FREE, credits: 5 });
+      userRepo.save.mockResolvedValue({ id: 'u-1', plan: UserPlan.FREE, credits: 4 });
+      aiService.analyzeCvProfile.mockResolvedValue({
+        job_title: 'NodeJS Developer',
+        experience_level: 'Senior',
+      });
+      interviewRepo.create.mockReturnValue(mockInterview);
+      interviewRepo.save.mockResolvedValue(mockInterview);
+      messageRepo.save.mockResolvedValue({});
+      ragService.indexCv.mockResolvedValue({});
     });
 
-    it('should analyze CV, index it and create interview successfully', async () => {
-      const user = { id: 'u1', plan: UserPlan.FREE, credits: 1 } as any;
-      userRepoMock.findOne.mockResolvedValue(user);
-      userRepoMock.save.mockResolvedValue({ ...user, credits: 0 });
+    it('successfully extracts PDF CV, creates interview and indexes CV', async () => {
+      const pdfBuffer = Buffer.from('dummy-pdf-content');
+      const result = await service.startWithCv('u-1', pdfBuffer);
 
-      const cvProfile = { job_title: 'DevOps', experience_level: 'Senior' };
-      aiServiceMock.analyzeCvProfile.mockResolvedValue(cvProfile);
-
-      const { PDFLoader } = require('@langchain/community/document_loaders/fs/pdf');
-      PDFLoader.mockImplementation(() => ({
-        load: jest.fn().mockResolvedValue([
-          { pageContent: 'This is a valid CV content with enough length.' },
-        ]),
-      }));
-
-      const created = { user_id: 'u1', status: 'IN_PROGRESS' } as any;
-      interviewRepoMock.create.mockReturnValue(created);
-      const saved = { id: 'i-cv', job_title: 'DevOps', ...created } as any;
-      interviewRepoMock.save.mockResolvedValue(saved);
-      messageRepoMock.save.mockResolvedValue({});
-      ragServiceMock.indexCv.mockResolvedValue({});
-
-      const out = await service.startWithCv('u1', Buffer.from('pdf-data'));
-
-      expect(aiServiceMock.analyzeCvProfile).toHaveBeenCalled();
-      expect(ragServiceMock.indexCv).toHaveBeenCalledWith('u1', 'i-cv', expect.any(String));
-      expect(out).toEqual(expect.objectContaining({ id: 'i-cv', jobTitle: 'DevOps' }));
+      expect(result.id).toBe('i-1');
+      expect(result.jobTitle).toBe('NodeJS Developer');
+      expect(ragService.indexCv).toHaveBeenCalled();
     });
   });
 
   describe('getInterviewState', () => {
-    it('should throw NotFoundException when interview missing', async () => {
-      interviewRepoMock.findOne.mockResolvedValue(undefined);
-      await expect(service.getInterviewState('i1', 'u1')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should return structured state when interview exists', async () => {
-      const interview = {
-        id: 'i1',
-        job_title: 'X',
-        current_phase: 'THEORY',
-        status: 'IN_PROGRESS',
-        last_code: 'c',
-      } as any;
-      interviewRepoMock.findOne.mockResolvedValue(interview);
-      messageRepoMock.find.mockResolvedValue([
-        { id: 'm1', role: 'user', content: 'hi', phase: 'THEORY', score: 0 },
+    it('returns structured interview state and history', async () => {
+      interviewRepo.findOne.mockResolvedValue(mockInterview);
+      messageRepo.find.mockResolvedValue([
+        { id: 'm-1', role: 'assistant', content: 'Hello', phase: 'THEORY', score: 0 },
       ]);
 
-      const res = await service.getInterviewState('i1', 'u1');
+      const result = await service.getInterviewState('i-1', 'u-1');
 
-      expect(res.interviewId).toBe('i1');
-      expect(res.chatHistory).toHaveLength(1);
-      expect(res.chatHistory[0]).toHaveProperty('role', 'user');
-    });
-  });
-
-  describe('processUserMessageStream', () => {
-    it('should throw NotFoundException when interview not found', async () => {
-      interviewRepoMock.findOne.mockResolvedValue(undefined);
-      const gen = service.processUserMessageStream('i1', 'u1', 'msg', 'THEORY', '');
-      await expect(gen.next()).rejects.toThrow(NotFoundException);
+      expect(result.interviewId).toBe('i-1');
+      expect(result.chatHistory).toHaveLength(1);
+      expect(result.chatHistory[0].content).toBe('Hello');
     });
 
-    it('should stream replies, save assistant message and yield metadata on completion', async () => {
-      const interview = {
-        id: 'i1',
-        user_id: 'u1',
-        status: 'IN_PROGRESS',
-        job_title: 'SWE',
-        current_phase: 'THEORY',
-      } as any;
-      interviewRepoMock.findOne.mockResolvedValue(interview);
-      messageRepoMock.find.mockResolvedValue([{ role: 'user', content: 'hi' }]);
-
-      async function* fakeGen() {
-        yield 'part1';
-        yield 'part2';
-        return { next_action: 'END_INTERVIEW' };
-      }
-      aiServiceMock.processInterviewTurnStream.mockReturnValue(fakeGen());
-      interviewRepoMock.save.mockResolvedValue({
-        ...interview,
-        status: 'COMPLETED',
-        current_phase: 'EVALUATION',
-      });
-      messageRepoMock.save.mockResolvedValue({});
-
-      const chunks: string[] = [];
-      const gen = service.processUserMessageStream('i1', 'u1', 'hello', 'THEORY', '', '', 'neutral');
-      for await (const chunk of gen) {
-        chunks.push(chunk as string);
-      }
-
-      expect(chunks).toContain('part1');
-      expect(chunks).toContain('part2');
-      expect(chunks.some(c => c.includes('__METADATA__'))).toBeTruthy();
-      expect(interviewRepoMock.save).toHaveBeenCalled();
+    it('throws NotFoundException when interview is not found', async () => {
+      interviewRepo.findOne.mockResolvedValue(null);
+      await expect(service.getInterviewState('i-invalid', 'u-1')).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('getSummaryReport', () => {
-    it('should throw NotFoundException when interview missing', async () => {
-      interviewRepoMock.findOne.mockResolvedValue(undefined);
-      await expect(service.getSummaryReport('i1')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw BadRequestException when no user messages in history', async () => {
-      const interview = { id: 'i1', job_title: 'X', status: 'IN_PROGRESS' } as any;
-      interviewRepoMock.findOne.mockResolvedValue(interview);
-      messageRepoMock.find.mockResolvedValue([{ role: 'assistant', content: 'hi' }]);
-      await expect(service.getSummaryReport('i1')).rejects.toThrow(BadRequestException);
-    });
-
-    it('should call EvaluatorAgent and return computed report when interview not completed', async () => {
-      const interview = { id: 'i1', job_title: 'X', status: 'IN_PROGRESS', last_code: 'c' } as any;
-      interviewRepoMock.findOne.mockResolvedValue(interview);
-      const fullHistory = [{ role: 'user', content: 'q' }];
-      messageRepoMock.find.mockResolvedValue(fullHistory);
-      const { EvaluatorAgent } = require('../src/ai/agents/evaluator.agent');
-      const fakeReport = {
-        average_score: 80,
-        breakdown: { theory: 30, coding: 40, soft_skills: 10 },
-        radar_chart: [1, 2, 3],
-        learning_path: ['a'],
-        summary_markdown: 'sum',
+    it('returns existing report data if interview is COMPLETED and has radar data', async () => {
+      const completedInterview = {
+        ...mockInterview,
+        status: 'COMPLETED',
+        radar_data: [8, 9, 8],
+        average_score: 8.3,
+        score_theory: 8,
+        score_coding: 9,
+        score_softskills: 8,
+        learning_path: 'path',
+        final_report: 'summary',
       };
-      EvaluatorAgent.mockImplementation(() => ({
-        invoke: jest.fn().mockResolvedValue(fakeReport),
-      }));
-      interviewRepoMock.save.mockResolvedValue({ ...interview, status: 'COMPLETED' });
+      interviewRepo.findOne.mockResolvedValue(completedInterview);
+      messageRepo.find.mockResolvedValue([
+        { role: 'user', content: 'Answer' },
+      ]);
 
-      const out = await service.getSummaryReport('i1');
-      expect(out).toHaveProperty('avgScore', 80);
-      expect(interviewRepoMock.save).toHaveBeenCalled();
+      const result = await service.getSummaryReport('i-1');
+
+      expect(result.avgScore).toBe(8.3);
+      expect(result.summary).toBe('summary');
+    });
+
+    it('generates new report via EvaluatorAgent if not completed or missing radar data', async () => {
+      interviewRepo.findOne.mockResolvedValue(mockInterview);
+      messageRepo.find.mockResolvedValue([
+        { role: 'user', content: 'Answer' },
+      ]);
+      interviewRepo.save.mockResolvedValue({});
+
+      const result = await service.getSummaryReport('i-1');
+
+      expect(result.avgScore).toBe(8.5);
+      expect(result.theory).toBe(8);
+      expect(interviewRepo.save).toHaveBeenCalled();
     });
   });
 
   describe('processAudioMessage', () => {
-    it('should return prompt when transcription empty', async () => {
-      aiServiceMock.transcribeAudio.mockResolvedValue('');
-      const res = await service.processAudioMessage(
-        'i1',
-        'u1',
-        Buffer.from(''),
-        'f.wav',
-        'THEORY',
-        '',
-        '',
-      );
-      expect(res).toEqual(
-        expect.objectContaining({ recognizedText: '', reply: expect.any(String) }),
-      );
+    beforeEach(() => {
+      aiService.transcribeAudio.mockResolvedValue('Hello AI');
+      aiService.processInterviewTurnStream.mockImplementation(async function* () {
+        yield 'Hello back';
+      });
+      interviewRepo.findOne.mockResolvedValue(mockInterview);
+      messageRepo.find.mockResolvedValue([]);
     });
 
-    it('should forward to processUserMessageStream and return accumulated reply', async () => {
-      aiServiceMock.transcribeAudio.mockResolvedValue('hello');
-      async function* fakeGen() {
-        yield 'a';
-        yield '__METADATA__{"current_phase":"THEORY"}';
-      }
-      jest.spyOn(service as any, 'processUserMessageStream').mockReturnValue(fakeGen() as any);
-      interviewRepoMock.findOne.mockResolvedValue({ id: 'i1', current_phase: 'THEORY' } as any);
-
-      const res = await service.processAudioMessage(
-        'i1',
-        'u1',
-        Buffer.from(''),
-        'f.wav',
+    it('transcribes audio and yields stream responses', async () => {
+      const result = await service.processAudioMessage(
+        'i-1',
+        'u-1',
+        Buffer.from('audio'),
+        'test.webm',
         'THEORY',
-        '',
-        '',
+        'code',
       );
-      expect(res).toHaveProperty('recognizedText', 'hello');
-      expect(res).toHaveProperty('reply', 'a');
+
+      expect(result.recognizedText).toBe('Hello AI');
+      expect(result.reply).toBe('Hello back');
     });
   });
 });

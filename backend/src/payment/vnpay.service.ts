@@ -163,7 +163,7 @@ export class VnpayService {
       vnp_ReturnUrl: vnpReturnUrl,
       vnp_CreateDate: createDate,
       vnp_IpAddr: ipAddr,
-      vnp_SecureHashType: 'SHA512',
+//      vnp_SecureHashType: 'SHA512',
     };
 
     const sortedKeys = Object.keys(params).sort();

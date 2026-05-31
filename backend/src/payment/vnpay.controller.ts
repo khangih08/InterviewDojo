@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Query, BadRequestException } from '@nestjs/common';
-import { VnpayService } from './vnpay.service';
+import { VnpayService } from '../payment/vnpay.service';
 import { CreateVnpayUrlDto } from './dto/create-vnpay-url.dto';
-import { VnpayIpnResponse } from './vnpay.service';
+import { VnpayIpnResponse } from '../payment/vnpay.service';
 
 @Controller('payment/vnpay')
 export class VnpayController {
