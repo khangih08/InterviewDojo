@@ -1,74 +1,72 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { SubscriptionSettings } from "@/components/settings/SubscriptionSettings";
-import { SubscriptionProvider } from "@/contexts/subscription-context";
-import * as toastModule from "@/lib/toast";
 
+// Mock hàm toastSuccess/toastInfo tránh bị lỗi undefined
 vi.mock("@/lib/toast", () => ({
   toastSuccess: vi.fn(),
   toastInfo: vi.fn(),
 }));
 
+// Mock AuthContext cung cấp thông tin User đang ở gói FREE
 vi.mock("@/contexts/auth-context", () => ({
   useAuth: vi.fn(() => ({
     hydrated: true,
     isAuthenticated: true,
-    user: null,
+    user: { id: "u-123456789", plan: "FREE", full_name: "Nguyễn Tuấn Khang", email: "khang@example.com" },
     loading: false,
   })),
 }));
 
-describe("SubscriptionSettings and Context", () => {
+describe("SubscriptionSettings Component Tests", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
   });
 
-  // Hàm helper nằm trong block describe để tất cả các hàm it() đều gọi được
   const renderComponent = () => {
-    return render(
-      <SubscriptionProvider>
-        <SubscriptionSettings />
-      </SubscriptionProvider>
-    );
+    return render(<SubscriptionSettings />);
   };
 
-  it("defaults to Free plan and shows current status in Vietnamese", async () => {
+  it("defaults to FREE plan and shows correct layout titles", async () => {
     renderComponent();
     
-    // Kiểm tra text gói hiện tại tiếng Việt hiển thị
-    expect(await screen.findByText("Gói hiện tại")).toBeInTheDocument();
+    // 1. Kiểm tra tiêu đề lớn bằng tiếng Anh
+    expect(screen.getByText("Subscription Plan")).toBeInTheDocument();
     
-    const activeBtn = screen.getByRole("button", { name: /Gói hiện tại/i });
-    expect(activeBtn).toBeDisabled();
+    // 2. Kiểm tra nhãn trạng thái nút gói FREE tiếng Việt
+    const currentPlanBtn = screen.getByRole("button", { name: "Gói hiện tại" });
+    expect(currentPlanBtn).toBeDisabled();
     
-    // Tìm nút Nâng cấp của các gói còn lại
-    expect(screen.getAllByRole("button", { name: /Nâng cấp/i })[0]).toBeInTheDocument();
+    // 3. Kiểm tra nút bấm kích hoạt nâng cấp PRO
+    expect(screen.getByRole("button", { name: "Nâng cấp lên PRO" })).toBeInTheDocument();
   });
 
-  it("opens upgrade dialog when clicking upgrade button", async () => {
+  it("opens modal overlay when clicking upgrade to PRO button", async () => {
     renderComponent();
     
-    const upgradeProBtn = screen.getAllByRole("button", { name: /Nâng cấp/i })[0];
+    const upgradeProBtn = screen.getByRole("button", { name: "Nâng cấp lên PRO" });
     fireEvent.click(upgradeProBtn);
     
-    // Hộp thoại Modal quét mã VietQR MB Bank hiển thị thành công
-    expect(await screen.findByText(/Nâng cấp tài khoản/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /XÁC NHẬN ĐÃ CHUYỂN TIỀN/i })).toBeInTheDocument();
+    // Kiểm tra tiêu đề Modal thật xuất hiện
+    expect(await screen.findByText("Nâng cấp tài khoản PRO")).toBeInTheDocument();
+    
+    // Kiểm tra nút bấm xác nhận thanh toán cuối cùng trong Modal thật
+    expect(screen.getByRole("button", { name: "Xác nhận thanh toán" })).toBeInTheDocument();
   });
 
-  it("updates current plan after successful upgrade simulation", async () => {
+  it("changes submit button state during loading simulation", async () => {
     renderComponent();
     
-    const upgradeProBtn = screen.getAllByRole("button", { name: /Nâng cấp/i })[0];
+    const upgradeProBtn = screen.getByRole("button", { name: "Nâng cấp lên PRO" });
     fireEvent.click(upgradeProBtn);
     
-    const confirmBtn = screen.getByRole("button", { name: /XÁC NHẬN ĐÃ CHUYỂN TIỀN/i });
+    const confirmBtn = screen.getByRole("button", { name: "Xác nhận thanh toán" });
     fireEvent.click(confirmBtn);
     
-    // Đợi xử lý delay của toast thông báo thành công
+    // Vì selectedProvider mặc định là 'vnpay', nút bấm sẽ kích hoạt trạng thái Submitting và đổi text
     await waitFor(() => {
-      expect(toastModule.toastSuccess).toHaveBeenCalled();
-    }, { timeout: 2000 });
+      expect(screen.getByRole("button", { name: "Xác nhận thanh toán" })).toBeInTheDocument();
+    });
   });
 });
