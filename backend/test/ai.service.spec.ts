@@ -1,5 +1,12 @@
 /// <reference types="jest" />
 
+const mockExec = jest.fn();
+jest.mock('child_process', () => {
+  return {
+    exec: mockExec,
+  };
+});
+
 const mockInvokeModel = jest.fn();
 jest.mock('@langchain/openai', () => {
   return {
@@ -70,7 +77,7 @@ describe('AiService', () => {
   describe('executeCode', () => {
     it('should execute valid JS code successfully', async () => {
       const code = `console.log("hello"); console.log("world");`;
-      const result = await service.executeCode(code);
+      const result = await service.executeCode(code, 'javascript');
       expect(result).toEqual({
         output: 'hello\nworld\n',
       });
@@ -78,15 +85,45 @@ describe('AiService', () => {
 
     it('should return error message when code throws an error', async () => {
       const code = `nonExistentFunction();`;
-      const result = await service.executeCode(code);
+      const result = await service.executeCode(code, 'javascript');
       expect(result.error).toBeDefined();
       expect(result.output).toBe('');
     });
 
     it('should prevent sandboxed code from accessing global process', async () => {
       const code = `console.log(process.env);`;
-      const result = await service.executeCode(code);
+      const result = await service.executeCode(code, 'javascript');
       expect(result.error).toBeDefined(); // process is not defined in sandbox
+    });
+
+    it('should transpile and execute TS code successfully', async () => {
+      const code = `const x: number = 42; console.log(x);`;
+      const result = await service.executeCode(code, 'typescript');
+      expect(result).toEqual({
+        output: '42\n',
+      });
+    });
+
+    it('should execute Python code successfully through child_process', async () => {
+      mockExec.mockImplementation((cmd, opts, callback) => {
+        callback(null, 'hello python\n', '');
+      });
+      const code = `print("hello python")`;
+      const result = await service.executeCode(code, 'python');
+      expect(result).toEqual({
+        output: 'hello python\n',
+      });
+      expect(mockExec).toHaveBeenCalled();
+    });
+
+    it('should return simulation output for C++ and Java', async () => {
+      const codeCpp = `int x = 10;`;
+      const resultCpp = await service.executeCode(codeCpp, 'cpp');
+      expect(resultCpp.output).toContain('Đang biên dịch mã nguồn CPP');
+
+      const codeJava = `public class Main {}`;
+      const resultJava = await service.executeCode(codeJava, 'java');
+      expect(resultJava.output).toContain('Đang biên dịch mã nguồn JAVA');
     });
   });
 

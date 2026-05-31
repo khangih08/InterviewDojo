@@ -73,4 +73,18 @@ export class AdminController {
 
     return { success: true, message: `Đã cập nhật credits cho ${user.full_name}` };
   }
+
+  // 6. API Thu hồi PRO (Hạ cấp xuống FREE)
+  @Post('revoke-pro/:id')
+  async revokePro(@Param('id') userId: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new BadRequestException('User không tồn tại');
+
+    user.plan = UserPlan.FREE;
+    user.credits = 10; // Reset lại 10 credits mặc định của gói FREE
+    user.is_pending_pro = false;
+    await this.userRepo.save(user);
+
+    return { success: true, message: `Đã hạ cấp xuống FREE cho ${user.full_name}` };
+  }
 }
