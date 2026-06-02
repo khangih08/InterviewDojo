@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm'; // Thêm DataSource từ typeorm
 import { createHmac } from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { User, UserPlan } from '../entities/user.entity';
@@ -19,9 +19,17 @@ export class VnpayService {
 
   constructor(
     private readonly configService: ConfigService,
+    private readonly dataSource: DataSource, // Inject thêm dâtSource để quản lý Transaction
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
   ) {}
+
+  // Hàm encode chuẩn hóa theo định dạng cổng 2.1.0 của VNPay
+  private vnpayUrlEncode(str: string): string {
+    return encodeURIComponent(str)
+      .replace(/%20/g, '+')
+      .replace(/%[0-9a-f]{2}/gi, (match) => match.toUpperCase());
+  }
 
   async createPaymentUrl(dto: CreateVnpayUrlDto): Promise<{ paymentUrl: string; orderRef: string }> {
     const { userId, amount = this.defaultProAmountVnd } = dto;
@@ -52,7 +60,6 @@ export class VnpayService {
     return { paymentUrl, orderRef };
   }
 
-  // Generate a safe vnp_TxnRef: only alphanumeric, max length 30
   private generateSafeTxnRef(prefix: string, userId: string): string {
     const cleanUser = String(userId || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12).toUpperCase();
     const ts = Date.now().toString(36).toUpperCase().slice(-6);
@@ -62,7 +69,15 @@ export class VnpayService {
   }
 
   async handleIpn(query: Record<string, string | undefined>): Promise<VnpayIpnResponse> {
-    const secureHash = query.vnp_SecureHash;
+    return this.handleVnpayCallback(query);
+  }
+
+  async handleReturn(query: Record<string, string | undefined>): Promise<VnpayIpnResponse> {
+    return this.handleVnpayCallback(query);
+  }
+
+  private async handleVnpayCallback(query: Record<string, string | undefined>): Promise<VnpayIpnResponse> {
+    const secureHash = query.vnp_SecureHash?.toUpperCase();
     const hashSecret = this.getRequiredEnv('VNP_HASHSECRET');
 
     if (!secureHash) {
@@ -74,12 +89,17 @@ export class VnpayService {
     const computedHash = this.computeSecureHash(vnpParams, hashSecret);
     const rawForDebug = this.computeRawDataForDebug(vnpParams);
 
-    if (!secureHash || computedHash !== secureHash) {
+    this.logger.debug('VNPay callback hash validation', {
+      receivedHash: secureHash,
+      computedHash,
+      secret: hashSecret.slice(0, 4) + '***',
+    });
+
+    if (computedHash !== secureHash) {
       this.logger.warn('Invalid VNPay signature', JSON.stringify({
         received: secureHash,
         computed: computedHash,
         raw: rawForDebug,
-        params: vnpParams,
       }));
       return { RspCode: '97', Message: 'Invalid signature' };
     }
@@ -111,33 +131,50 @@ export class VnpayService {
       return { RspCode: '04', Message: 'Invalid order info' };
     }
 
-    const user = await this.userRepo
-      .createQueryBuilder('user')
-      .setLock('pessimistic_write')
-      .where('user.id = :id', { id: userId })
-      .getOne();
+    // Bọc quy trình truy vấn dữ liệu vào Transaction để thực hiện khóa bi quan (Pessimistic Write) an toàn
+    return await this.dataSource.transaction(async (transactionalEntityManager) => {
+      const user = await transactionalEntityManager
+        .createQueryBuilder(User, 'user')
+        .setLock('pessimistic_write')
+        .where('user.id = :id', { id: userId })
+        .getOne();
 
-    if (!user) {
-      this.logger.warn('VNPay order user not found', { userId, orderRef });
-      return { RspCode: '01', Message: 'User not found' };
-    }
+      if (!user) {
+        this.logger.warn('VNPay order user not found', { userId, orderRef });
+        return { RspCode: '01', Message: 'User not found' };
+      }
 
-    if (user.pending_pro_provider !== 'vnpay' || user.pending_pro_order_ref !== orderRef || !user.is_pending_pro) {
-      this.logger.warn('VNPay duplicate or mismatched order', { userId, orderRef, currentProvider: user.pending_pro_provider, currentOrderRef: user.pending_pro_order_ref, isPending: user.is_pending_pro });
-      return { RspCode: '01', Message: 'Order invalid or already processed' };
-    }
+      const isSameOrder = user.pending_pro_provider === 'vnpay' && user.pending_pro_order_ref === orderRef;
 
-    user.plan = UserPlan.PRO;
-    user.credits = 9999;
-    user.is_pending_pro = false;
-    user.pending_pro_provider = null;
-    user.pending_pro_order_ref = null;
+      if (user.plan === UserPlan.PRO && !user.is_pending_pro) {
+        this.logger.log('VNPay callback already processed (idempotent)', { userId, orderRef });
+        return { RspCode: '00', Message: 'Confirm success' };
+      }
 
-    await this.userRepo.save(user);
+      if (!isSameOrder) {
+        this.logger.warn('VNPay duplicate or mismatched order', {
+          userId,
+          orderRef,
+          currentProvider: user.pending_pro_provider,
+          currentOrderRef: user.pending_pro_order_ref,
+        });
+        return { RspCode: '01', Message: 'Order invalid or already processed' };
+      }
 
-    this.logger.log(`VNPay confirmed and upgraded user=${user.email} orderRef=${orderRef}`);
+      // Cập nhật thông tin User lên tài khoản PRO
+      user.plan = UserPlan.PRO;
+      user.credits = 9999;
+      user.is_pending_pro = false;
+      user.pending_pro_provider = null;
+      user.pending_pro_order_ref = null;
 
-    return { RspCode: '00', Message: 'Confirm success' };
+      // Lưu thông qua EntityManager của Transaction hiện tại
+      await transactionalEntityManager.save(user);
+
+      this.logger.log(`VNPay confirmed and upgraded user=${user.email} orderRef=${orderRef}`);
+
+      return { RspCode: '00', Message: 'Confirm success' };
+    });
   }
 
   private buildVnpayCheckoutUrl(user: User, orderRef: string, amount: number): string {
@@ -163,28 +200,19 @@ export class VnpayService {
       vnp_ReturnUrl: vnpReturnUrl,
       vnp_CreateDate: createDate,
       vnp_IpAddr: ipAddr,
-//      vnp_SecureHashType: 'SHA512',
     };
 
     const sortedKeys = Object.keys(params).sort();
 
-    // Use VNPay-specific encoding: encodeURIComponent, but replace %20 with + and uppercase hex
-    const encodeForVnpay = (value: string) =>
-      encodeURIComponent(value)
-        .replace(/%20/g, '+')
-        .replace(/%[0-9a-f]{2}/gi, (m) => m.toUpperCase());
-
-    const queryString = sortedKeys
-      .map((key) => `${encodeForVnpay(key)}=${encodeForVnpay(params[key])}`)
-      .join('&');
-
-    // Build raw hash string using the SAME encoding rules (exclude vnp_SecureHashType)
     const rawHash = sortedKeys
-      .filter((key) => key !== 'vnp_SecureHashType')
-      .map((key) => `${key}=${encodeForVnpay(params[key])}`)
+      .map((key) => `${this.vnpayUrlEncode(key)}=${this.vnpayUrlEncode(params[key])}`)
       .join('&');
 
     const secureHash = createHmac('sha512', vnpHashSecret).update(rawHash).digest('hex').toUpperCase();
+
+    const queryString = sortedKeys
+      .map((key) => `${this.vnpayUrlEncode(key)}=${this.vnpayUrlEncode(params[key])}`)
+      .join('&');
 
     return `${vnpUrl}?${queryString}&vnp_SecureHash=${secureHash}`;
   }
@@ -203,22 +231,19 @@ export class VnpayService {
 
   private computeSecureHash(params: Record<string, string>, secret: string): string {
     const sortedKeys = Object.keys(params).sort();
-    const encodeForVnpay = (value: string) =>
-      encodeURIComponent(value)
-        .replace(/%20/g, '+')
-        .replace(/%[0-9a-f]{2}/gi, (m) => m.toUpperCase());
-    const rawData = sortedKeys.map((key) => `${key}=${encodeForVnpay(params[key])}`).join('&');
+    
+    const rawData = sortedKeys
+      .map((key) => `${key}=${this.vnpayUrlEncode(params[key])}`)
+      .join('&');
+    
     return createHmac('sha512', secret).update(rawData).digest('hex').toUpperCase();
   }
 
-  // Helper for debugging: return the raw data string used to compute the secure hash
   private computeRawDataForDebug(params: Record<string, string>): string {
     const sortedKeys = Object.keys(params).sort();
-    const encodeForVnpay = (value: string) =>
-      encodeURIComponent(value)
-        .replace(/%20/g, '+')
-        .replace(/%[0-9a-f]{2}/gi, (m) => m.toUpperCase());
-    return sortedKeys.map((key) => `${key}=${encodeForVnpay(params[key])}`).join('&');
+    return sortedKeys
+      .map((key) => `${key}=${this.vnpayUrlEncode(params[key])}`)
+      .join('&');
   }
 
   private parseUserIdFromOrderInfo(orderInfo: string): string | null {

@@ -22,17 +22,20 @@ export default function ProfilePage() {
         {/* Profile Content */}
         <div className="px-8 pb-8 relative">
           {/* Avatar & Edit Button */}
-          <div className="flex justify-between items-end -mt-16 mb-6">
-            <div className="relative group cursor-pointer">
+          <div className="flex justify-between items-end -mt-16 mb-6 gap-4">
+            <div className="relative group cursor-pointer flex items-center gap-4">
               <div className="h-32 w-32 rounded-3xl bg-white dark:bg-slate-800 p-2 shadow-lg ring-4 ring-white/50 dark:ring-slate-900/50 relative z-10 overflow-hidden transition-transform duration-300 group-hover:scale-105">
                 <div className="w-full h-full rounded-2xl bg-gradient-to-br from-violet-100 to-indigo-50 dark:from-violet-900/40 dark:to-indigo-900/40 flex items-center justify-center text-violet-600 dark:text-violet-400">
                   <UserRound className="h-12 w-12" />
                 </div>
               </div>
-              {/* Optional glow behind avatar */}
-              <div className="absolute inset-0 rounded-3xl bg-violet-400/30 blur-xl z-0 animate-pulse-glow" />
+              {user?.plan?.toUpperCase?.() === 'PRO' && (
+                <div className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm font-semibold uppercase tracking-[0.12em] text-amber-600 shadow-sm shadow-amber-500/10">
+                  PRO
+                </div>
+              )}
             </div>
-            
+
             <Button variant="outline" className="hidden sm:flex gap-2 rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm">
               <Edit3 className="w-4 h-4" />
               Chỉnh sửa hồ sơ

@@ -5,6 +5,9 @@ export type User = {
   target_role?: JobRole;
   experience_level?: ExperienceLevel;
   role?: "admin" | "user";
+  plan?: "FREE" | "PRO";
+  credits?: number;
+  is_pending_pro?: boolean;
 };
 
 export type JobRole =
