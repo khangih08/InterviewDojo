@@ -18,9 +18,9 @@ import {
 type DashboardRecentCardProps = {
   sessions: Session[];
   loading: boolean;
-  onViewReport?: (sessionId: string) => void; // Hàm gọi mở Modal
-  limit?: number; // Giới hạn số lượng hiển thị (dùng cho Dashboard)
-  hideHeader?: boolean; // Ẩn header nếu dùng ở trang History
+  onViewReport?: (sessionId: string) => void;
+  limit?: number;
+  hideHeader?: boolean;
 };
 
 function getStatusIcon(status: string) {
@@ -57,7 +57,6 @@ export function DashboardRecentCard({
   hideHeader = false,
 }: DashboardRecentCardProps) {
   const router = useRouter();
-  // Nếu không truyền limit (undefined), sẽ hiển thị tất cả
   const displaySessions = limit ? sessions.slice(0, limit) : sessions;
 
   return (
@@ -107,10 +106,16 @@ export function DashboardRecentCard({
           </div>
         ) : displaySessions.length > 0 ? (
           <div className="space-y-3 p-4">
-            {displaySessions.map((session) => {
-              const score = getAverageScore(session);
+            {displaySessions.map((session: any) => {
+
+              // 1. SỬA LỖI 0%: Lấy điểm trực tiếp từ object session. Nếu không có mới gọi hàm tính
+              const rawScore = session.score ?? session.evaluation?.overallScore ?? session.evaluation?.score ?? getAverageScore(session) ?? 0;
+              const score = Math.round(Number(rawScore)); // Đảm bảo luôn là số nguyên
+
               const tone = getScoreTone(score);
-              const category = inferSessionCategory(session.question_content);
+
+              // 2. SỬA LỖI CATEGORY: Ưu tiên lấy category/topic thẳng từ backend, không có mới gọi hàm infer
+              const category = session.category || session.topic || inferSessionCategory(session.question_content) || "General";
 
               return (
                 <button
