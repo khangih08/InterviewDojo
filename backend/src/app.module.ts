@@ -15,7 +15,7 @@ import { QuestionsModule } from './questions/questions.module';
 import { TagsModule } from './tag/tags.module';
 import { RedisModule } from './common/redis/redis.module';
 import { AiModule } from './ai/ai.module';
-
+import {PaymentModule} from './payment/payment.module' ;
 // Entities
 import { Category } from './entities/category.entity';
 import { Question } from './entities/question.entity';
@@ -51,6 +51,7 @@ import { AdminController } from './admin/admin.controller';
     TagsModule,
     QuestionsModule,
     RedisModule,
+    PaymentModule,
 
     // Cấu hình TypeORM kết nối Database
     TypeOrmModule.forRootAsync({
