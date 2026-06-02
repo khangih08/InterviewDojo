@@ -6,8 +6,7 @@ export class MentorAgent {
   constructor(private readonly llm: BaseChatModel) {}
 
   async invoke(targetRole: string, lastInterviewReport: string, averageScore: number) {
-    // 1. ĐỊNH NGHĨA SCHEMA CHUẨN 100% BẰNG ZOD
-    // AI sẽ bị ép buộc trả về đúng các key và type này ở cấp độ API
+
     const responseSchema = z.object({
       motivational_message: z.string().describe("Một câu động viên ngắn gọn dưới 20 chữ"),
       focus_topics: z.array(z.string()).describe("Mảng chứa đúng 3 từ khóa kỹ năng cần ôn tập"),

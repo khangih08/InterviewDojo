@@ -47,7 +47,7 @@ export default function PaymentCallbackClient() {
           .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v ?? '')}`)
           .join('&');
 
-        const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
         const res = await fetch(`${base}/payment/vnpay/ipn?${params}`);
         const data = await res.json();
         if (res.ok && data.RspCode === '00') {
