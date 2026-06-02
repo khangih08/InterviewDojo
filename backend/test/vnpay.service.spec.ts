@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm'; // IMPORT THÊM: Quản lý Transaction khóa bi quan
 import { VnpayService } from '../src/payment/vnpay.service';
 import { User, UserPlan } from '../src/entities/user.entity';
 import { createHmac } from 'crypto';
@@ -19,6 +20,23 @@ describe('VnpayService', () => {
     get: jest.Mock;
   };
 
+  // Các biến mock phục vụ cho kiến trúc Transaction của TypeORM
+  let mockEntityManager: {
+    findOne: jest.Mock;
+    save: jest.Mock;
+  };
+  let mockQueryRunner: {
+    connect: jest.Mock;
+    startTransaction: jest.Mock;
+    commitTransaction: jest.Mock;
+    rollbackTransaction: jest.Mock;
+    release: jest.Mock;
+    manager: any;
+  };
+  let mockDataSource: {
+    createQueryRunner: jest.Mock;
+  };
+
   const mockQueryBuilder = {
     setLock: jest.fn().mockReturnThis(),
     where: jest.fn().mockReturnThis(),
@@ -27,6 +45,25 @@ describe('VnpayService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    // 1. Khởi tạo Mock các hàm bên trong Transaction manager
+    mockEntityManager = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+
+    mockQueryRunner = {
+      connect: jest.fn(),
+      startTransaction: jest.fn(),
+      commitTransaction: jest.fn(),
+      rollbackTransaction: jest.fn(),
+      release: jest.fn(),
+      manager: mockEntityManager, // Ép QueryRunner dùng EntityManager giả lập này
+    };
+
+    mockDataSource = {
+      createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
+    };
 
     userRepo = {
       findOne: jest.fn(),
@@ -52,6 +89,8 @@ describe('VnpayService', () => {
         VnpayService,
         { provide: ConfigService, useValue: configService },
         { provide: getRepositoryToken(User), useValue: userRepo },
+        // 2. GIẢI QUYẾT LỖI: Cung cấp mockDataSource cho NestJS Testing Module
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
@@ -172,7 +211,6 @@ describe('VnpayService', () => {
         vnp_ResponseCode: '00',
         vnp_TxnRef: 'VNP123',
       };
-      // Missing OrderInfo and Amount
       const query = generateVnpayQuery(params);
       const result = await service.handleIpn(query);
       expect(result).toEqual({ RspCode: '04', Message: 'Invalid order data' });
@@ -183,7 +221,7 @@ describe('VnpayService', () => {
         vnp_ResponseCode: '00',
         vnp_TxnRef: 'VNP123',
         vnp_OrderInfo: 'PRO_UPGRADE|u-123',
-        vnp_Amount: '1000', // expected is defaultProAmountVnd * 100 = 19900000
+        vnp_Amount: '1000',
       };
       const query = generateVnpayQuery(params);
       const result = await service.handleIpn(query);
@@ -210,7 +248,9 @@ describe('VnpayService', () => {
         vnp_Amount: String(199000 * 100),
       };
       const query = generateVnpayQuery(params);
-      mockQueryBuilder.getOne.mockResolvedValue(null);
+      
+      // Vì handleIpn chạy Transaction qua QueryRunner, ta mock hàm findOne của EntityManager giả lập
+      mockEntityManager.findOne.mockResolvedValue(null);
 
       const result = await service.handleIpn(query);
       expect(result).toEqual({ RspCode: '01', Message: 'User not found' });
@@ -226,11 +266,12 @@ describe('VnpayService', () => {
       const query = generateVnpayQuery(params);
       const mockUser = {
         id: 'u-123',
-        pending_pro_provider: 'other', // provider mismatch
+        pending_pro_provider: 'other', 
         pending_pro_order_ref: 'VNP123',
         is_pending_pro: true,
       } as User;
-      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
+      
+      mockEntityManager.findOne.mockResolvedValue(mockUser);
 
       const result = await service.handleIpn(query);
       expect(result).toEqual({ RspCode: '01', Message: 'Order invalid or already processed' });
@@ -253,8 +294,9 @@ describe('VnpayService', () => {
         pending_pro_order_ref: 'VNP123',
         is_pending_pro: true,
       } as User;
-      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
-      userRepo.save.mockResolvedValue(mockUser);
+      
+      mockEntityManager.findOne.mockResolvedValue(mockUser);
+      mockEntityManager.save.mockResolvedValue(mockUser);
 
       const result = await service.handleIpn(query);
 
@@ -264,7 +306,9 @@ describe('VnpayService', () => {
       expect(mockUser.is_pending_pro).toBe(false);
       expect(mockUser.pending_pro_provider).toBeNull();
       expect(mockUser.pending_pro_order_ref).toBeNull();
-      expect(userRepo.save).toHaveBeenCalledWith(mockUser);
+      
+      // Đảm bảo dữ liệu được ghi đè và lưu chính thức thông qua Transaction EntityManager
+      expect(mockEntityManager.save).toHaveBeenCalledWith(mockUser);
     });
 
     it('filters out falsy query params in extractVnpayParams', async () => {
@@ -277,7 +321,7 @@ describe('VnpayService', () => {
       
       const query = {
         ...generateVnpayQuery(params),
-        vnp_EmptyParam: '', // append empty param to hit line 195
+        vnp_EmptyParam: '', 
       };
       
       const mockUser = {
@@ -286,7 +330,8 @@ describe('VnpayService', () => {
         pending_pro_order_ref: 'VNP123',
         is_pending_pro: true,
       } as User;
-      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
+      
+      mockEntityManager.findOne.mockResolvedValue(mockUser);
 
       const result = await service.handleIpn(query);
       expect(result.RspCode).toBe('00');
