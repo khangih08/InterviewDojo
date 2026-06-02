@@ -1,4 +1,4 @@
-<reference types="jest" />
+/// <reference types="jest" />
 
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -20,7 +20,6 @@ describe('VnpayService', () => {
     get: jest.Mock;
   };
 
-  // Các biến mock phục vụ cho kiến trúc Transaction của TypeORM
   let mockEntityManager: {
     findOne: jest.Mock;
     save: jest.Mock;
@@ -36,7 +35,7 @@ describe('VnpayService', () => {
   };
   let mockDataSource: {
     createQueryRunner: jest.Mock;
-    transaction: jest.Mock; // Khai báo thêm hàm transaction
+    transaction: jest.Mock;
   };
 
   const mockQueryBuilder = {
@@ -48,11 +47,9 @@ describe('VnpayService', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // 1. Khởi tạo Mock các hàm bên trong Transaction manager
     mockEntityManager = {
       findOne: jest.fn(),
       save: jest.fn(),
-      // Bổ sung createQueryBuilder cho EntityManager để chạy mượt mà dòng 137 trong code service của cậu
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder), 
     };
 
@@ -67,7 +64,6 @@ describe('VnpayService', () => {
 
     mockDataSource = {
       createQueryRunner: jest.fn().mockReturnValue(mockQueryRunner),
-      // 🌟 VÁ LỖI CỐT RÕ: Giả lập hàm .transaction nhận callback và thực thi ngay lập tức
       transaction: jest.fn().mockImplementation(async (cb: (manager: any) => Promise<any>) => {
         return await cb(mockEntityManager);
       }),
