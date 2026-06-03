@@ -4,6 +4,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { InterviewGraph } from './workflows/interview.graph';
 import { EvaluatorAgent } from './agents/evaluator.agent';
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
+import { JsonOutputParser } from "@langchain/core/output_parsers"; // <-- Bổ sung parser để chuẩn hóa dữ liệu CV
 import OpenAI, { toFile } from 'openai';
 import { VM } from 'vm2';
 
@@ -154,7 +155,10 @@ export class AiService {
     }
   }
 
+  // SỬA ĐỔI: Sử dụng JsonOutputParser để bọc thép quy trình trích xuất CV không lỗi cấu trúc chuỗi
   async analyzeCvProfile(cvText: string): Promise<{ job_title: string; experience_level: string }> {
+    const parser = new JsonOutputParser();
+
     const prompt = `Bạn là một chuyên gia tuyển dụng (Headhunter).
 Hãy đọc nội dung CV dưới đây và trích xuất chức danh công việc, cấp độ kinh nghiệm.
 
@@ -162,7 +166,7 @@ Hãy đọc nội dung CV dưới đây và trích xuất chức danh công vi�
 Chỉ trả về DUY NHẤT một chuỗi JSON hợp lệ. KHÔNG giải thích, KHÔNG markdown.
 {
   "job_title": "<Ví dụ: Senior Frontend Developer>",
-  "experience_level": "<Ví dụ: Junior, Senior>"
+  "experience_level": "<Ví dụ: Junior, Senior, Middle>"
 }
 
 Nội dung CV:
@@ -171,19 +175,9 @@ ${cvText.substring(0, 3000)}
 ---`;
 
     try {
-      const response = await this.model.invoke([new HumanMessage(prompt)]);
-      let resultContent = response.content as string;
+      const chain = this.model.pipe(parser);
+      const result: any = await chain.invoke([new HumanMessage(prompt)]);
 
-      const jsonStart = resultContent.indexOf('{');
-      const jsonEnd = resultContent.lastIndexOf('}');
-
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        resultContent = resultContent.substring(jsonStart, jsonEnd + 1);
-      } else {
-        resultContent = resultContent.replace(/```json/gi, '').replace(/```/gi, '').trim();
-      }
-
-      const result = JSON.parse(resultContent);
       return {
         job_title: result.job_title || 'Chưa xác định',
         experience_level: result.experience_level || 'Chưa xác định'
@@ -194,7 +188,6 @@ ${cvText.substring(0, 3000)}
     }
   }
 
-  // CẬP NHẬT: Thêm tham số terminalOutput
   async *processInterviewTurnStream(
     userId: string,
     interviewId: string,
@@ -227,7 +220,6 @@ ${cvText.substring(0, 3000)}
       formattedMessages.push(new HumanMessage("Hãy đánh giá tổng quan buổi phỏng vấn."));
     }
 
-    // CẬP NHẬT: State truyền cho Agentic Workflow giờ đã chứa terminal_output
     const initialState = {
       messages: formattedMessages,
       userId,
@@ -235,7 +227,7 @@ ${cvText.substring(0, 3000)}
       cvContext: cvContextString,
       active_tab: activeTab,
       code_snippet: codeSnippet,
-      terminal_output: terminalOutput, // BƠM CHO CODING AGENT TẠI ĐÂY
+      terminal_output: terminalOutput,
       current_emotion: currentEmotion,
       finalAgentOutput: null
     };
@@ -269,6 +261,7 @@ ${cvText.substring(0, 3000)}
     }
   }
 
+  // SỬA ĐỔI: Lấy summary_markdown thay vì reply_to_user cũ (Vì EvaluatorAgent mới chỉ sinh summary_markdown)
   async generateFinalReport(targetRole: string, chatHistory: any[], averageScore: number) {
     const evaluator = new EvaluatorAgent(this.model);
     const formattedMessages = chatHistory.map(msg =>
@@ -277,6 +270,6 @@ ${cvText.substring(0, 3000)}
     formattedMessages.push(new HumanMessage(`Kết thúc. Điểm trung bình: ${averageScore}/100. Xuất báo cáo.`));
 
     const result = await evaluator.invoke(formattedMessages, { target_role: targetRole }, null);
-    return result.reply_to_user;
+    return result.summary_markdown;
   }
 }
