@@ -3,7 +3,7 @@ import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 import { JsonOutputParser } from "@langchain/core/output_parsers";
 
 export class EvaluatorAgent {
-  constructor(private model: ChatOpenAI) {}
+  constructor(private model: any) {}
 
   async invoke(messages: any[], userContext: any, codeSnippet: string | null) {
     const chatHistoryText = messages
@@ -17,7 +17,6 @@ export class EvaluatorAgent {
 
     const parser = new JsonOutputParser();
 
-    // TUYỆT ĐỐI CẤM AI LÀM TOÁN. Chỉ trả về mảng 5 điểm độc lập.
     const systemPrompt = new SystemMessage(`
 Bạn là một Tech Lead (Chuyên gia Đánh giá Kỹ thuật). Cuộc phỏng vấn đã kết thúc.
 Nhiệm vụ của bạn là phân tích toàn bộ lịch sử trò chuyện và code của ứng viên để xuất ra báo cáo.
@@ -30,15 +29,10 @@ Nhiệm vụ của bạn là phân tích toàn bộ lịch sử trò chuyện v�
 5. Soft Skills: Sự tự tin, cách diễn đạt mạch lạc, tư duy phản biện.
 
 [QUY TẮC ĐẦU RA JSON BẮT BUỘC]
-Trả về DUY NHẤT một Object JSON hợp lệ. TUYỆT ĐỐI KHÔNG TỰ TÍNH TRUNG BÌNH CỘNG:
+Trả về DUY NHẤT một Object JSON hợp lệ. TUYỆT ĐỐI KHÔNG TỰ TÍNH TRUNG BÌNH CỘNG.
+⚠️ QUAN TRỌNG: TUYỆT ĐỐI KHÔNG ĐƯỢC SỬ DỤNG CHÚ THÍCH (COMMENTS) NHƯ "//" HAY "/* */" Ở BÊN TRONG CHUỖI JSON. CHỈ TRẢ VỀ JSON HỢP LỆ THEO ĐÚNG ĐỊNH DẠNG SAU:
 {
-  "radar_chart": [
-    0, // [0] Điểm Technical Knowledge
-    0, // [1] Điểm Coding Logic
-    0, // [2] Điểm Code Optimization
-    0, // [3] Điểm Language Mastery
-    0  // [4] Điểm Soft Skills
-  ],
+  "radar_chart": [0, 0, 0, 0, 0],
   "learning_path": [
     {
       "topic": "Tên chủ đề cần học (Chỉ đưa ra nếu điểm tiêu chí đó < 80)",
@@ -51,26 +45,50 @@ Trả về DUY NHẤT một Object JSON hợp lệ. TUYỆT ĐỐI KHÔNG TỰ T
 }
     `);
 
+    let aiText = "";
     try {
-      const chain = this.model.pipe(parser);
-      const response = await chain.invoke([
+      const rawResponse = await this.model.invoke([
         systemPrompt,
         new HumanMessage(`Vị trí ứng tuyển: ${userContext.target_role}.\n\n--- MÃ NGUỒN CUỐI CÙNG ---\n${finalCode}\n\n--- LỊCH SỬ CHAT (RÚT GỌN) ---\n${chatHistoryText}`)
       ]);
 
-      // 1. Kiểm duyệt và parse mảng Radar Chart an toàn
-      const rawRadar = Array.isArray(response.radar_chart) ? response.radar_chart : [0, 0, 0, 0, 0];
-      const radar_chart = rawRadar.map(score => Number(score) || 0).slice(0, 5);
+      if (typeof rawResponse === "string") {
+        aiText = rawResponse;
+      } else if (rawResponse && typeof rawResponse.content === "string") {
+        aiText = rawResponse.content;
+      } else if (rawResponse && rawResponse.text) {
+        aiText = rawResponse.text;
+      }
+      aiText = aiText.trim();
+
+      aiText = aiText.replace(/(?<!https?:)\/\/.*$/gm, '');
+      aiText = aiText.replace(/\/\*[\s\S]*?\*\//g, '');
+
+      let parsedResponse: any = null;
+      try {
+        parsedResponse = await parser.parse(aiText);
+      } catch (parseError) {
+
+        const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          parsedResponse = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error("Không tìm thấy JSON hợp lệ trong câu trả lời.");
+        }
+      }
+
+      // 3. Kiểm duyệt và parse mảng Radar Chart an toàn
+      const rawRadar = Array.isArray(parsedResponse.radar_chart) ? parsedResponse.radar_chart : [0, 0, 0, 0, 0];
+      const radar_chart = rawRadar.map((score: any) => Number(score) || 0).slice(0, 5);
       while (radar_chart.length < 5) radar_chart.push(0);
 
-      // 2. Tính toán Toán học bằng JavaScript (Chính xác tuyệt đối)
+      // 4. Tính toán Toán học bằng JavaScript (Chính xác tuyệt đối)
       const theory = radar_chart[0];
       const codingLogic = radar_chart[1];
       const optimization = radar_chart[2];
       const language = radar_chart[3];
       const softSkills = radar_chart[4];
 
-      // Công thức tính Breakdown
       const coding = Math.round((codingLogic + optimization + language) / 3);
       // Công thức tính Average Score (Tổng 5 tiêu chí / 5)
       const average_score = Math.round(radar_chart.reduce((acc, curr) => acc + curr, 0) / 5);
@@ -83,18 +101,19 @@ Trả về DUY NHẤT một Object JSON hợp lệ. TUYỆT ĐỐI KHÔNG TỰ T
           soft_skills: softSkills
         },
         radar_chart,
-        learning_path: response.learning_path || [],
-        summary_markdown: response.summary_markdown || "Không có nhận xét chi tiết."
+        learning_path: parsedResponse.learning_path || [],
+        summary_markdown: parsedResponse.summary_markdown || "Không có nhận xét chi tiết."
       };
 
     } catch (error) {
       console.error("❌ [EvaluatorAgent] Lỗi parse JSON:", error);
+      console.error("Dữ liệu lỗi thô từ AI:", aiText);
       return {
         average_score: 0,
         breakdown: { theory: 0, coding: 0, soft_skills: 0 },
         radar_chart: [0, 0, 0, 0, 0],
         learning_path: [],
-        summary_markdown: "## Lỗi hệ thống\nKhông thể tạo báo cáo đánh giá tự động lúc này do sự cố LLM."
+        summary_markdown: "## Lỗi hệ thống\nKhông thể tạo báo cáo đánh giá tự động lúc này do sự cố kết nối với mô hình ngôn ngữ (LLM)."
       };
     }
   }

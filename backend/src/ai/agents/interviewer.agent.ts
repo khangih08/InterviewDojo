@@ -12,7 +12,6 @@ export class InterviewerAgent {
   ) {
     console.log(`👉 [DEBUG - Interviewer] Emotion: ${currentEmotion}`);
 
-    // Sử dụng JsonOutputParser để bọc thép việc parse JSON từ LLM
     const parser = new JsonOutputParser();
 
     const systemPrompt = new SystemMessage(`
@@ -43,25 +42,66 @@ ${cvContext}
   "next_action": "CONTINUE_THEORY", // Hoặc "SWITCH_TO_CODING", "CONTINUE_CODING", "END_INTERVIEW"
   "reply_to_user": "Câu phản hồi + Câu hỏi chuyên môn tiếp theo dành cho ứng viên."
 }
+
+⚠️ BẮT BUỘC: BẠN CHỈ ĐƯỢC TRẢ VỀ JSON HỢP LỆ. KHÔNG XUẤT TEXT CHÀO HỎI, KHÔNG GIẢI THÍCH BÊN NGOÀI KHỐI JSON.
     `);
 
+    let aiText = "";
     try {
-      const chain = this.model.pipe(parser);
-      const response = await chain.invoke([systemPrompt, ...messages]);
+      // 1. Gọi trực tiếp model để lấy kết quả thô, không qua .bind() tránh lỗi thư viện HuggingFace
+      const rawResponse = await this.model.invoke([systemPrompt, ...messages]);
+
+      // Trích xuất chuỗi văn bản từ các định dạng trả về khác nhau của các dòng Model
+      if (typeof rawResponse === "string") {
+        aiText = rawResponse;
+      } else if (rawResponse && typeof rawResponse.content === "string") {
+        aiText = rawResponse.content;
+      } else if (rawResponse && rawResponse.text) {
+        aiText = rawResponse.text;
+      }
+      aiText = aiText.trim();
+
+      // 2. Tiến hành ép kiểu/parse JSON từ chuỗi thu được
+      const response = await parser.parse(aiText);
 
       if (!response.next_action) response.next_action = "CONTINUE_THEORY";
-
-      // Đảm bảo score luôn là số hợp lệ
       response.score = Number(response.score) || 0;
 
       return response;
     } catch (error: any) {
-      console.error("❌ [InterviewerAgent] Lỗi parse JSON hoặc Timeout:", error);
+      console.warn("⚠️ [InterviewerAgent] Phát hiện định dạng không chuẩn hoặc lỗi Parse. Tiến hành tự động bọc lót dữ liệu.");
+
+      // Thử tìm kiếm khối cấu trúc JSON ẩn bên trong văn bản (nếu AI viết kèm lời thoại bên ngoài)
+      const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          const parsedJson = JSON.parse(jsonMatch[0]);
+          if (!parsedJson.next_action) parsedJson.next_action = "CONTINUE_THEORY";
+          parsedJson.score = Number(parsedJson.score) || 0;
+          return parsedJson;
+        } catch (e) {
+          // Thất bại khi parse sub-json, chuyển xuống bộ lọc tối cao phía dưới
+        }
+      }
+
+      // BỘ LỌC TỐI CAO: Nếu AI cứng đầu trả về 100% text hội thoại (Vd: "Bạn có kinh nghiệm..."),
+      // biến luôn đoạn text đó thành câu hỏi hiển thị lên màn hình chat của ứng viên chứ không làm crash hệ thống.
+      if (aiText && aiText.length > 10 && !aiText.startsWith("{")) {
+        return {
+          reasoning: "AI cãi lệnh trả về văn bản thuần. Tự động đóng gói để cứu luồng chat.",
+          score: 50,
+          next_action: "CONTINUE_THEORY",
+          reply_to_user: aiText
+        };
+      }
+
+      // Trường hợp lỗi kết nối nghiêm trọng/Timeout không có dữ liệu trả về
+      console.error("❌ [InterviewerAgent Error]:", error);
       return {
-        reasoning: "LLM Error Fallback.",
-        score: 0, // Fallback về 0 để không cộng ảo điểm 50 cho ứng viên
+        reasoning: "LLM Critical Error Fallback.",
+        score: 0,
         next_action: "CONTINUE_THEORY",
-        reply_to_user: "Xin lỗi, đường truyền của tôi vừa bị gián đoạn. Bạn có thể nhắc lại ý vừa rồi được không?"
+        reply_to_user: "Xin lỗi, hệ thống của tôi vừa gặp gián đoạn nhỏ. Bạn có thể chia sẻ lại câu trả lời vừa rồi được không?"
       };
     }
   }
