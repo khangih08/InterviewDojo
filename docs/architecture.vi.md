@@ -112,6 +112,53 @@ Trong các câu hỏi thực hành viết code (Coding Questions):
 
 ---
 
+### 💳 E. Upgrade PRO & VNPay Payment Gateway (Hệ Thống Thanh Toán & Nâng Cấp)
+Để cung cấp gói tính năng PRO (không giới hạn lượt phỏng vấn và câu hỏi), hệ thống tích hợp cổng thanh toán **VNPay**:
+1. **Frontend**: Người dùng chọn nâng cấp tài khoản, client gửi yêu cầu tạo link thanh toán lên backend.
+2. **Backend (VNPay Service)**:
+   - Tạo mã giao dịch duy nhất (`vnp_TxnRef`) bám theo ID người dùng và thời gian thực hiện.
+   - Ký số dữ liệu bằng thuật toán mã hóa chữ ký **HMAC-SHA512** với chuỗi bí mật bảo mật (`VNP_HASHSECRET`).
+   - Tạo và trả về link redirect checkout của VNPay Sandbox / Production.
+3. **Mạng lưới xử lý Callback IPN an toàn**:
+   - Khi người dùng hoàn tất thanh toán, cổng VNPay gửi yêu cầu callback (IPN) đến webhook của NestJS Backend.
+   - **Xác thực chữ ký**: Backend tính toán lại chữ ký HMAC-SHA512 để so khớp với `vnp_SecureHash` nhằm đảm bảo dữ liệu không bị thay đổi trên đường truyền.
+   - **Chống trùng lặp (Idempotency) & Khóa Bi Quan (Pessimistic Lock)**: Để loại bỏ race condition khi VNPay gọi IPN và User redirect đồng thời, hoặc VNPay gọi IPN nhiều lần cho cùng một giao dịch, backend thực hiện bọc quy trình nâng cấp trong một **Database Transaction** và sử dụng khóa bi quan (`setLock('pessimistic_write')`) để khóa tạm thời bản ghi User trong cơ sở dữ liệu cho tới khi transaction kết thúc. Nếu giao dịch hợp lệ và chưa được xử lý, backend cập nhật gói lên PRO, cấp phát credits và giải phóng lock.
+
+#### 🔄 Luồng dữ liệu nâng cấp tài khoản qua VNPay:
+```
+[Client (Upgrade Button)] ──► [Gọi API Create Link] ──► [NestJS Server]
+                                                           │
+  ┌────────────────────────────────────────────────────────┘
+  ▼
+[Tạo chữ ký SHA512 & vnp_TxnRef] ──► [Redirect sang cổng VNPay] ──► [Người dùng thanh toán]
+                                                                            │
+      ┌─────────────────────────────────────────────────────────────────────┘
+      ▼
+[VNPay Callback IPN] ──► [NestJS Webhook]
+                             │
+                             ▼
+                 [Xác thực Chữ ký SHA512] (Thành công)
+                             │
+                             ▼
+                 [Khởi tạo DB Transaction]
+                             │
+                             ▼
+                 [Pessimistic Write Lock User]
+                             │
+            ┌────────────────┴────────────────┐
+            ▼ (Chưa xử lý)                    ▼ (Đã xử lý trước đó)
+  [Nâng cấp PRO & Credits]            [Bỏ qua - Trả về RspCode 00]
+            │                                 │
+            └────────────────┬────────────────┘
+                             ▼
+                 [Commit Transaction & Unlock]
+                             │
+                             ▼
+                 [Trả về Response cho VNPay]
+```
+
+---
+
 ## 🔒 3. Các Biện Pháp Bảo Mật Hệ Thống
 
 Để đảm bảo hệ thống vận hành an toàn trước các cuộc tấn công mạng, InterviewDojo áp dụng:
