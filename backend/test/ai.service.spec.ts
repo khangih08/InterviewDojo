@@ -13,6 +13,24 @@ jest.mock('@langchain/openai', () => {
     ChatOpenAI: jest.fn().mockImplementation(() => {
       return {
         invoke: mockInvokeModel,
+        pipe: jest.fn().mockImplementation(() => {
+          return {
+            invoke: jest.fn().mockImplementation(async (input) => {
+              const res = await mockInvokeModel(input);
+              const text = res.content;
+              try {
+                if (text.includes('{')) {
+                  const start = text.indexOf('{');
+                  const end = text.lastIndexOf('}') + 1;
+                  return JSON.parse(text.slice(start, end));
+                }
+                return JSON.parse(text);
+              } catch (e) {
+                return JSON.parse(text);
+              }
+            }),
+          };
+        }),
       };
     }),
   };
@@ -383,7 +401,7 @@ describe('AiService', () => {
   describe('generateFinalReport', () => {
     it('should invoke evaluator and return report text', async () => {
       mockEvaluatorInvoke.mockResolvedValue({
-        reply_to_user: 'Báo cáo phỏng vấn hoàn chỉnh...',
+        summary_markdown: 'Báo cáo phỏng vấn hoàn chỉnh...',
       });
 
       const chatHistory = [
