@@ -4,6 +4,8 @@
 > 
 > *An AI-powered mock interview platform that helps candidates practice and improve their interviewing skills through realistic, timed sessions with instant AI feedback, integrated coding sandbox, and real-time webcam expression tracking.*
 
+🚀 **Trải nghiệm ngay (Live Demo / Production):** [https://interview-dojo-smoky.vercel.app/](https://interview-dojo-smoky.vercel.app/)
+
 ---
 
 ## ✨ Các Tính Năng Nổi Bật / Core Features
