@@ -1,5 +1,6 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
+import { JsonOutputParser } from "@langchain/core/output_parsers";
 
 export class CodeTesterAgent {
   constructor(private model: ChatOpenAI) {}
@@ -8,92 +9,74 @@ export class CodeTesterAgent {
     messages: any[],
     userContext: any,
     codeSnippet: string | null,
-    terminalOutput: string = '', // <--- BỔ SUNG: Nhận kết quả từ Terminal
-    currentEmotion: string = 'Bình thường' // <--- Nhận cảm xúc từ Graph
+    terminalOutput: string = '',
+    currentEmotion: string = 'Bình thường'
   ) {
-    // Console log để bạn debug xem dữ liệu có xuống tới đây không
     console.log(`👉 [DEBUG - CodeTester] Emotion: ${currentEmotion}`);
-    console.log(`👉 [DEBUG - CodeTester] Terminal Has Output: ${terminalOutput.length > 0}`);
 
     const currentCode = codeSnippet && codeSnippet.trim().length > 0
       ? codeSnippet
-      : "Ứng viên chưa viết code hoặc chưa gửi code.";
+      : "[SYSTEM]: Candidate has not written any code yet.";
 
-    const currentTerminal = terminalOutput && terminalOutput.trim().length > 0
-      ? terminalOutput
-      : "Chưa có kết quả chạy code (Terminal rỗng).";
+    const seniority = userContext.seniority || "Middle/Senior";
+
+    // Sử dụng JsonOutputParser
+    const parser = new JsonOutputParser();
 
     const systemPrompt = new SystemMessage(`
-Bạn là Người phỏng vấn Kỹ thuật (Coding Agent) trong một hệ thống Agentic Workflow.
-Vị trí ứng tuyển: ${userContext.target_role}.
-Giai đoạn: Thực hành Code (CODING TAB).
+You are a strict Principal Engineer conducting a Technical Coding Interview.
+Target Role: ${userContext.target_role} (${seniority} level).
 
-[PHÂN TÍCH BIỂU CẢM ỨNG VIÊN]
-- Trạng thái hiện tại qua Camera: "${currentEmotion}"
-- Nếu ứng viên "Đang suy nghĩ": Hãy cho họ thêm thời gian, đừng hối thúc.
-- Nếu ứng viên "Hào hứng": Hãy khen ngợi tinh thần và sự tự tin của họ.
+[CRITICAL RULES - NEVER VIOLATE]
+1. STRICTLY FORBIDDEN: Do not ask basic/newbie questions (e.g., "Sum of two numbers", "Even/Odd numbers").
+2. If the candidate has NO CODE yet: You MUST provide a complex, real-world challenge related to ${userContext.target_role}.
+3. CONTEXT AWARENESS: Read the chat history. Make sure the coding challenge matches previously discussed topics.
 
-NHIỆM VỤ CHUYÊN MÔN:
-- Nếu chưa có đề bài, ra một bài tập thuật toán/thực hành liên quan đến lý thuyết trước đó.
-- Nếu đã có code, review logic, cú pháp, Time/Space Complexity.
-- ⚠️ ĐẶC BIỆT LƯU Ý KHI ĐÁNH GIÁ (QUAN TRỌNG):
-  1. Bạn PHẢI đối chiếu Code của ứng viên với KẾT QUẢ CHẠY TERMINAL.
-  2. Nếu Terminal báo lỗi (ví dụ: Lỗi cú pháp, Lỗi ReferenceError, "require is not defined",...), bạn KHÔNG ĐƯỢC khen chung chung. Bạn PHẢI chỉ ra chính xác lỗi đó và gợi ý cách sửa.
-  3. KHÔNG khuyên thêm những gì ứng viên ĐÃ VIẾT. Hãy nhìn vào code để nói chuyện.
+[EVALUATION RULES - VISUAL REVIEW ONLY]
+- YOU DO NOT HAVE ACCESS TO TERMINAL OUTPUT. Evaluate the code logic by reading it carefully.
+- IGNORE environment-related syntax errors. Focus ONLY on algorithm, logic, and complexity (Time/Space).
+- If the logic is sound and the algorithm correctly solves the problem, accept the answer.
+- If the candidate asks "Is it okay?" or "Done?": If the logic is correct, return "END_INTERVIEW".
 
-QUY TẮC ĐIỀU HƯỚNG WORKFLOW (BẮT BUỘC):
-- Trả về "CONTINUE_CODING": Nếu ứng viên làm chưa xong hoặc cần hỏi xoáy thêm.
-- Trả về "END_INTERVIEW": Nếu ứng viên đã hoàn thành hoặc muốn kết thúc.
-
-⚠️ TRẢ VỀ JSON NGUYÊN BẢN:
+[OUTPUT INSTRUCTION]
+Return ONLY a valid JSON object.
 {
-  "reasoning": "Phân tích nội bộ",
-  "score": 0-100,
-  "next_action": "CONTINUE_CODING" | "END_INTERVIEW",
-  "reply_to_user": "Lời nhận xét (Hãy tinh tế dựa trên cảm xúc ${currentEmotion})"
+  "reasoning": "Detailed logic analysis (Why the code is correct/incorrect, English)",
+  "score": 0, // Integer 0-100
+  "next_action": "CONTINUE_CODING", // Or "END_INTERVIEW"
+  "reply_to_user": "Lời nói với ứng viên bằng TIẾNG VIỆT (Nhận xét sâu về thuật toán, độ phức tạp hoặc gợi ý tối ưu)."
 }
     `);
 
-    // Gửi cả Code lẫn Terminal Output vào cho AI
     const codeContextMessage = new HumanMessage(`
-[HỆ THỐNG GỬI ĐÍNH KÈM: DỮ LIỆU HIỆN TẠI TỪ EDITOR CỦA ỨNG VIÊN]
-
-1. ĐOẠN CODE MỚI NHẤT:
+[CURRENT STATE]
+Candidate Code:
 \`\`\`javascript
 ${currentCode}
 \`\`\`
 
-2. KẾT QUẢ TỪ TERMINAL (SAU KHI CHẠY CODE):
-\`\`\`text
-${currentTerminal}
-\`\`\`
-
-Dựa vào đoạn code, kết quả terminal trên, biểu cảm "${currentEmotion}" và lịch sử chat, hãy đưa ra quyết định.
-CHỈ TRẢ VỀ JSON NGUYÊN BẢN.
+Note: Evaluate the code logic visually. Ignore any environment/module syntax errors.
     `);
 
     try {
-      const response = await this.model.invoke([
+      const chain = this.model.pipe(parser);
+      const response = await chain.invoke([
         systemPrompt,
         ...messages,
         codeContextMessage
       ]);
 
-      const content = response.content as string;
-      const startIdx = content.indexOf('{');
-      const endIdx = content.lastIndexOf('}');
+      if (!response.next_action) response.next_action = "CONTINUE_CODING";
+      response.score = Number(response.score) || 0;
 
-      if (startIdx === -1 || endIdx === -1) throw new Error("Missing JSON");
-      const parsed = JSON.parse(content.substring(startIdx, endIdx + 1));
-      if (!parsed.next_action) parsed.next_action = "CONTINUE_CODING";
-
-      return parsed;
+      return response;
     } catch (error: any) {
+      console.error("❌ [CodeTesterAgent] Error:", error);
       return {
-        reasoning: "Lỗi hệ thống",
-        score: 50,
+        reasoning: "LLM Error Fallback.",
+        score: 0,
         next_action: "CONTINUE_CODING",
-        reply_to_user: "Tôi đang phân tích đoạn code của bạn, hãy đợi một chút nhé!"
+        reply_to_user: "Mạng có vẻ hơi chậm. Bạn có thể tóm tắt lại ý tưởng và độ phức tạp (Time Complexity) của thuật toán vừa rồi không?"
       };
     }
   }

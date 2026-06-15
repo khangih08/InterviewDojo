@@ -119,13 +119,19 @@ export function useDashboardData(userId?: string): DashboardDataState {
     [completedSessions],
   );
 
-  const categoryData = useMemo<CategoryPoint[]>(() => {
+ const categoryData = useMemo<CategoryPoint[]>(() => {
     const counts = new Map<SessionCategory, number>();
 
     for (const session of sessions) {
-      // Dùng job_title từ backend thay cho question_content nếu có
-      const contentToAnalyze = session.job_title || session.question_content || "";
-      const category = inferSessionCategory(contentToAnalyze as any);
+
+      const contentToAnalyze = [
+        (session as any).category,
+        (session as any).topic,
+        session.job_title,
+        session.question_content
+      ].filter(Boolean).join(" ");
+
+      const category = inferSessionCategory(contentToAnalyze);
       counts.set(category, (counts.get(category) ?? 0) + 1);
     }
 
@@ -135,7 +141,7 @@ export function useDashboardData(userId?: string): DashboardDataState {
         sessions: sessionsCount,
       }))
       .sort((a, b) => b.sessions - a.sessions)
-      .slice(0, 5);
+      .slice(0, 5); // Lấy tối đa 5 danh mục cao nhất để đưa vào biểu đồ Donut
   }, [sessions]);
 
   const statusData = useMemo<StatusPoint[]>(

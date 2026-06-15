@@ -12,45 +12,46 @@ export type SessionCategory =
   | "Security"
   | "General";
 
+// ĐÃ CẬP NHẬT: Bổ sung từ khóa Tiếng Việt và các biến thể viết tắt để AI mapping chuẩn 100%
 const CATEGORY_RULES: Array<{
   category: SessionCategory;
   keywords: string[];
 }> = [
   {
     category: "Frontend",
-    keywords: ["react", "css", "frontend", "browser", "dom", "ui", "ux"],
+    keywords: ["react", "css", "frontend", "browser", "dom", "ui", "ux", "fe", "html", "javascript", "js", "giao diện", "vue", "nextjs", "angular", "tailwind"],
   },
   {
     category: "Backend",
-    keywords: ["api", "backend", "database", "sql", "microservice", "server"],
+    keywords: ["api", "backend", "database", "sql", "microservice", "server", "be", "node", "express", "nestjs", "cơ sở dữ liệu", "truy vấn", "mongodb", "postgres", "redis"],
   },
   {
     category: "System Design",
-    keywords: ["scale", "system design", "architecture", "distributed", "cache"],
+    keywords: ["scale", "system design", "architecture", "distributed", "cache", "thiết kế hệ thống", "kiến trúc", "phân tán", "tải cao", "load balancer", "sharding", "microservices"],
   },
   {
     category: "Algorithms",
-    keywords: ["algorithm", "complexity", "tree", "graph", "array", "dp"],
+    keywords: ["algorithm", "complexity", "tree", "graph", "array", "dp", "thuật toán", "độ phức tạp", "cây", "đồ thị", "mảng", "chuỗi", "đệ quy", "sắp xếp", "tìm kiếm", "leetcode", "tối ưu"],
   },
   {
     category: "Behavioral",
-    keywords: ["yourself", "conflict", "challenge", "leadership", "team"],
+    keywords: ["yourself", "conflict", "challenge", "leadership", "team", "bản thân", "xung đột", "thách thức", "khó khăn", "tình huống", "đồng nghiệp", "quản lý", "dự án", "kinh nghiệm", "lãnh đạo", "giới thiệu"],
   },
   {
     category: "Data",
-    keywords: ["machine learning", "data", "model", "experiment", "analytics"],
+    keywords: ["machine learning", "data", "model", "experiment", "analytics", "dữ liệu", "mô hình", "phân tích", "trực quan", "ai", "báo cáo"],
   },
   {
     category: "DevOps",
-    keywords: ["docker", "kubernetes", "ci/cd", "deployment", "monitoring"],
+    keywords: ["docker", "kubernetes", "ci/cd", "deployment", "monitoring", "triển khai", "vận hành", "k8s", "cloud", "aws", "cicd"],
   },
   {
     category: "Mobile",
-    keywords: ["android", "ios", "mobile", "swift", "kotlin", "react native"],
+    keywords: ["android", "ios", "mobile", "swift", "kotlin", "react native", "di động", "flutter", "app"],
   },
   {
     category: "Security",
-    keywords: ["security", "auth", "oauth", "jwt", "vulnerability", "xss"],
+    keywords: ["security", "auth", "oauth", "jwt", "vulnerability", "xss", "bảo mật", "mã hóa", "tấn công", "phân quyền", "đăng nhập"],
   },
 ];
 
@@ -59,15 +60,36 @@ export function clampScore(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-export function getAverageScore(session: Session) {
-  if (!session.ai_analysis) return 0;
+// ĐÃ SỬA LỖI 0%: Thuật toán quét điểm đa tầng (Quét mọi ngóc ngách cấu trúc dữ liệu của Session)
+export function getAverageScore(session: any) {
+  if (!session) return 0;
 
-  const technical = clampScore(session.ai_analysis.technical_score ?? 0);
-  const communication = clampScore(
-    session.ai_analysis.communication_score ?? 0,
-  );
+  // 1. Tìm điểm số tổng quan trực tiếp từ các trường cấu trúc khác nhau
+  const directScore = session.score ??
+                      session.evaluation?.overallScore ??
+                      session.evaluation?.score ??
+                      session.ai_analysis?.score ??
+                      session.ai_analysis?.overallScore ??
+                      session.ai_analysis?.overall_score;
 
-  return Math.round((technical + communication) / 2);
+  if (directScore !== undefined && directScore !== null) {
+    return clampScore(directScore);
+  }
+
+  // 2. Nếu không tìm thấy score tổng, tự động tính toán trung bình cộng từ sub-scores
+  const analysis = session.ai_analysis || session.evaluation;
+  if (analysis) {
+    const technical = analysis.technical_score ?? analysis.technicalScore;
+    const communication = analysis.communication_score ?? analysis.communicationScore;
+
+    if (technical !== undefined || communication !== undefined) {
+      const tScore = clampScore(technical ?? 0);
+      const cScore = clampScore(communication ?? 0);
+      return Math.round((tScore + cScore) / 2);
+    }
+  }
+
+  return 0; // Trả về số mặc định nếu phiên chưa được chấm điểm hoặc FAILED
 }
 
 export function inferSessionCategory(

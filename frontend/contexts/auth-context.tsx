@@ -21,20 +21,8 @@ import {
   logoutApi,
   register as registerApi,
 } from "@/lib/api/auth";
-import type { AuthRegisterRequest } from "@/lib/api/types";
-
-// ĐỊNH NGHĨA USER CHUẨN ĐỂ DÙNG TOÀN APP
-export type User = {
-  id: string;
-  email: string;
-  full_name: string;
-  role: 'user' | 'admin'; // Thêm mới để phân quyền
-  plan: 'FREE' | 'PRO';
-  credits: number;
-  is_pending_pro: boolean; // Thêm mới để check trạng thái thanh toán
-  target_role?: string;
-  experience_level?: string;
-};
+import type { AuthRegisterRequest, User } from "@/lib/api/types"; // Đồng bộ Enum JobRole chuẩn từ types.ts
+import { http } from "@/lib/api/http";
 
 type AuthContextValue = {
   user: User | null;
@@ -48,6 +36,7 @@ type AuthContextValue = {
   }) => Promise<void>;
   register: (input: AuthRegisterRequest) => Promise<void>;
   logout: () => void;
+  refreshUser: () => Promise<void>; 
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -72,12 +61,19 @@ function subscribeAuthStore(onStoreChange: () => void) {
   if (typeof window === "undefined") {
     return () => {};
   }
-  const handleStorage = () => {
+  const handleStorageChange = () => {
+    cachedUserRaw = undefined;
+    cachedToken = undefined;
+    cachedSnapshot = undefined;
     onStoreChange();
   };
-  window.addEventListener("storage", handleStorage);
+  
+  window.addEventListener("storage", handleStorageChange);
+  window.addEventListener("authStorageChange", handleStorageChange);
+  
   return () => {
-    window.removeEventListener("storage", handleStorage);
+    window.removeEventListener("storage", handleStorageChange);
+    window.removeEventListener("authStorageChange", handleStorageChange);
   };
 }
 
@@ -124,9 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         refreshToken: response.refreshToken,
         remember: input.remember,
       });
-      // Response từ API bây giờ sẽ có đủ role, plan, credits, is_pending_pro
       saveUser(response.user, input.remember);
-      window.dispatchEvent(new Event("storage"));
     },
     [],
   );
@@ -140,7 +134,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuthTokens();
     clearUser();
     if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("storage"));
+      window.dispatchEvent(new Event('authStorageChange'));
+    }
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    try {
+      const response = await http.get<User>('/user/me'); 
+      const updatedUser = response.data; 
+      
+      if (updatedUser) {
+        saveUser(updatedUser); 
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new Event('authStorageChange'));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to refresh user profile package:", error);
     }
   }, []);
 
@@ -153,8 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
+      refreshUser, 
     }),
-    [user, token, hydrated, login, register, logout],
+    [user, token, hydrated, login, register, logout, refreshUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

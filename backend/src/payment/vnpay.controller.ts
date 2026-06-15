@@ -20,7 +20,15 @@ export class VnpayController {
   }
 
   /**
-   * Callback / IPN endpoint nhận dữ liệu VNPay gửi về sau khi người dùng hoàn tất thanh toán.
+   * Callback / return endpoint nhận dữ liệu VNPay khi người dùng được chuyển về trang chủ site.
+   */
+  @Get('return')
+  async handleReturn(@Query() query: Record<string, string | undefined>): Promise<VnpayIpnResponse> {
+    return await this.vnpayService.handleReturn(query);
+  }
+
+  /**
+   * IPN endpoint nhận dữ liệu VNPay server-to-server để đồng bộ thanh toán.
    */
   @Get('ipn')
   async handleIpn(@Query() query: Record<string, string | undefined>): Promise<VnpayIpnResponse> {

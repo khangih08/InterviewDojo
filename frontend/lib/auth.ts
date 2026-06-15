@@ -173,11 +173,17 @@ export function saveUser(user: User, remember?: boolean) {
   if (persist) {
     window.localStorage.setItem(USER_STORAGE, serialized);
     window.sessionStorage.removeItem(USER_SESSION);
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('authStorageChange'));
+    }
     return;
   }
 
   window.localStorage.removeItem(USER_STORAGE);
   window.sessionStorage.setItem(USER_SESSION, serialized);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('authStorageChange'));
+  }
 }
 
 export function getUser<T = User>() {

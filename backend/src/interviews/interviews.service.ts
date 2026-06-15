@@ -94,8 +94,11 @@ export class InterviewsService {
       };
     }
 
+    // SỬA: Lấy CV text từ lịch sử phỏng vấn. Nếu ứng viên thi chay không có CV, fallback về job_title
+    const cvContext = lastInterview.cv_text || `Thông tin ứng viên: Ứng tuyển vị trí ${lastInterview.job_title || targetRole}`;
+
     const plan = await mentorAgent.invoke(
-      targetRole,
+      cvContext, // Đã truyền cvContext thay cho targetRole
       lastInterview.final_report,
       lastInterview.average_score
     );
@@ -152,7 +155,7 @@ export class InterviewsService {
     const savedInterview = await this.interviewRepo.save(newInterview);
     await this.ragService.indexCv(userId, savedInterview.id, cvText);
 
-    const greetingMsg = `Chào bạn! Mình đã đọc CV của bạn và sẵn sàng phỏng vấn cho vị trí ${cvProfile.job_title}. Chúng ta bắt đầu nhé!`;
+    const greetingMsg = `Chào bạn! Mình đã đọc CV của bạn và sẵn sàng phỏng vấn cho vị trí ${cvProfile.job_title}. Chúng quy ta bắt đầu nhé!`;
     await this.messageRepo.save({
       interview_id: savedInterview.id,
       role: 'assistant',

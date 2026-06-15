@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import UserAvatar from "@/components/layout/UserAvatar";
 import { Zap, Crown } from "lucide-react"; // Import thêm icon cho đẹp
 
 export function Navbar() {
@@ -44,10 +45,19 @@ export function Navbar() {
           </div>
         )}
 
-        <div className="hidden rounded-full border border-border/60 bg-accent/50 px-3 py-1.5 text-sm sm:block">
-          {mounted
-            ? user?.full_name || user?.email || "Candidate"
-            : "Candidate"}
+        <div className="hidden sm:flex items-center gap-3 rounded-full border border-border/60 bg-accent/50 px-3 py-1.5 text-sm">
+          <UserAvatar user={user} size={36} />
+          <span className="font-medium">
+            {mounted ? user?.full_name || user?.email || "Candidate" : "Candidate"}
+          </span>
+          {mounted && user?.plan?.toUpperCase?.() === 'PRO' && (
+            <button
+              type="button"
+              className="rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-amber-300 transition hover:bg-amber-500/15"
+            >
+              PRO
+            </button>
+          )}
         </div>
 
         <button

@@ -66,14 +66,7 @@ export class AuthService {
       );
       return {
         ...tokens,
-        user: {
-          id: user.id,
-          email: user.email,
-          full_name: user.full_name,
-          target_role: user.target_role,
-          experience_level: user.experience_level,
-          role: user.role,
-        },
+        user: this.mapAuthUser(user),
       };
     } catch (error) {
       console.error('Error during user registration:', error);
@@ -106,6 +99,20 @@ export class AuthService {
     await this.UserRepository.update(userId, { refreshToken });
   }
 
+  private mapAuthUser(user: User) {
+    return {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      target_role: user.target_role,
+      experience_level: user.experience_level,
+      role: user.role,
+      plan: user.plan,
+      credits: user.credits,
+      is_pending_pro: user.is_pending_pro,
+    };
+  }
+
   async refreshToken(userId: string): Promise<AuthResponseDto> {
     const user = await this.UserRepository.findOne({
       where: { id: userId },
@@ -116,6 +123,9 @@ export class AuthService {
         target_role: true,
         experience_level: true,
         role: true,
+        plan: true,
+        credits: true,
+        is_pending_pro: true,
       },
     });
     if (!user) {
@@ -127,14 +137,7 @@ export class AuthService {
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        target_role: user.target_role,
-        experience_level: user.experience_level,
-        role: user.role,
-      },
+      user: this.mapAuthUser(user),
     };
   }
 
@@ -163,6 +166,9 @@ export class AuthService {
         'role',
         'target_role',
         'experience_level',
+        'plan',
+        'credits',
+        'is_pending_pro',
       ],
     });
 
@@ -182,14 +188,7 @@ export class AuthService {
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        target_role: user.target_role,
-        experience_level: user.experience_level,
-        role: user.role,
-      },
+      user: this.mapAuthUser(user),
     };
   }
 
@@ -260,14 +259,7 @@ export class AuthService {
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        target_role: user.target_role,
-        experience_level: user.experience_level,
-        role: user.role,
-      },
+      user: this.mapAuthUser(user),
       requiresProfileCompletion: isNewGoogleUser,
     };
   }
@@ -295,6 +287,9 @@ export class AuthService {
         target_role: true,
         experience_level: true,
         role: true,
+        plan: true,
+        credits: true,
+        is_pending_pro: true,
         is_google_user: true,
       },
     });
@@ -316,14 +311,7 @@ export class AuthService {
 
     return {
       message: 'Google profile completed successfully',
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        target_role: user.target_role,
-        experience_level: user.experience_level,
-        role: user.role,
-      },
+      user: this.mapAuthUser(user),
     };
   }
 
@@ -485,6 +473,9 @@ export class AuthService {
         'role',
         'target_role',
         'experience_level',
+        'plan',
+        'credits',
+        'is_pending_pro',
         'google_verified',
         'google_verification_code',
       ],
@@ -506,14 +497,7 @@ export class AuthService {
 
     return {
       ...tokens,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        target_role: user.target_role,
-        experience_level: user.experience_level,
-        role: user.role,
-      },
+      user: this.mapAuthUser(user),
     };
   }
 

@@ -19,7 +19,7 @@ export default function UpgradeButton({ userId }: UpgradeButtonProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payment/vnpay/create-url`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'}/payment/vnpay/create-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

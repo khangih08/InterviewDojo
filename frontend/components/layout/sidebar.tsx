@@ -104,6 +104,8 @@ export function Sidebar() {
       .join("");
   }, [user?.email, user?.full_name]);
 
+  const isPro = mounted && user?.plan?.toUpperCase?.() === "PRO";
+
   const visibleNavItems =
     mounted && user?.role !== "admin"
       ? navItems.filter((item) => item.href !== "/admin")
@@ -197,6 +199,11 @@ export function Sidebar() {
             <p className="truncate text-xs text-muted-foreground">
               {mounted ? user?.email || "Signed in" : "Signed in"}
             </p>
+            {isPro && (
+              <span className="mt-1 inline-flex rounded-full bg-amber-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-amber-500">
+                PRO
+              </span>
+            )}
           </div>
           <ChevronUp
             className={[

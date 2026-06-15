@@ -25,6 +25,9 @@ export class AuthResponseDto {
       target_role: JobRole.BACKEND,
       experience_level: ExperienceLevel.FRESHER,
       role: Role.USER,
+      plan: 'PRO',
+      credits: 9999,
+      is_pending_pro: false,
     },
   })
   user!: {
@@ -34,6 +37,9 @@ export class AuthResponseDto {
     target_role: JobRole;
     experience_level: ExperienceLevel;
     role: Role;
+    plan: string;
+    credits: number;
+    is_pending_pro: boolean;
   };
 
   @ApiPropertyOptional({

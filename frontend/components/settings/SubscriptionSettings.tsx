@@ -53,7 +53,7 @@ export function SubscriptionSettings() {
     setStatusMessage(null);
 
     try {
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/payment/vnpay/create-url`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'}/payment/vnpay/create-url`;
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

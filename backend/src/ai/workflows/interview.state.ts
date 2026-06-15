@@ -7,7 +7,7 @@ export interface InterviewState {
   userContext: { target_role: string; experience_level: string };
   cvContext: string;
 
-  active_tab: 'THEORY' | 'CODING' | 'EVALUATION';
+  active_tab:  'THEORY' | 'CODING' | 'EVALUATION';
   code_snippet?: string;
 
   // [CẬP NHẬT] Thêm biến lưu kết quả Terminal

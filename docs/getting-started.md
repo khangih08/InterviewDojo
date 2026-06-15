@@ -84,6 +84,14 @@ SMTP_FROM="Interview Dojo <no-reply@interviewdojo.com>"
 # Khác
 PORT=3001
 ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# Cấu hình Cổng Thanh Toán VNPay
+VNP_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html   # URL cổng test VNPay Sandbox
+VNP_TMNCODE=your-vnpay-tmncode                              # Mã định danh website (Merchant ID)
+VNP_HASHSECRET=your-vnpay-hashsecret                        # Chuỗi bảo mật checksum SHA512
+VNP_RETURNURL=http://localhost:3000/payment/callback        # URL redirect ở frontend nhận kết quả
+VNP_IP_ADDR=127.0.0.1                                       # Địa chỉ IP của client (tùy chọn)
+```,StartLine:84,TargetContent:
 ```
 
 #### Khởi chạy Backend ở chế độ Development:

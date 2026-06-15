@@ -64,6 +64,10 @@ export function useSandboxEditor() {
 
   const BACKEND_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001'}/interviews`;
 
+  const hasUserWrittenCode =
+    codeSnippet.trim() !== '' &&
+    codeSnippet.trim() !== (defaultSnippets[language] || '').trim();
+
   const handleLanguageChange = (newLang: string) => {
     setLanguage(newLang);
     setCodeSnippet(defaultSnippets[newLang] || '// Viết code...');
@@ -91,14 +95,15 @@ export function useSandboxEditor() {
     setIsRunningCode(false);
   };
 
-  return { 
-    codeSnippet, 
-    setCodeSnippet, 
-    codeOutput, 
-    setCodeOutput, 
-    isRunningCode, 
+  return {
+    codeSnippet,
+    setCodeSnippet,
+    codeOutput,
+    setCodeOutput,
+    isRunningCode,
     handleRunCode,
     language,
-    handleLanguageChange
+    handleLanguageChange,
+    hasUserWrittenCode
   };
 }

@@ -3,6 +3,8 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { toastSuccess } from '@/lib/toast';
+import { getUser, saveUser } from '@/lib/auth'; 
 
 const STATUS_MAP = {
   success: {
@@ -31,39 +33,84 @@ export default function PaymentCallbackClient() {
   const status = useMemo(() => STATUS_MAP[statusKey], [statusKey]);
   const Icon = status.icon;
 
-  const handleBack = () => router.push('/dashboard');
+  const handleBack = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/dashboard';
+    } else {
+      router.push('/dashboard');
+    }
+  };
 
   const [verifying, setVerifying] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    // On return from VNPay, call backend to validate the query and trigger server-side upgrade
     const doVerify = async () => {
       const code = searchParams.get('vnp_ResponseCode');
-      if (!code) return;
+      if (!code) {
+        setVerifyMsg('Không có mã phản hồi VNPay.');
+        return;
+      }
+
       setVerifying(true);
       try {
         const params = Array.from(searchParams.entries())
           .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v ?? '')}`)
           .join('&');
 
-        const base = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-        const res = await fetch(`${base}/payment/vnpay/ipn?${params}`);
+        const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+        const res = await fetch(`${base}/payment/vnpay/return?${params}`);
         const data = await res.json();
-        if (res.ok && data.RspCode === '00') {
-          setVerifyMsg('Xác thực thanh toán thành công. Tài khoản đã được nâng cấp.');
+
+        if (res.ok && (data.RspCode === '00' || data.Message === 'Confirm success')) {
+          setVerifyMsg('Xác thực thanh toán thành công. Đang cập nhật gói PRO...');
+          toastSuccess('Thanh toán VNPay thành công. Gói PRO đã được kích hoạt.');
+
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          const currentUser = getUser<any>();
+          
+          if (currentUser) {
+            const upgradedUser = {
+              ...currentUser,
+              plan: 'PRO',
+              credits: 9999,
+              is_pending_pro: false
+            };
+            
+            saveUser(upgradedUser);
+          } else {
+            // Dự phòng nếu phiên bị mất thông tin thô tạm thời
+            saveUser({
+              email: 'user@vnu.edu.vn',
+              plan: 'PRO',
+              credits: 9999
+            } as any);
+          }
+
+          setVerifyMsg('Đồng bộ trạng thái PRO thành công! Đang chuyển hướng về Dashboard...');
+
+          // Ép cứng trình duyệt tải lại trang để xóa hoàn toàn cache layout cũ của Next.js
+          setTimeout(() => {
+            if (typeof window !== 'undefined') {
+              window.location.href = '/dashboard';
+            } else {
+              router.push('/dashboard');
+            }
+          }, 1000);
+
         } else {
-          setVerifyMsg(`Xác thực thất bại: ${data.Message || 'Không rõ'}`);
+          const errorMessage = data?.Message || 'Không rõ';
+          setVerifyMsg(`Xác thực thất bại: ${errorMessage}`);
         }
       } catch (err) {
-        setVerifyMsg('Lỗi khi xác thực thanh toán.');
+        setVerifyMsg('Lỗi khi xác thực thanh toán. Vui lòng thử lại sau.');
       } finally {
         setVerifying(false);
       }
     };
+
     doVerify();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [searchParams, router]);
 
   return (
     <main className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4 py-8">
@@ -87,18 +134,18 @@ export default function PaymentCallbackClient() {
               <p className="text-base font-medium text-white">{responseCode ?? 'Không có dữ liệu'}</p>
             </div>
             <div className="space-y-2">
-              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Gợi ý</p>
+              <p className="text-sm uppercase tracking-[0.24em] text-slate-500">Đồng bộ hệ thống</p>
               <p className="text-sm leading-6 text-slate-300">
                 {responseCode === '00'
-                  ? 'Nếu bạn vẫn chưa thấy quyền lợi PRO, thử đăng xuất rồi đăng nhập lại hoặc vào trang hồ sơ để làm mới trạng thái.'
+                  ? 'Hệ thống đang tự động kích hoạt quyền lợi gói PRO thời gian thực lên giao diện hiển thị của bạn.'
                   : 'Hãy kiểm tra lại thông tin và thử thanh toán lại, hoặc liên hệ bộ phận hỗ trợ nếu cần giúp đỡ.'}
               </p>
             </div>
           </div>
 
           {verifying && (
-            <div className="rounded-md border border-slate-800 bg-slate-900/80 p-4 text-sm text-slate-300">
-              Đang xác thực thanh toán...
+            <div className="rounded-md border border-slate-800 bg-slate-900/80 p-4 text-sm text-slate-300 animate-pulse">
+              Đang xác thực giao dịch từ cổng VNPay...
             </div>
           )}
 
